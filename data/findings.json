@@ -193,10 +193,12 @@
    }
   ],
   "slice": "s04-drawing-providers",
-  "verified": false,
+  "verified": true,
   "merged_from": [],
   "file": "003-native-objects-created-per-redraw-never-deleted.md",
-  "refuted": false
+  "refuted": false,
+  "verdict": "confirmed",
+  "verification_notes": "Re-read PolarHeatmapDrawingProvider.js:6-40: code_quote matches lines 30-38 verbatim; line 31 creates `new SCRTHeatmapSeriesDrawingProvider()` as a local, and only contourParams (:37) and v4 (:38) are deleted. The class has no delete() override and no field holds the provider, so nothing can free it later. Caller chain re-established: SciChartRenderer.render (SciChartRenderer.js:88) -> drawFn rs.draw (:354, skipped only when !rs.isVisible) -> BaseRenderableSeries.draw (BaseRenderableSeries.js:593, guarded only by canDraw :602) -> dp.draw (:628) -> PolarHeatmapDrawingProvider.draw; the provider is pushed in PolarUniformHeatmapRenderableSeries.addDrawingProviders (PolarUniformHeatmapRenderableSeries.js:34), and neither UniformHeatmapRenderableSeries nor BaseHeatmapRenderableSeries overrides draw. No caching, dirty flag or early return beyond the heatTexture null check, so it is one leaked native object per redraw. Every other native drawing provider in the library is held in a field and freed with deleteSafe (LineSegmentSeriesDrawingProvider.js:70, MountainSeriesDrawingProvider.js:30, etc.), which confirms these are raw embind handles; the glue attachFinalizer (_glue-pretty/scichart.js:3739-3757) registers only smart-pointer handles. Contours: UniformContoursDrawingProvider.js:66 discards the TSRVector4 that SCRTFillTextureFloat32 returns by value (types/types/TSciChart.d.ts:4), while UniformHeatmapDrawingProvider deletes the same value (UniformHeatmapDrawingProvider.js:196); the series registers this provider at UniformContoursRenderableSeries.js:91 and reaches it on the same per-redraw path. ErrorSeriesDrawingProvider.js:33-45: onAttachSeries allocates args and nativeDrawingProvider, and onDetachSeries does not free them (compare LineSegmentSeriesDrawingProvider.js:68-71). Attach and detach are called from BaseRenderableSeries.js:769/789, so this leak grows per detach and re-attach. Rule Avoid fields (GPU-05: do not delete right after the draw that used the resource; SC-29) do not excuse a per-frame create with no delete. The fix keeps one provider per series, which matches the library's pattern; the import path ../../../../../Core/Deleter resolves to esm/Core/Deleter. Severity high is kept: this is a leak on the per-frame redraw path. Evidence S is kept: the missing delete is certain in the code, and the native size per object is not claimed."
  },
  {
   "id": "004",
