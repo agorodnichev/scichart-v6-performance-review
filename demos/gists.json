@@ -1,8 +1,230 @@
 {
+  "001": {
+    "gist": "536ef52eb4c16bbd677557084dfa7a30",
+    "dir": "001-svg-clip-path-defs-rewritten-hidpi",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/536ef52eb4c16bbd677557084dfa7a30/",
+    "gistUrl": "https://gist.github.com/536ef52eb4c16bbd677557084dfa7a30"
+  },
+  "002": {
+    "gist": "7ba80fdf18310bb90abe773194754dd2",
+    "dir": "002-annotation-label-texture-per-frame",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/7ba80fdf18310bb90abe773194754dd2/",
+    "gistUrl": "https://gist.github.com/7ba80fdf18310bb90abe773194754dd2"
+  },
+  "007": {
+    "gist": "6c6ce13d5c960239c4cd1e12dabb597c",
+    "dir": "007-polar-column-label-leaks-linebounds",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/6c6ce13d5c960239c4cd1e12dabb597c/",
+    "gistUrl": "https://gist.github.com/6c6ce13d5c960239c4cd1e12dabb597c"
+  },
+  "008": {
+    "gist": "63294c357fc6821a97b7127d93659e6b",
+    "dir": "008-line-segment-hittest-full-scan",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/63294c357fc6821a97b7127d93659e6b/",
+    "gistUrl": "https://gist.github.com/63294c357fc6821a97b7127d93659e6b"
+  },
+  "009": {
+    "gist": "21b996729063ad953754f181309a0a9d",
+    "dir": "009-rectangle-hittest-y-before-x",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/21b996729063ad953754f181309a0a9d/",
+    "gistUrl": "https://gist.github.com/21b996729063ad953754f181309a0a9d"
+  },
   "012": {
     "gist": "78eb5bd1180c4e5b13249287b09c8a66",
     "dir": "012-rollover-marker-svg-reparse",
     "fiddle": "https://jsfiddle.net/gh/gist/library/pure/78eb5bd1180c4e5b13249287b09c8a66/",
     "gistUrl": "https://gist.github.com/78eb5bd1180c4e5b13249287b09c8a66"
+  },
+  "013": {
+    "gist": "16e017182cb3af8bcfc5bad7dffc93fb",
+    "dir": "013-svgline-axis-label-getbbox",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/16e017182cb3af8bcfc5bad7dffc93fb/",
+    "gistUrl": "https://gist.github.com/16e017182cb3af8bcfc5bad7dffc93fb"
+  },
+  "014": {
+    "gist": "670ef1748afaa161e1111424a94cb389",
+    "dir": "014-legend-rebuild-leaks-handlers",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/670ef1748afaa161e1111424a94cb389/",
+    "gistUrl": "https://gist.github.com/670ef1748afaa161e1111424a94cb389"
+  },
+  "015": {
+    "gist": "10d3fa1deed16487db613392cdd65235",
+    "dir": "015-overview-annotation-forced-layout",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/10d3fa1deed16487db613392cdd65235/",
+    "gistUrl": "https://gist.github.com/10d3fa1deed16487db613392cdd65235"
+  },
+  "021": {
+    "gist": "eb260d17a53d0c6e3dfeedaf5ce73d65",
+    "dir": "021-stacked-accumulation-push-back-rebuild",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/eb260d17a53d0c6e3dfeedaf5ce73d65/",
+    "gistUrl": "https://gist.github.com/eb260d17a53d0c6e3dfeedaf5ce73d65"
+  },
+  "023": {
+    "gist": "2527ec4678f5faddde04ba00da42e16a",
+    "dir": "023-rollover-cursor-tooltip-svg-reparse",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/2527ec4678f5faddde04ba00da42e16a/",
+    "gistUrl": "https://gist.github.com/2527ec4678f5faddde04ba00da42e16a"
+  },
+  "027": {
+    "gist": "a9c69252ac92e115113c4e4ff04161b5",
+    "dir": "027-engine-raf-loop-never-stops",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/a9c69252ac92e115113c4e4ff04161b5/",
+    "gistUrl": "https://gist.github.com/a9c69252ac92e115113c4e4ff04161b5"
+  },
+  "030": {
+    "gist": "91e8b2da94216d1669badb28679555d4",
+    "dir": "030-datavalue-subchart-forced-layout",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/91e8b2da94216d1669badb28679555d4/",
+    "gistUrl": "https://gist.github.com/91e8b2da94216d1669badb28679555d4"
+  },
+  "032": {
+    "gist": "f0c5ea18c20f6f9dbe98d81e970a5645",
+    "dir": "032-ohlc-yrange-embind-get-loop",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/f0c5ea18c20f6f9dbe98d81e970a5645/",
+    "gistUrl": "https://gist.github.com/f0c5ea18c20f6f9dbe98d81e970a5645"
+  },
+  "033": {
+    "gist": "a26100968d9eac6cb77506b82d30534e",
+    "dir": "033-style-animation-pointmarker-leak",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/a26100968d9eac6cb77506b82d30534e/",
+    "gistUrl": "https://gist.github.com/a26100968d9eac6cb77506b82d30534e"
+  },
+  "034": {
+    "gist": "24a7c68a7fe7fe340b69b7d596163b84",
+    "dir": "034-stacked-mountain-palette-invalidation",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/24a7c68a7fe7fe340b69b7d596163b84/",
+    "gistUrl": "https://gist.github.com/24a7c68a7fe7fe340b69b7d596163b84"
+  },
+  "038": {
+    "gist": "1af150e9aa62bcd73d07235128bc0ae2",
+    "dir": "038-pie-legend-rebuilt-per-invalidate",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/1af150e9aa62bcd73d07235128bc0ae2/",
+    "gistUrl": "https://gist.github.com/1af150e9aa62bcd73d07235128bc0ae2"
+  },
+  "047": {
+    "gist": "ad5fce75f9c8aa855d78ba36c49ebc0d",
+    "dir": "047-sync-layout-double-measure",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/ad5fce75f9c8aa855d78ba36c49ebc0d/",
+    "gistUrl": "https://gist.github.com/ad5fce75f9c8aa855d78ba36c49ebc0d"
+  },
+  "049": {
+    "gist": "348b5da582d41b89ce9e6265ed6eb4ef",
+    "dir": "049-pie-label-forced-layout",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/348b5da582d41b89ce9e6265ed6eb4ef/",
+    "gistUrl": "https://gist.github.com/348b5da582d41b89ce9e6265ed6eb4ef"
+  },
+  "052": {
+    "gist": "3c571989601271c913e7a79453e9c083",
+    "dir": "052-subchart-wrapper-write-then-read",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/3c571989601271c913e7a79453e9c083/",
+    "gistUrl": "https://gist.github.com/3c571989601271c913e7a79453e9c083"
+  },
+  "053": {
+    "gist": "79c6448e37a530d67422688efa0fedcd",
+    "dir": "053-offscreen-charts-render-freeze-stale",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/79c6448e37a530d67422688efa0fedcd/",
+    "gistUrl": "https://gist.github.com/79c6448e37a530d67422688efa0fedcd"
+  },
+  "058": {
+    "gist": "6f6b236087d5372656a774aee833e93d",
+    "dir": "058-data-labels-repeat-linebounds",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/6f6b236087d5372656a774aee833e93d/",
+    "gistUrl": "https://gist.github.com/6f6b236087d5372656a774aee833e93d"
+  },
+  "059": {
+    "gist": "88741873b41ba402ce827cd778624ccd",
+    "dir": "059-style-animation-marker-texture-rebuild",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/88741873b41ba402ce827cd778624ccd/",
+    "gistUrl": "https://gist.github.com/88741873b41ba402ce827cd778624ccd"
+  },
+  "060": {
+    "gist": "d0c5a221be903a0e83160dc5b5dee2cb",
+    "dir": "060-selected-annotation-adorner-reparse",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/d0c5a221be903a0e83160dc5b5dee2cb/",
+    "gistUrl": "https://gist.github.com/d0c5a221be903a0e83160dc5b5dee2cb"
+  },
+  "065": {
+    "gist": "cb154fd7856f52ead5b4727480362f28",
+    "dir": "065-pie-sync-redraw-timer-animations",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/cb154fd7856f52ead5b4727480362f28/",
+    "gistUrl": "https://gist.github.com/cb154fd7856f52ead5b4727480362f28"
+  },
+  "066": {
+    "gist": "cd954221b1913153bd11f0a1ba661e4a",
+    "dir": "066-getfontkey-style-registry-scan",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/cd954221b1913153bd11f0a1ba661e4a/",
+    "gistUrl": "https://gist.github.com/cd954221b1913153bd11f0a1ba661e4a"
+  },
+  "072": {
+    "gist": "6043d9452f984f2594fec8ad751aa97b",
+    "dir": "072-textannotation-text-change-reparse",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/6043d9452f984f2594fec8ad751aa97b/",
+    "gistUrl": "https://gist.github.com/6043d9452f984f2594fec8ad751aa97b"
+  },
+  "073": {
+    "gist": "29302f94ef6f5ebe82cffd4ae0fafc3a",
+    "dir": "073-nativetext-wrap-remeasure",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/29302f94ef6f5ebe82cffd4ae0fafc3a/",
+    "gistUrl": "https://gist.github.com/29302f94ef6f5ebe82cffd4ae0fafc3a"
+  },
+  "075": {
+    "gist": "a033d8429f93f75587566d51acbecf9a",
+    "dir": "075-rectangle-series-no-visible-range-culling",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/a033d8429f93f75587566d51acbecf9a/",
+    "gistUrl": "https://gist.github.com/a033d8429f93f75587566d51acbecf9a"
+  },
+  "080": {
+    "gist": "5682ffc022303d4517e25834557142f3",
+    "dir": "080-invalidateelement-debug-string",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/5682ffc022303d4517e25834557142f3/",
+    "gistUrl": "https://gist.github.com/5682ffc022303d4517e25834557142f3"
+  },
+  "084": {
+    "gist": "9310235ca34c16f2181d9ebc06c37688",
+    "dir": "084-stacked-column-collection-provider-leak",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/9310235ca34c16f2181d9ebc06c37688/",
+    "gistUrl": "https://gist.github.com/9310235ca34c16f2181d9ebc06c37688"
+  },
+  "086": {
+    "gist": "abc0473d5c6302ba16146f8a873dbfca",
+    "dir": "086-draw-copy-destination-lookup",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/abc0473d5c6302ba16146f8a873dbfca/",
+    "gistUrl": "https://gist.github.com/abc0473d5c6302ba16146f8a873dbfca"
+  },
+  "087": {
+    "gist": "494964da455df534fb6ea4710de3f143",
+    "dir": "087-painted-event-messagechannel",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/494964da455df534fb6ea4710de3f143/",
+    "gistUrl": "https://gist.github.com/494964da455df534fb6ea4710de3f143"
+  },
+  "088": {
+    "gist": "4f2995f0c5ffcec17848f04d4620befe",
+    "dir": "088-wasm-draw-params-per-draw",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/4f2995f0c5ffcec17848f04d4620befe/",
+    "gistUrl": "https://gist.github.com/4f2995f0c5ffcec17848f04d4620befe"
+  },
+  "089": {
+    "gist": "a33fc135d7c8acf8bced503da505e59f",
+    "dir": "089-datapointwidth-unsorted-minmax",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/a33fc135d7c8acf8bced503da505e59f/",
+    "gistUrl": "https://gist.github.com/a33fc135d7c8acf8bced503da505e59f"
+  },
+  "090": {
+    "gist": "bb2a26675884a1666cf4c9cd18357bd5",
+    "dir": "090-stacked-setters-rebuild-on-unchanged-value",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/bb2a26675884a1666cf4c9cd18357bd5/",
+    "gistUrl": "https://gist.github.com/bb2a26675884a1666cf4c9cd18357bd5"
+  },
+  "092": {
+    "gist": "69122af960cdcf3822f58d79f10b433f",
+    "dir": "092-svg-annotations-rewrite-unchanged-attributes",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/69122af960cdcf3822f58d79f10b433f/",
+    "gistUrl": "https://gist.github.com/69122af960cdcf3822f58d79f10b433f"
+  },
+  "094": {
+    "gist": "bb48e400ad0609c6f67457204f08ae41",
+    "dir": "094-group-delete-relayout",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/bb48e400ad0609c6f67457204f08ae41/",
+    "gistUrl": "https://gist.github.com/bb48e400ad0609c6f67457204f08ae41"
   }
 }
