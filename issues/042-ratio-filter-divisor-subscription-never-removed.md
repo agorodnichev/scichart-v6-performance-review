@@ -8,7 +8,7 @@
 | Pipeline stage | Memory and lifecycle (`memory`) |
 | Metric | memory (retained filters per add/remove cycle); per-update work and errors in the data path |
 | Evidence | S — static, mechanism certain (not measured) |
-| Verification | **not yet verified**: reviewer-only candidate, see README "Verification status" |
+| Verification | verified by an independent adversarial reviewer (corrected) |
 | Rule | LIFE-01, SC-29 (web-performance skill) |
 | Effort to fix | small |
 
@@ -23,7 +23,7 @@
 
 ## Call path and frequency
 
-Create: XyRatioFilter constructor (:20-21) subscribes. Teardown: surface.renderableSeries.remove(ratioSeries) deletes the series and its data series -> XyFilterBase.delete (XyFilterBase.js:82-85) deletes the original series and the filter, never touching the divisor. Afterwards, each divisor data call -> BaseDataSeries.notifyDataChanged (esm/Charting/Model/BaseDataSeries.js:647) -> EventHandler.raiseEvent (esm/Core/EventHandler.js:56) -> XyRatioFilter.onDivisorDataChanged (:140) -> filterOnAppend (:49) -> areSourcesInSync (:90) -> getOriginalCount() on originalSeries, which delete() set to undefined -> TypeError out of the divisor's appendRange. Per add/remove cycle (retention) and per divisor data update (dead handler runs).
+Create: XyRatioFilter constructor (:20-21) subscribes. Teardown: surface.renderableSeries.remove(ratioSeries) deletes the series and its data series (BaseRenderableSeries.js:674) -> XyFilterBase.delete (XyFilterBase.js:82-85) deletes the original series and the filter, never touching the divisor. Afterwards, each divisor data call -> BaseDataSeries.notifyDataChanged (esm/Charting/Model/BaseDataSeries.js:645, raiseEvent at :647) -> EventHandler.raiseEvent (esm/Core/EventHandler.js:56) -> XyRatioFilter.onDivisorDataChanged (:140) -> filterOnAppend (:49) / filterOnInsert / filterOnRemove -> areSourcesInSync (:90) -> getOriginalCount() on originalSeries, which delete() set to undefined -> TypeError out of the divisor's appendRange (update: filterOnUpdate :62 -> getOriginalYValues, same TypeError). Per add/remove cycle (retention) and per divisor data update (dead handler runs).
 
 ## Why it costs
 
@@ -38,13 +38,12 @@ The divisor usually outlives the ratio series, so its handler list holds the bou
 +++ b/esm/Charting/Model/Filters/XyRatioFilter.js
 @@ class XyRatioFilter
 +    detachFromOriginalSeries() {
-+        if (this.divisorSeries) this.divisorSeries.dataChanged.unsubscribe(this.onDivisorDataChanged);
++        this.divisorSeries.dataChanged.unsubscribe(this.onDivisorDataChanged);
 +        super.detachFromOriginalSeries();
 +    }
 +    delete() {
 +        // the divisor usually outlives the ratio (it is often plotted too): stop it calling a deleted filter
-+        if (this.divisorSeries) this.divisorSeries.dataChanged.unsubscribe(this.onDivisorDataChanged);
-+        this.divisorSeries = undefined;
++        this.divisorSeries.dataChanged.unsubscribe(this.onDivisorDataChanged);
 +        super.delete();
 +    }
 ```
@@ -53,7 +52,7 @@ The divisor usually outlives the ratio series, so its handler list holds the bou
 
 ## App-side workaround
 
-Before removing the ratio series, call divisorSeries.dataChanged.unsubscribe(ratioFilter.onDivisorDataChanged) (the bound handler is stored on the instance).
+Before removing the ratio series, unsubscribe the filter from the divisor you passed in: divisorSeries.dataChanged.unsubscribe((ratioFilter as any).onDivisorDataChanged). The bound handler is an own property of the instance, but it is private in the typings (types/Charting/Model/Filters/XyRatioFilter.d.ts:39), hence the cast.
 
 ## Verify
 
@@ -68,5 +67,5 @@ measure.md#mem: 10 cycles of (add a ratio series over a shared divisor -> remove
 ## Review notes
 
 - Found by reviewer slice `s09-filters-numerics-utils`.
-- Not yet adversarially verified. The code quote and line numbers come from the slice reviewer; re-check them before acting.
+- Adversarial verification (corrected): Re-read esm/Charting/Model/Filters/XyRatioFilter.js: the quote matches :18-21 verbatim; the class overrides neither delete() nor detachFromOriginalSeries(), and rg finds no other reference to divisorSeries in esm/ outside this file. XyFilterBase.detachFromOriginalSeries (esm/Charting/Model/Filters/XyFilterBase.js:78-81) unsubscribes only the original series; XyFilterBase.delete (:82-85) sets originalSeriesProperty = deleteSafe(...) = undefined (esm/Core/Deleter.js:5-8) then BaseDataSeries.delete, which touches no other series. Teardown chain: BaseRenderableSeries.delete (esm/Charting/Visuals/RenderableSeries/BaseRenderableSeries.js:671-674) -> deleteSafe(dataSeries) -> filter.delete(); the dataSeries setter (:434) then unsubscribes the renderable series from the filter, so the dead filter does not retain the renderable series, but the divisor still holds onDivisorDataChanged. Afterwards: divisor appendRange/insertRange/removeRange/update -> notifyDataChanged (esm/Charting/Model/BaseDataSeries.js:645-647) -> EventHandler.raiseEvent (esm/Core/EventHandler.js:55-57, handlers.slice(0).forEach with no try/catch) -> onDivisorDataChanged (:140) -> filterOnAppend (:49) -> areSourcesInSync (:90) -> getOriginalCount (XyFilterBase.js:101-103) -> undefined.count() -> TypeError; update goes through filterOnUpdate (:62) -> getOriginalYValues -> same TypeError. Clear and Property events do not throw (onClear -> clear() returns on a deleted series). Mechanism certain (S). Severity kept medium: the retained object per cycle is a small JS shell (wasm buffers already freed), and the visible effect is the throw out of the app's divisor update. Fix diff checked: delete() is reached through the renderable-series teardown and is safe to call twice; removed the 'this.divisorSeries = undefined' line because divisorSeries is 'private readonly' in types/Charting/Model/Filters/XyRatioFilter.d.ts:17, and it is not needed once the subscription is gone. Corrected app_workaround: onDivisorDataChanged is private in the typings (:39), so TS code needs a cast. Fixed the notifyDataChanged line (645, raise at 647).
 
