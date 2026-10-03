@@ -3,13 +3,13 @@
 | | |
 |---|---|
 | Package | `scichart@6.0.6` (npm, ESM build) |
-| Location | `esm/Charting3D/Visuals/Axis/AxisCubeEntity.js:74` |
+| Location | `esm/Charting3D/Visuals/Axis/AxisCubeEntity.js:66` |
 | Severity | **medium** |
 | Pipeline stage | JS execution (`js`) |
 | Metric | frame time |
 | Evidence | S — static, mechanism certain (not measured) |
-| Verification | **not yet verified**: reviewer-only candidate, see README "Verification status" |
-| Rule | V8-07 (web-performance skill) |
+| Verification | verified by an independent adversarial reviewer (corrected) |
+| Rule | TASK-13 (web-performance skill) |
 | Effort to fix | small |
 
 ## Code
@@ -36,7 +36,7 @@ Every rendered 3D frame (orbit drag, zoom, streaming data): SciChart3DSurface.do
 
 The code already deep-compares each new descriptor with the last one, and uses the result only to decide DestroyMeshes(). The full push into the native descriptors (which persist between frames, since they are reached by pointer through GetXAxisDescPtr) happens anyway. During a camera orbit the ticks, labels and styles do not change, so every frame repeats hundreds of JS-to-wasm boundary crossings, allocates and frees native vectors, and marshals label strings, all to write the same values. The descriptor itself is also rebuilt on every frame (tick generation, label formatting, regex color parsing), and its arrays and objects become garbage one frame later. A bug in getTextStylesEqual compares a.multilineSpacing with itself, so a change to that value alone is never detected.
 
-**Scale where it matters:** 3 axes, with about 10 major ticks, about 40 minor ticks and about 10 labels per axis by default. Each axis costs about 85 fixed embind calls plus one push_back per major tick, minor tick and label (about 145 per axis, about 435 per frame), plus new/delete of SCRTTextStyle, FloatVector x2 and WStringVector, and about 30 JS-to-wasm UTF-32 string conversions. This repeats on every frame of a camera orbit, and on every surface on the page.
+**Scale where it matters:** 3 axes, with about 10 major ticks, about 40 minor ticks and about 10 labels per axis by default. Each axis costs about 85 fixed embind calls plus one push_back per major tick, minor tick and label (about 145 per axis, about 435 per frame), plus new/delete of SCRTTextStyle, FloatVector x2 and WStringVector, and about 40 JS-to-wasm string conversions per frame (title, two font families and about 10 labels per axis). This repeats on every frame of a camera orbit, and on every 3D surface on the page.
 
 ## Fix (library side)
 
@@ -94,5 +94,5 @@ measure.md#fps, orbit-drag scenario for 5 s on a default 3D surface with three N
 ## Review notes
 
 - Found by reviewer slice `s12-pie-3d-surface`.
-- Not yet adversarially verified. The code quote and line numbers come from the slice reviewer; re-check them before acting.
+- Adversarial verification (corrected): Re-read AxisCubeEntity.js:32-136 (Update, called from wasm via SCRTAxisCubeEntity.implement at :27): getDescriptorsEqual x3 at :55-57 only gates DestroyMeshes (:60); :66-76 then calls updateScrtAxisDescriptor for all three axes unconditionally, and :149-194 does ~15 scalar sets, 3 updateTsrVector4 (4 sets each, tsrExtensions.js:7-15), 4 updateScrtLineStyle, a new/delete SCRTTextStyle with 12 sets, and new FloatVector x2 / WStringVector with one push_back per element. Caller chain: createSingle.js:206-207 (native render loop Draw -> family.drawFrame) -> SciChart3DSurface.js:74-76 drawFrame -> doDrawingLoop :629 -> :639 SciChart3DRenderer.render :67 -> prepareRenderData :118 -> getSceneDescriptor :18-28 (toAxisDescriptor x3, AxisBase3D.js:376-433 with getTickCoordsAndLabels :531-545 and formatLabel per tick :515) -> visitEntities(setRenderPassData) :121; the native scene then calls entity Update (BaseSceneEntity3D.js:112-127). No dirty flag or cache anywhere: rg finds no other writer of Get?AxisDescPtr/updateScrtAxisDescriptor/DestroyMeshes in esm. Checked the fix: getDescriptorsEqual (IAxisDescriptor.js:6-42) covers every field updateScrtAxisDescriptor pushes (m_bBackgroundEnabled is a constant true), enum fields come from convert* helpers that return embind enum singletons (TextPosition.js:19-33, TextStyle3D.js:12-24) so === works, and the multilineSpacing self-compare at :76 is real and must be fixed as the diff does. First Update has lastXDescriptor undefined so it pushes. Native persistence of the descriptor is not visible (trade_off already says so). Per rendered frame during orbit/zoom, but the redundant work is a bounded few hundred embind calls per surface, so medium is kept; evidence S kept (the unconditional push per frame is certain; no timings claimed). Corrections: primary line 74 -> 66 where code_quote starts; rule V8-07 -> TASK-13 (the primary and the fix are about redundant per-item wasm boundary crossings and string marshalling; V8-07 only fits the lastXDescriptor field store, which the fix does not change); scale string-conversion count recounted (title + 2 font families + ~10 labels per axis = ~40 per frame).
 
