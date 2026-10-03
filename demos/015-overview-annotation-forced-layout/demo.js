@@ -3,7 +3,7 @@ const META = {
   title: "SciChartOverview's selection annotations force a layout and re-parse the grip adorner on every overview render",
   issue: "issues/015-overview-annotation-forced-layout-and-adorner-reparse-per-re.md",
   severity: "high",
-  claim: "Each of the overview's three OverviewCustomResizableAnnotation instances writes its styles and x/y/width/height, then calls getBoundingClientRect() (the result is overwritten before use), so every overview render runs three interleaved forced layouts. The drag box also removes and re-parses its grip adorner SVG on every render, even when the markup is identical.",
+  claim: "Each of the overview's three OverviewCustomResizableAnnotation instances writes its styles and x/y/width/height, then calls getBoundingClientRect() (the stored rect only feeds borders that update() overwrites), so every overview render runs three interleaved forced layouts. The drag box also removes and re-parses its grip adorner SVG on every render, even when the markup is identical.",
   method: "<p>A main chart (one line series, 3,000 points, X range fixed to a window) with <code>SciChartOverview.create()</code> below it; the overview shares the series' data. Scenario A appends 5 points per frame for 90 frames (the overview X axis auto-ranges, so the box moves in pixels). Scenario B updates 20 Y values in place per frame for 90 frames (<code>dataSeries.update()</code>), so the overview X range and the box stay fixed. Per overview render (counted with <code>rendered</code>) the demo counts OverviewCustomResizableAnnotation.update() calls, layout reads made inside them (getBoundingClientRect, getBBox) and how many came right after a DOM write (the harness's forced-layout counter), and adorner parses through annotationHelpers.createSvg, comparing each adorner's markup with the previous one.</p><p>A/B: each scenario runs again with the library fix from the issue applied at runtime: inside update() the svg's getBoundingClientRect returns a DOMRect built from the x/y/width/height just written, and updateAdornerInner keeps the existing adorner when its clipped markup is unchanged. Patches are removed afterwards.</p>",
 };
 
@@ -137,13 +137,17 @@ async function demo(P) {
   annotationHelpers.createSvg = origCreateSvg;
 
   const all = [aShipped, aFixed, bShipped, bFixed];
+  const rendered = all.every((s) => s.rendersPerFrame >= 0.8);
   const forcedOk = [aShipped, bShipped].every((s) => s.updates >= OVERVIEW_ANNOTATIONS * 0.8 && s.forced >= OVERVIEW_ANNOTATIONS * 0.8);
   const reparseOk = bShipped.sameParses >= 0.8;
   const fixOk = [aFixed, bFixed].every((s) => s.reads <= 0.1 * OVERVIEW_ANNOTATIONS) && bFixed.parses <= 0.1;
-  const reproduced = forcedOk && reparseOk && fixOk;
+  const reproduced = rendered && forcedOk && reparseOk && fixOk;
+  const verdict = !rendered ? "inconclusive" : reproduced ? "reproduced" : "not-reproduced";
   P.report({
-    verdict: reproduced ? "reproduced" : "not-reproduced",
-    headline: reproduced
+    verdict,
+    headline: !rendered
+      ? `The overview did not render once per frame in every run (renders per frame: ${all.map((s) => s.rendersPerFrame.toFixed(2)).join(", ")}), so the counts cannot be compared.`
+      : reproduced
       ? `Every overview render runs ${aShipped.forced.toFixed(2)} forced layouts from the selection annotations' update() (A: streaming; B: ${bShipped.forced.toFixed(2)}) and, with the box standing still (B), re-parses an identical grip adorner ${bShipped.sameParses.toFixed(2)} times. With the fix: ${aFixed.forced.toFixed(2)} / ${bFixed.forced.toFixed(2)} forced layouts and ${bFixed.parses.toFixed(2)} adorner parses in B.`
       : `Expected ${OVERVIEW_ANNOTATIONS} forced layouts and, in B, one unchanged adorner re-parse per overview render; measured A ${aShipped.forced.toFixed(2)}, B ${bShipped.forced.toFixed(2)} forced and ${bShipped.sameParses.toFixed(2)} unchanged re-parses (fix: ${aFixed.reads.toFixed(2)} / ${bFixed.reads.toFixed(2)} reads, ${bFixed.parses.toFixed(2)} parses).`,
     columns: ["A streaming: as shipped", "with fix", "B Y-only: as shipped", "with fix"],

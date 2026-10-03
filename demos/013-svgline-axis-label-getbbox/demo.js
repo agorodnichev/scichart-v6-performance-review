@@ -133,25 +133,30 @@ async function demo(P) {
   proto.update = origUpdate;
   proto.drawSvgAxisLabel = origDraw;
 
+  const runs = [neverShipped, neverFixed, sweepShipped, sweepFixed, leftShipped, leftFixed];
+  const rendered = runs.every((s) => s.rendersPerFrame >= 0.8);
   const hiddenRuns = [neverShipped, leftShipped];
   const hiddenOk = hiddenRuns.every((s) => s.bothHidden && s.bbox >= LINES * 0.8);
   const fixOk = [neverFixed, leftFixed].every((s) => s.bbox <= LINES * 0.1);
-  const reproduced = hiddenOk && fixOk;
+  const reproduced = rendered && hiddenOk && fixOk;
+  const verdict = !rendered ? "inconclusive" : reproduced ? "reproduced" : "not-reproduced";
   P.report({
-    verdict: reproduced ? "reproduced" : "not-reproduced",
-    headline: reproduced
+    verdict,
+    headline: !rendered
+      ? `The chart did not render once per frame in every run (renders per frame: ${runs.map((s) => s.rendersPerFrame.toFixed(2)).join(", ")}), so the counts cannot be compared.`
+      : reproduced
       ? `With the crosshair hidden, every render still calls getBBox ${neverShipped.bbox.toFixed(2)} times (pointer never entered) and ${leftShipped.bbox.toFixed(2)} times (pointer left) from drawSvgAxisLabel, ${neverShipped.forced.toFixed(2)} of them right after a DOM write. With the fix: ${neverFixed.bbox.toFixed(2)} and ${leftFixed.bbox.toFixed(2)}; hover sweep ${sweepShipped.bbox.toFixed(2)} -> ${sweepFixed.bbox.toFixed(2)}.`
       : `Expected about ${LINES} getBBox calls per render from the hidden crosshair's labels; measured ${neverShipped.bbox.toFixed(2)} (never entered) and ${leftShipped.bbox.toFixed(2)} (left), hidden: ${neverShipped.bothHidden}/${leftShipped.bothHidden}; with the fix ${neverFixed.bbox.toFixed(2)} / ${leftFixed.bbox.toFixed(2)}.`,
     columns: ["Never entered: as shipped", "with fix", "Hover sweep: as shipped", "with fix", "Pointer left: as shipped", "with fix"],
     rows: [
-      ["Both crosshair lines hidden", ...[neverShipped, neverFixed, sweepShipped, sweepFixed, leftShipped, leftFixed].map((s) => (s.bothHidden ? "yes" : "no"))],
-      ["Chart renders per frame", ...[neverShipped, neverFixed, sweepShipped, sweepFixed, leftShipped, leftFixed].map((s) => s.rendersPerFrame)],
-      ["SvgLineAnnotation.update() per render", ...[neverShipped, neverFixed, sweepShipped, sweepFixed, leftShipped, leftFixed].map((s) => s.updates)],
-      ["drawSvgAxisLabel() per render", ...[neverShipped, neverFixed, sweepShipped, sweepFixed, leftShipped, leftFixed].map((s) => s.labels)],
-      ["getBBox() inside drawSvgAxisLabel per render", ...[neverShipped, neverFixed, sweepShipped, sweepFixed, leftShipped, leftFixed].map((s) => s.bbox)],
-      ["...of which right after a DOM write (forced layout)", ...[neverShipped, neverFixed, sweepShipped, sweepFixed, leftShipped, leftFixed].map((s) => s.forced)],
-      ["Time in SvgLineAnnotation.update() per render, ms", ...[neverShipped, neverFixed, sweepShipped, sweepFixed, leftShipped, leftFixed].map((s) => s.ms)],
-      ["Frame interval p95, ms", ...[neverShipped, neverFixed, sweepShipped, sweepFixed, leftShipped, leftFixed].map((s) => s.p95)],
+      ["Both crosshair lines hidden", ...runs.map((s) => (s.bothHidden ? "yes" : "no"))],
+      ["Chart renders per frame", ...runs.map((s) => s.rendersPerFrame)],
+      ["SvgLineAnnotation.update() per render", ...runs.map((s) => s.updates)],
+      ["drawSvgAxisLabel() per render", ...runs.map((s) => s.labels)],
+      ["getBBox() inside drawSvgAxisLabel per render", ...runs.map((s) => s.bbox)],
+      ["...of which right after a DOM write (forced layout)", ...runs.map((s) => s.forced)],
+      ["Time in SvgLineAnnotation.update() per render, ms", ...runs.map((s) => s.ms)],
+      ["Frame interval p95, ms", ...runs.map((s) => s.p95)],
     ],
     notes: [
       "Before the first hover both lines have no coordinates, resolve to 0 and label the X axis at pixel 0; after the pointer leaves they keep their last coordinates. In both states the label branch runs for an invisible crosshair.",
