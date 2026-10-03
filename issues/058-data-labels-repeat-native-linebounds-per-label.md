@@ -9,6 +9,7 @@
 | Metric | frame time (pan, zoom or streaming with data labels or FastTextRenderableSeries) |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/6f6b236087d5372656a774aee833e93d/): reproduced on WebGL and WebGPU ([source](../demos/058-data-labels-repeat-linebounds/)) |
 | Rule | SC-21 (plus SC-06 for indexes.get per label) (web-performance skill) |
 | Effort to fix | medium |
 

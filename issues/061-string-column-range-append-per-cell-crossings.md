@@ -9,6 +9,7 @@
 | Metric | frame time (per data update) |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/f713b758a829ec4302edd679efd71a38/): reproduced on WebGL and WebGPU ([source](../demos/061-string-column-range-append-per-cell-crossings/)) |
 | Rule | SC-01, TASK-13 (web-performance skill) |
 | Effort to fix | medium |
 

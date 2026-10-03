@@ -9,6 +9,7 @@
 | Metric | memory (wasm heap growth); also frame time |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/cdedcd3e2e690bcd3d7af4d34c4d5394/): reproduced on WebGL and WebGPU ([source](../demos/016-hlc-getxrange-minmax-leak/)) |
 | Rule | TASK-13 (web-performance skill) |
 | Effort to fix | small |
 

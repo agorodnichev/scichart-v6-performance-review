@@ -9,6 +9,7 @@
 | Metric | frame time during pan, zoom or autoranged streaming |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/3c571989601271c913e7a79453e9c083/): reproduced on WebGL and WebGPU ([source](../demos/052-subchart-wrapper-write-then-read/)) |
 | Rule | EVT-07 (web-performance skill) |
 | Effort to fix | medium |
 

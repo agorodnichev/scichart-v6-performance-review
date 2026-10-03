@@ -9,6 +9,7 @@
 | Metric | memory (wasm heap growth per render) |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/6c6ce13d5c960239c4cd1e12dabb597c/): reproduced on WebGL and WebGPU ([source](../demos/007-polar-column-label-leaks-linebounds/)) |
 | Rule | none (wasm-heap object lifetime; closest SC-29 / LIFE-10) (web-performance skill) |
 | Effort to fix | small |
 

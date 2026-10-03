@@ -9,6 +9,7 @@
 | Metric | frame time during pan, zoom or streaming |
 | Evidence | H — hypothesis, depends on data size/hardware (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/9ca6469f124d3627be377f43812194a0/): reproduced on WebGL and WebGPU ([source](../demos/070-label-provider-setters-flush-cache/)) |
 | Rule | none (web-performance skill) |
 | Effort to fix | small |
 

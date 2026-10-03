@@ -9,6 +9,7 @@
 | Metric | frame time (per data update) |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/54aacd7a6845a95dc7cd75f8694ee06d/): reproduced on WebGL and WebGPU ([source](../demos/040-table-renumber-rows-embind-set-per-row/)) |
 | Rule | SC-06, TASK-13 (web-performance skill) |
 | Effort to fix | small |
 

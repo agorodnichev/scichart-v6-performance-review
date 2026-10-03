@@ -9,6 +9,7 @@
 | Metric | frame time (also INP when data arrives during interaction) |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/5c054001a12138465fa59eb7a575c293/): reproduced on WebGL and WebGPU ([source](../demos/024-linear-trend-filter-full-recompute-per-append/)) |
 | Rule | SC-24, V8-01 (web-performance skill) |
 | Effort to fix | medium |
 

@@ -9,6 +9,7 @@
 | Metric | memory |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (confirmed) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/670ef1748afaa161e1111424a94cb389/): reproduced on WebGL and WebGPU ([source](../demos/014-legend-rebuild-leaks-handlers/)) |
 | Rule | LIFE-01, LIFE-05 (web-performance skill) |
 | Effort to fix | small |
 

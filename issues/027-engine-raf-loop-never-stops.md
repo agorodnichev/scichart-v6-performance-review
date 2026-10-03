@@ -9,6 +9,7 @@
 | Metric | frame time (idle main-thread wake-ups every vsync, battery and thermal on idle dashboards) |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/a9c69252ac92e115113c4e4ff04161b5/): reproduced on WebGL and WebGPU ([source](../demos/027-engine-raf-loop-never-stops/)) |
 | Rule | CNV-02 (also CNV-20, SC-15, SC-31) (web-performance skill) |
 | Effort to fix | medium |
 

@@ -9,6 +9,7 @@
 | Metric | INP, frame time (also memory on teardown) |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/cb154fd7856f52ead5b4727480362f28/): reproduced on WebGL and WebGPU ([source](../demos/065-pie-sync-redraw-timer-animations/)) |
 | Rule | DATA-06, TASK-09, LIFE-01 (web-performance skill) |
 | Effort to fix | medium |
 

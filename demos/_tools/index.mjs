@@ -71,15 +71,15 @@ One page per issue. Each page loads SciChart.js 6.0.6 from jsDelivr, drives the 
 - **In the browser:** click a **JSFiddle** link in the table below (or in the Demo column of the [main index](../README.md#index), or the Demo row at the top of each issue file). The demo runs by itself; after a few seconds the verdict and the measurement table appear under the chart in JSFiddle's result pane (enlarge or scroll the pane). **Run again** re-runs it; the renderer menu switches between SciChart's default, WebGL and WebGPU (the page reloads). The fiddles load from secret gists: unlisted, but open to anyone with the link.
 - **Locally**, as full pages without JSFiddle (needs Node and Python 3):
 
-```bash
+\`\`\`bash
 git clone -b demos https://github.com/agorodnichev/scichart-v6-performance-review.git
 cd scichart-v6-performance-review/demos
 node _tools/build.mjs
 python3 -m http.server 8770 --bind 127.0.0.1 -d .
-```
+\`\`\`
 
-  then open `http://127.0.0.1:8770/_dist/NNN/index.html` (for example [`_dist/012/index.html`](http://127.0.0.1:8770/_dist/012/index.html) once the server runs).
-- **Headless**, verdicts in the terminal: `cd _tools && npm install && cd .. && node _tools/verify.mjs 012` (Chrome in /Applications, server above running).
+  then open \`http://127.0.0.1:8770/_dist/NNN/index.html\` (for example [\`_dist/012/index.html\`](http://127.0.0.1:8770/_dist/012/index.html) once the server runs).
+- **Headless**, verdicts in the terminal: \`cd _tools && npm install && cd .. && node _tools/verify.mjs 012\` (Chrome in /Applications, server above running).
 
 **${summary}.**
 

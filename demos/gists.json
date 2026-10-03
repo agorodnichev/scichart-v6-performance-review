@@ -29,6 +29,18 @@
     "fiddle": "https://jsfiddle.net/gh/gist/library/pure/21b996729063ad953754f181309a0a9d/",
     "gistUrl": "https://gist.github.com/21b996729063ad953754f181309a0a9d"
   },
+  "010": {
+    "gist": "f9e4fbe6d6c2cc17cd001a8d18f04ace",
+    "dir": "010-date-format-icu-formatter-per-call",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/f9e4fbe6d6c2cc17cd001a8d18f04ace/",
+    "gistUrl": "https://gist.github.com/f9e4fbe6d6c2cc17cd001a8d18f04ace"
+  },
+  "011": {
+    "gist": "cbdcf49a1f960a3cb3ffc194ee38deb2",
+    "dir": "011-texture-manager-full-canvas-clear",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/cbdcf49a1f960a3cb3ffc194ee38deb2/",
+    "gistUrl": "https://gist.github.com/cbdcf49a1f960a3cb3ffc194ee38deb2"
+  },
   "012": {
     "gist": "78eb5bd1180c4e5b13249287b09c8a66",
     "dir": "012-rollover-marker-svg-reparse",
@@ -77,6 +89,12 @@
     "fiddle": "https://jsfiddle.net/gh/gist/library/pure/eb260d17a53d0c6e3dfeedaf5ce73d65/",
     "gistUrl": "https://gist.github.com/eb260d17a53d0c6e3dfeedaf5ce73d65"
   },
+  "022": {
+    "gist": "07293834b91a3a1a9aed495bbb318790",
+    "dir": "022-axis-marker-modifier-label-texture-per-frame",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/07293834b91a3a1a9aed495bbb318790/",
+    "gistUrl": "https://gist.github.com/07293834b91a3a1a9aed495bbb318790"
+  },
   "023": {
     "gist": "2527ec4678f5faddde04ba00da42e16a",
     "dir": "023-rollover-cursor-tooltip-svg-reparse",
@@ -124,6 +142,12 @@
     "dir": "034-stacked-mountain-palette-invalidation",
     "fiddle": "https://jsfiddle.net/gh/gist/library/pure/24a7c68a7fe7fe340b69b7d596163b84/",
     "gistUrl": "https://gist.github.com/24a7c68a7fe7fe340b69b7d596163b84"
+  },
+  "037": {
+    "gist": "f7540ebca682608b070bcb3facd23253",
+    "dir": "037-canvastexture-per-pixel-embind-copy",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/f7540ebca682608b070bcb3facd23253/",
+    "gistUrl": "https://gist.github.com/f7540ebca682608b070bcb3facd23253"
   },
   "038": {
     "gist": "1af150e9aa62bcd73d07235128bc0ae2",
@@ -244,6 +268,24 @@
     "dir": "066-getfontkey-style-registry-scan",
     "fiddle": "https://jsfiddle.net/gh/gist/library/pure/cd954221b1913153bd11f0a1ba661e4a/",
     "gistUrl": "https://gist.github.com/cd954221b1913153bd11f0a1ba661e4a"
+  },
+  "069": {
+    "gist": "cbff574fda8a34470c805355fdc81c68",
+    "dir": "069-label-cache-prune-evicts-visible-labels",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/cbff574fda8a34470c805355fdc81c68/",
+    "gistUrl": "https://gist.github.com/cbff574fda8a34470c805355fdc81c68"
+  },
+  "070": {
+    "gist": "9ca6469f124d3627be377f43812194a0",
+    "dir": "070-label-provider-setters-flush-cache",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/9ca6469f124d3627be377f43812194a0/",
+    "gistUrl": "https://gist.github.com/9ca6469f124d3627be377f43812194a0"
+  },
+  "071": {
+    "gist": "4138403e416f8ed8083592da33ebc5a0",
+    "dir": "071-two-scratch-canvases-per-axis",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/4138403e416f8ed8083592da33ebc5a0/",
+    "gistUrl": "https://gist.github.com/4138403e416f8ed8083592da33ebc5a0"
   },
   "072": {
     "gist": "6043d9452f984f2594fec8ad751aa97b",

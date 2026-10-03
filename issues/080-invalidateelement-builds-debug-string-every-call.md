@@ -9,6 +9,7 @@
 | Metric | frame time (script per data update) |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (confirmed) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/5682ffc022303d4517e25834557142f3/): reproduced on WebGL and WebGPU ([source](../demos/080-invalidateelement-debug-string/)) |
 | Rule | none (web-performance skill) |
 | Effort to fix | small |
 

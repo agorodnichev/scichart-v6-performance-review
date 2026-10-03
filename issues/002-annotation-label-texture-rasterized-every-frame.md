@@ -9,6 +9,7 @@
 | Metric | frame time (also INP while dragging or panning) |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/7ba80fdf18310bb90abe773194754dd2/): reproduced on WebGL and WebGPU ([source](../demos/002-annotation-label-texture-per-frame/)) |
 | Rule | GPU-24, GPU-05, CNV-15 (web-performance skill) |
 | Effort to fix | medium |
 

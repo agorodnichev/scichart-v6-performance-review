@@ -9,6 +9,7 @@
 | Metric | frame time (periodic long frames; also wasm/GPU texture churn) |
 | Evidence | H — hypothesis, depends on data size/hardware (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/cbff574fda8a34470c805355fdc81c68/): reproduced on WebGL and WebGPU ([source](../demos/069-label-cache-prune-evicts-visible-labels/)) |
 | Rule | SC-20, LIFE-05, GPU-24 (web-performance skill) |
 | Effort to fix | small |
 

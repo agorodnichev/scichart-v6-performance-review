@@ -9,6 +9,7 @@
 | Metric | frame time (GC pressure) |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/324c5508c89132536fbe16b9de952c3b/): reproduced on WebGL and WebGPU ([source](../demos/043-resampling-hash-json-split-per-frame/)) |
 | Rule | V8-10, V8-06 (web-performance skill) |
 | Effort to fix | small |
 

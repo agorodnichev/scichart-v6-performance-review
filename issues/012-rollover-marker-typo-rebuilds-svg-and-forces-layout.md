@@ -9,6 +9,7 @@
 | Metric | frame time (also INP on hover) |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/78eb5bd1180c4e5b13249287b09c8a66/): reproduced on WebGL and WebGPU ([source](../demos/012-rollover-marker-svg-reparse/)) |
 | Rule | EVT-07, SC-21 (web-performance skill) |
 | Effort to fix | small |
 

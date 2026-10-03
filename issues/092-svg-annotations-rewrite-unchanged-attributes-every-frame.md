@@ -9,6 +9,7 @@
 | Metric | frame time |
 | Evidence | H — hypothesis, depends on data size/hardware (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/69122af960cdcf3822f58d79f10b433f/): reproduced on WebGL and WebGPU ([source](../demos/092-svg-annotations-rewrite-unchanged-attributes/)) |
 | Rule | DOM-04 (web-performance skill) |
 | Effort to fix | small |
 

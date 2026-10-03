@@ -9,6 +9,7 @@
 | Metric | frame time (script per frame) |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/ad5fce75f9c8aa855d78ba36c49ebc0d/): reproduced on WebGL and WebGPU ([source](../demos/047-sync-layout-double-measure/)) |
 | Rule | V8-01 (web-performance skill) |
 | Effort to fix | small |
 

@@ -9,6 +9,7 @@
 | Metric | memory (wasm heap) |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/9310235ca34c16f2181d9ebc06c37688/): reproduced on WebGL and WebGPU ([source](../demos/084-stacked-column-collection-provider-leak/)) |
 | Rule | SC-29 (web-performance skill) |
 | Effort to fix | small |
 

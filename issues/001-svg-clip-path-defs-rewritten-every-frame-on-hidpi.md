@@ -9,6 +9,7 @@
 | Metric | frame time |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/536ef52eb4c16bbd677557084dfa7a30/): reproduced on WebGL and WebGPU ([source](../demos/001-svg-clip-path-defs-rewritten-hidpi/)) |
 | Rule | none (web-performance skill) |
 | Effort to fix | small |
 

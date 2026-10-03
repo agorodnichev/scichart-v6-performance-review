@@ -9,6 +9,7 @@
 | Metric | frame time during hover (also per-frame cost on live charts) |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/869326ed5573792c1689cceaf8ad313c/): reproduced on WebGL and WebGPU ([source](../demos/045-rollover-double-hit-test/)) |
 | Rule | SC-27, V8-01 (web-performance skill) |
 | Effort to fix | small |
 

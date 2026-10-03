@@ -9,6 +9,7 @@
 | Metric | frame time |
 | Evidence | H — hypothesis, depends on data size/hardware (not measured) |
 | Verification | verified by an independent adversarial reviewer (confirmed) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/6043d9452f984f2594fec8ad751aa97b/): reproduced on WebGL and WebGPU ([source](../demos/072-textannotation-text-change-reparse/)) |
 | Rule | DOM-07, EVT-07, SC-21 (web-performance skill) |
 | Effort to fix | small |
 

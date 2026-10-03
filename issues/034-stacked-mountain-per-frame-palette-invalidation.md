@@ -9,6 +9,7 @@
 | Metric | frame time (pan, zoom, cursor-driven redraws) |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/24a7c68a7fe7fe340b69b7d596163b84/): reproduced on WebGL and WebGPU ([source](../demos/034-stacked-mountain-palette-invalidation/)) |
 | Rule | SC-23, V8-07 (web-performance skill) |
 | Effort to fix | small |
 

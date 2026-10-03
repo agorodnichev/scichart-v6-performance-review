@@ -9,6 +9,7 @@
 | Metric | frame time (also INP while dragging) |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (confirmed) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/d0c5a221be903a0e83160dc5b5dee2cb/): reproduced on WebGL and WebGPU ([source](../demos/060-selected-annotation-adorner-reparse/)) |
 | Rule | DOM-07 (web-performance skill) |
 | Effort to fix | medium |
 

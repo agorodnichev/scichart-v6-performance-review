@@ -9,6 +9,7 @@
 | Metric | frame time |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/cbdcf49a1f960a3cb3ffc194ee38deb2/): reproduced on WebGL and WebGPU ([source](../demos/011-texture-manager-full-canvas-clear/)) |
 | Rule | GPU-24, CNV-12 (web-performance skill) |
 | Effort to fix | small |
 

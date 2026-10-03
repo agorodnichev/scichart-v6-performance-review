@@ -9,6 +9,7 @@
 | Metric | memory |
 | Evidence | H — hypothesis, depends on data size/hardware (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/4138403e416f8ed8083592da33ebc5a0/): reproduced on WebGL and WebGPU ([source](../demos/071-two-scratch-canvases-per-axis/)) |
 | Rule | CNV-05, CNV-24 (web-performance skill) |
 | Effort to fix | small |
 

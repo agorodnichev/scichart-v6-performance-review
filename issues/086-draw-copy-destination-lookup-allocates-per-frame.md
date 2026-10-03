@@ -9,6 +9,7 @@
 | Metric | frame time (minor GC) |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/abc0473d5c6302ba16146f8a873dbfca/): reproduced on WebGL and WebGPU ([source](../demos/086-draw-copy-destination-lookup/)) |
 | Rule | V8-01 (web-performance skill) |
 | Effort to fix | small |
 

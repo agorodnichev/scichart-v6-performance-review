@@ -9,6 +9,7 @@
 | Metric | frame time (pointer move, pan/zoom), also INP for down/up |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/b18ab9f565ed5563ff6b5157fd8df34c/): reproduced on WebGL and WebGPU ([source](../demos/044-subchart-move-rebroadcast/)) |
 | Rule | SC-42 (web-performance skill) |
 | Effort to fix | small |
 
