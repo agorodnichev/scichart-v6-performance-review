@@ -22,9 +22,9 @@ Nothing here is measured. Every issue names the recipe that would measure it.
 
 | Status | Issues |
 |---|---|
-| Verified by an adversarial reviewer (confirmed or corrected) | 78 |
+| Verified by an adversarial reviewer (confirmed or corrected) | 79 |
 | Refuted by an adversarial reviewer (file kept, marked) | 0 |
-| **Not yet verified** (reviewer only) | 16 |
+| **Not yet verified** (reviewer only) | 15 |
 
 Each issue file and the index below show its own verification status; all high-severity issues are verified. Unverified issues are strong candidates: re-check the quoted line and the caller chain before acting. Raw data for resuming: [`data/findings.json`](data/findings.json) (`verified: false`).
 
@@ -83,7 +83,7 @@ Each issue file and the index below show its own verification status; all high-s
 | [049](issues/049-pie-label-forced-layout-per-segment.md) | medium | Layout | Pie label placement reads offsetWidth/offsetHeight right after writing each label's styles and innerHTML, forcing one layout per segment per draw | `esm/Charting/Visuals/SciChartPieSurface/SciChartPieSurface.js:727` | S | yes | small |
 | [050](issues/050-hover-select-triggers-full-3d-geometry-rebuild.md) | medium | GPU upload | Hover/selection flips (and idempotent marker/visibility sets) flag a full point-cloud geometry rebuild although no 3D entity renders them | `esm/Charting3D/Visuals/RenderableSeries/BaseRenderableSeries3D.js:314` | S | yes | small |
 | [051](issues/051-tooltip3d-keeps-hittesting-after-pointer-leave.md) | medium | Tasks and scheduling | TooltipModifier3D never clears mousePoint on pointer leave, so every later render hit-tests all series at a stale point (and keeps a mesh render loop alive) | `esm/Charting3D/ChartModifiers/TooltipModifier3D.js:249` | S | yes | small |
-| [052](issues/052-subchart-wrapper-write-then-read-per-frame.md) | medium | Layout | DataValue sub-charts with a wrapper container write wrapper styles and then read section clientWidth/clientHeight on every frame, which forces one layout per sub-chart | `esm/Charting/Visuals/SciChartSubSurface.js:214` | S | no | small |
+| [052](issues/052-subchart-wrapper-write-then-read-per-frame.md) | medium | Layout | DataValue sub-charts with a wrapper container write wrapper styles and then read section clientWidth/clientHeight on every frame, which forces one layout per sub-chart | `esm/Charting/Visuals/SciChartSubSurface.js:214` | S | yes | medium |
 | [053](issues/053-offscreen-charts-render-by-default-freeze-drops-redraw.md) | medium | GPU draw | Off-screen charts render and copy on every invalidation by default; the opt-in freeze never redraws on return, and returning to the tab force-renders even frozen charts | `esm/Charting/Visuals/SciChartSurfaceBase.js:614` | S | no | small |
 | [054](issues/054-createsingle-delete-wipes-global-label-cache.md) | medium | Memory and lifecycle | Deleting a createSingle chart resets the page-wide label/style cache: every live chart re-measures labels and each live context gains a new SCRTFontKey per text style | `esm/Charting/Visuals/createSingle.js:192` | S | no | small |
 | [055](issues/055-webgpu-specialhtmltargets-retains-deleted-canvases.md) | medium | Memory and lifecycle | WebGPU: each chart's canvas is registered in wasmContext.specialHTMLTargets and never removed on delete | `esm/Charting/Visuals/createMaster.js:288` | S | no | small |
@@ -144,7 +144,7 @@ Each issue file and the index below show its own verification status; all high-s
 | `s11-layout-core-themes` | 2 | 1 verified, 0 refuted, 1 not verified |
 | `s12-pie-3d-surface` | 7 | 7 verified, 0 refuted, 0 not verified |
 | `s13-3d-series-modifiers` | 6 | 5 verified, 0 refuted, 0 not verified |
-| `x1-frame-path` | 6 | 1 verified, 0 refuted, 3 not verified |
+| `x1-frame-path` | 6 | 2 verified, 0 refuted, 2 not verified |
 | `x2-data-and-lifecycle` | 7 | not verified yet |
 
 Per-slice notes on what was checked and found fine, and what static review could not decide: [`data/coverage.json`](data/coverage.json).
