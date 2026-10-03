@@ -8,7 +8,7 @@
 | Pipeline stage | JS execution (`js`) |
 | Metric | frame time (also INP when props are re-applied on UI renders) |
 | Evidence | H — hypothesis, depends on data size/hardware (not measured) |
-| Verification | **not yet verified**: reviewer-only candidate, see README "Verification status" |
+| Verification | verified by an independent adversarial reviewer (corrected) |
 | Rule | none (web-performance skill) |
 | Effort to fix | small |
 
@@ -27,7 +27,7 @@ App sets collection.isOneHundredPercent / isVisible / separatePositiveNegativeSt
 
 ## Why it costs
 
-There is no rule for this case; the mechanism is invalidation without a change. Other setters in the same classes (stroke, opacity, yRangeMode, xAxisId) compare before they notify, but these do not, so a no-op assignment costs a redraw request and a full rebuild of every accumulated vector.
+There is no rule for this case. The mechanism is invalidation without a change. Comparable setters compare before they notify: the collection's xAxisId and yRangeMode (BaseStackedCollection.js:131, :186), the child's isVisible, stroke and opacity (BaseRenderableSeries.js:299, :361, :383) and StackedColumnRenderableSeries.yAxisId (:196). The collection's stroke and opacity setters throw. These five setters do not compare, so a no-op assignment costs a redraw request and a full rebuild of every accumulated vector on the next draw (updateAccumulatedVectors, guarded only by isAccumulatedVectorDirty: StackedXyCollection.js:35, StackedColumnCollection.js:106).
 
 **Scale where it matters:** Matters only together with the costly rebuild: large stacks (N x S >= 10^5) bound to UI state that is re-applied on every render.
 
@@ -66,5 +66,5 @@ measure.md#fps with a scenario that re-applies the unchanged props once per fram
 ## Review notes
 
 - Found by reviewer slice `s03-renderable-series`.
-- Not yet adversarially verified. The code quote and line numbers come from the slice reviewer; re-check them before acting.
+- Adversarial verification (corrected): Re-read BaseStackedCollection.js:179-182 (isOneHundredPercent setter; quote verbatim, primary 180 inside it) and :123-126 (isVisible), StackedXyCollection.js:274-277, StackedColumnCollection.js:433-436 and StackedColumnRenderableSeries.js:230-233 (stackedGroupId). None of them compares before notifying. Paths: collection setters -> StackedXyCollection.notifyPropertyChanged (:254-261) / StackedColumnCollection.notifyPropertyChanged (:315-325) -> BaseStackedCollection.notifyPropertyChanged (:455-457, invalidateParent) plus isAccumulatedVectorDirty = true. Child stackedGroupId -> BaseStackedRenderableSeries.notifyPropertyChanged (:97-102) -> notifyParentPropertyChangedFn, which is the collection's notifyPropertyChanged (wired in StackedColumnCollection.attachChildSeries :475). The next draw runs updateAccumulatedVectors (StackedXyCollection.js:167, StackedColumnCollection.js:205), whose only guard is the dirty flag (:35 / :106). No other guard was found, and the child isVisible goes through the guarded BaseRenderableSeries setter (:299-302), so the list of locations is complete. Rate depends on the app re-assigning props (discrete UI renders, not per frame by itself), so low/H stays. Corrected why_it_costs: it said that the collection's stroke and opacity setters compare before they notify, but BaseStackedCollection.stroke (:288) and opacity (:324) throw. The setters that do compare are the collection's xAxisId (:131-135) and yRangeMode (:186-190), the child's isVisible, stroke and opacity (BaseRenderableSeries.js:299/361/383), and StackedColumnRenderableSeries.yAxisId (:196-200). Fix diff checked: a minimal early return that is safe at construction, because isAccumulatedVectorDirty starts true (BaseStackedCollection.js:43).
 

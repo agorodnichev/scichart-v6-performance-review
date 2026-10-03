@@ -22,9 +22,9 @@ Nothing here is measured. Every issue names the recipe that would measure it.
 
 | Status | Issues |
 |---|---|
-| Verified by an adversarial reviewer (confirmed or corrected) | 87 |
+| Verified by an adversarial reviewer (confirmed or corrected) | 88 |
 | Refuted by an adversarial reviewer (file kept, marked) | 0 |
-| **Not yet verified** (reviewer only) | 7 |
+| **Not yet verified** (reviewer only) | 6 |
 
 Each issue file and the index below show its own verification status; all high-severity issues are verified. Unverified issues are strong candidates: re-check the quoted line and the caller chain before acting. Raw data for resuming: [`data/findings.json`](data/findings.json) (`verified: false`).
 
@@ -121,7 +121,7 @@ Each issue file and the index below show its own verification status; all high-s
 | [087](issues/087-painted-event-new-messagechannel-per-frame.md) | low | Memory and lifecycle | While a painted listener exists, each surface creates a new MessageChannel every frame and never closes its ports | `esm/Charting/Visuals/SciChartSurface.js:1367` | H | yes | small |
 | [088](issues/088-wasm-draw-params-allocated-per-draw-call.md) | low | JS execution | WebGlRenderContext2D constructs and deletes a wasm Draw*Params object on every draw call, where one cached instance per entry point would do | `esm/Charting/Drawing/WebGlRenderContext2D.js:357` | H | yes | medium |
 | [089](issues/089-datapointwidth-unsorted-minmax-every-frame.md) | low | JS execution | Column, candle, rectangle and box-plot widths rescan all X values every frame when X is unsorted | `esm/Charting/Visuals/RenderableSeries/BaseRenderableSeries.js:1410` | H | yes | small |
-| [090](issues/090-stacked-setters-rebuild-on-unchanged-value.md) | low | JS execution | Stacked collection setters mark the whole accumulation dirty even when the value is unchanged | `esm/Charting/Visuals/RenderableSeries/BaseStackedCollection.js:180` | H | no | small |
+| [090](issues/090-stacked-setters-rebuild-on-unchanged-value.md) | low | JS execution | Stacked collection setters mark the whole accumulation dirty even when the value is unchanged | `esm/Charting/Visuals/RenderableSeries/BaseStackedCollection.js:180` | H | yes | small |
 | [091](issues/091-bezier-transform-grows-js-arrays-per-run.md) | low | Memory and lifecycle | BezierRenderDataTransform builds its output in growable JS arrays (20 values per source point) and recomputes the easing for every segment on each pan, zoom or data run | `esm/Charting/Visuals/RenderableSeries/RenderDataTransforms/BezierRenderDataTransform.js:11` | H | no | small |
 | [092](issues/092-svg-annotations-rewrite-unchanged-attributes-every-frame.md) | low | Style | Every SVG annotation rewrites style and x/y attributes on every render, even when nothing changed | `esm/Charting/Visuals/Annotations/SvgAnnotationBase.js:59` | H | no | small |
 | [093](issues/093-annotation-hover-rebuilds-target-list-twice.md) | low | JS execution | AnnotationHoverModifier rebuilds the z-ordered annotation list (13 filter passes + 9 spreads) twice per pointermove, then does a linear includes-search per hit | `esm/Charting/ChartModifiers/AnnotationHoverModifier.js:87` | H | no | small |
@@ -133,7 +133,7 @@ Each issue file and the index below show its own verification status; all high-s
 |---|---|---|
 | `s01-surface-render` | 7 | 7 verified, 0 refuted, 0 not verified |
 | `s02-init-loading` | 7 | 7 verified, 0 refuted, 0 not verified |
-| `s03-renderable-series` | 8 | 7 verified, 0 refuted, 1 not verified |
+| `s03-renderable-series` | 8 | 8 verified, 0 refuted, 0 not verified |
 | `s04-drawing-providers` | 10 | 9 verified, 0 refuted, 1 not verified |
 | `s05-labels-hittest-anim` | 5 | 5 verified, 0 refuted, 0 not verified |
 | `s06-axis-text` | 7 | 7 verified, 0 refuted, 0 not verified |
