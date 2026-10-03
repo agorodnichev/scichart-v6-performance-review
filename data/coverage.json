@@ -1,0 +1,440 @@
+[
+ {
+  "slice": "s01-surface-render",
+  "candidates": 7,
+  "kept": 7,
+  "checked_no_findings": [
+   "Pen2DCache / BrushCache / SolidBrushCache / TextureCache / PaletteCache (esm/Charting/Drawing/*): value-compared single-entry caches; no per-frame re-creation while inputs are stable (BrushCache compares gradient/custom options by reference, which is stable when taken from series properties). Pen2DCache.create allocates a small DpiHelper.adjustStrokeSize object per call: young-gen only (V8-06).",
+   "NativeObject vector/vertex/rect/vector4/textBounds/dictTextParams caches: wasm vectors are reused (clear() + reserve) per wasm context; teardown via deleteCache/freeCache (createMaster.js:255/341, createSingle.js:201).",
+   "copyCanvasUtils.doCopy: one drawImage(master WebGL canvas -> chart 2D canvas) per destination per rendered frame. The destination 2D context is created without willReadFrequently (RenderContext2D.js:13), so the copy stays on the GPU. This is inherent to the create() shared-context design (SC-16).",
+   "WatermarkController.update: a handful of embind setters per frame per surface; negligible.",
+   "RenderSurface/BatchRenderContext/WebGlRenderContext2D: one small JS context object per frame (delete() is a no-op) and a Map of layer arrays. Short-lived young-gen allocations, as are SciChartRenderer's per-frame closures, RenderPassInfo maps, sort of layer keys, PerformanceDebugHelper.mark argument literals and `Layer-${key}` strings when debug is off (V8-06: temporaries that die young are fine).",
+   "SciChartSurface.applySciChartBackground (SciChartSurface.js:1296): writes domChartRoot.style.background every frame. The value is unchanged, so the inline-style set is a parse-and-compare with no invalidation in Chromium. Sub-surface background (sciChartSubSurfaceCommon.js:169) parses the colour each frame only to validate it. Both negligible.",
+   "ChartTitleRenderer/TitleRenderer: text size and texture cached until text/style change; reset on DPR change; DpiHelper.dpiChanged unsubscribed in delete().",
+   "labelCache.pruneCache() per frame (SciChartSurface.js:1376): O(1) check; sorting happens only above maxSize and is throttled by minAge.",
+   "UpdateSuspender.lock per frame: one closure and one Set add/delete.",
+   "updateStackedCollectionAccumulatedVectors per frame: guarded by isAccumulatedVectorDirty in StackedXyCollection/StackedColumnCollection.",
+   "RenderPassData coordinate-calculator getters: bound in AxisCore constructor and cached by coordCalcCache.",
+   "Teardown: SciChartSurfaceBase.delete unsubscribes DpiHelper.dpiChanged and the mouse manager, runs deletables (visibilitychange listener, dev MutationObserver) and disconnects the VisibilityObserver; SciChartSurface.delete cancels the pending SVG rAF and deletes brush caches, watermark and title renderer; HeatmapLegend.delete unsubscribes colorMap.propertyChanged.",
+   "SVG-only renders (renderDomOnly) are coalesced through one rAF id (svgRenderRequestId) and cancelled by a full render; animation re-invalidation uses setTimeout(0) once per frame only while an animation runs.",
+   "HeatmapLegend: the 100-cell zValues are rebuilt only on a colorMap min/max change. SciChartOverview: one-time setup; its layoutMeasured handler allocates one NumberRange per overview render.",
+   "polarChartHelper / labelHelper: constant-time math per label.",
+   "Detect sweep: no readPixels/getError, getBoundingClientRect, getComputedStyle, Intl/toLocaleString, new RegExp or JSON in per-frame paths of the slice files. The only layout reads are the sub-chart getOffsets (reported) and SciChartSurface.onDpiChanged clientWidth/clientHeight (once per DPR change)."
+  ],
+  "not_checked": [
+   "No measurements: all findings are static (S/H). GPU-side cost of the wasm engine's DrawPrimitives/DrawRects and of texture uploads was not measured; the .wasm engine is out of scope.",
+   "Emscripten main loop in the glue (_glue-pretty/scichart.js:5801-6020, emscripten_set_main_loop with a MainLoop.requestAnimationFrame runner): not traced whether the engine keeps a rAF loop running while nothing is invalidated (CNV-02/CNV-20). This belongs to the glue/engine slice.",
+   "Callee internals owned by other slices were read only enough to establish call rates: TextureManager/AxisRenderer/NativeAxisRenderer/TextureAxisRenderer, LabelCache, annotation classes (SvgAnnotationBase.update writes style.visibility/opacity and x/y attributes for every SVG annotation on every full render; the driver is SciChartRenderer.js:367/396, the per-annotation cost is for the annotations slice), the layout manager, resampling (ExtremeResamplerHelper) and axis auto-range getMaximumRange.",
+   "Out of scope (correctness, not performance), observed but not verified at runtime: SciChartOverview.delete() deletes the overview surface, whose cloned series share the parent's dataSeries (SciChartOverview.js:202), and BaseRenderableSeries.delete() deletes its dataSeries (BaseRenderableSeries.js:674). Deleting an overview alone would therefore delete the parent's data series. Its subscription on originalMainAxis.visibleRangeChanged (SciChartOverview.js:236) is also never removed.",
+   "Real data scale and update rates of the user's apps; DPR distribution of their users (finding 2 depends on DPR != 1).",
+   "Script-load/tree-shaking of the slice (index.js re-exports everything); not assessed in this slice."
+  ]
+ },
+ {
+  "slice": "s02-init-loading",
+  "candidates": 7,
+  "kept": 7,
+  "checked_no_findings": [
+   "Tree-shaking: esm/package.json and cjs/package.json declare \"sideEffects\": []. Builder registration is opt-in per type (Builder/register/*, registerAllTypes only on demand). A scratch bundler experiment with esbuild 0.25 and webpack 5 in production mode bundled a NumberRange-only import to ~1.3 KB, put the wasm64 glue in a lazy chunk, and produced ~657 KB (esbuild split) or ~669 KB (webpack) of minified initial JS for a minimal 2D line chart, of which ~175 KB is the Emscripten glue. These are static bundle sizes, not timings.",
+   "Core wasm load path: compileStreaming plus a per-URL compiled-module cache shared by create() and createSingle() (wasmModuleCache.js). preloadWasm() is exported. The SIMD and Memory64 probes are tiny WebAssembly.validate calls, cached after first use (FeatureDetectionHelper.js).",
+   "The wasm64 glue is loaded by dynamic import only on opt-in (SciChartDefaults.useWasm64 defaults to Never).",
+   "Emscripten memory growth: the default geometric step (20%, at most +96 MB per step) and updateMemoryViews only on grow (_glue-pretty/scichart.js:6059-6092). No view is re-created per call.",
+   "Embind std::string marshalling (malloc, encode, free per string argument, _glue-pretty/scichart.js:5355) is the standard cost. The per-label cost beyond it is covered by the invoker finding.",
+   "WebGPU device creation is deduplicated by a cached promise (WebGpuHelper.js:9-23).",
+   "Telemetry sends at most one POST per session (hasSent flag plus a 1 h cookie, Telemetry.js:30-103), never per chart or per frame.",
+   "No per-frame license checks in JS: license state is read on create and on status transitions only.",
+   "localStorage access happens only at module evaluation (constants/app.js IS_WEB_GPU read; licenseManager2D.js:14 storage probe, which does one setItem/removeItem) and on license-debug paths: once per page, not on hot paths.",
+   "Per-frame Draw and CopyToDestination callbacks (createMaster.js:560-569, :685) allocate a fresh array and scan all destinations (Globals.js:70-81) for each surface drawn. That is O(N) per surface per frame, negligible at typical surface counts, so not reported.",
+   "initCanvas (sciChartInitCommon.js:92-101) reads offsetWidth/offsetHeight after innerHTML and style writes: one forced layout per chart creation. It is startup-only and small unless many charts are created in one task; batching would need a restructured create path, so not reported. checkChartDivExists runs one querySelectorAll per create.",
+   "In production, wasmContext is wrapped in an empty-handler revocable Proxy (createWasmContextRevocableProxy, called from createMaster.js:328 and createSingle.js:76), so every wasmContext.X goes through Proxy [[Get]]. Accesses happen per draw call or label, not per point on the main 2D series path; a throwaway Node model showed a small constant overhead. Not reported.",
+   "The default loader spinner animates transform only and is removed after create (loader.js).",
+   "Each surface's ResizeObserver is disconnected through addDeletable. The DpiHelper window resize listener is registered once per page.",
+   "Builder dispatch (configureSurface, resolveDefinitions, series, dataSeries) has no O(n^2) work beyond the JSON reviver finding."
+  ],
+  "not_checked": [
+   "The C++ engine (.wasm) is out of scope. That includes the EM_ASM localStorage reads and writes in the glue's ASM_CONSTS (_glue-pretty/scichart.js ~10106), whose call rate cannot be determined from JS.",
+   "No browser measurement was run. All findings are static (S) and their costs are not measured.",
+   "Whether Chrome's timer-nesting 4 ms clamp applies to the setTimeout(0) hops on the create path (createMaster.js:139-152, createSingle.js:196-204) when apps create charts one after another with await.",
+   "Whether -sEMBIND_AOT is compatible with this MAIN_MODULE/SIDE_MODULE (charting3d) build.",
+   "Which side-module imports resolve to the JS stub trampolines in loadWebAssemblyModule's env Proxy (_glue-pretty/scichart.js:637-650). That depends on the wasm export lists.",
+   "How browsers treat loopback requests from public origins (local-network permission): there is no row in support.md.",
+   "The default page-relative wasmUrl \"scichart.wasm\" (sciChartConfig.js:10) resolves per route directory in SPAs. That is a correctness and caching trap whose impact depends on app routing; not assessed further.",
+   "The cjs build, and the full browser bundles index.min.js / index.min.mjs (2.3-2.5 MB minified, for script-tag use), were not reviewed beyond size."
+  ]
+ },
+ {
+  "slice": "s03-renderable-series",
+  "candidates": 8,
+  "kept": null,
+  "checked_no_findings": [
+   "BaseRenderableSeries per-frame flow: resampling runs once per frame in ExtremeResamplerHelper.resampleSeries. getYRange reuses that frame's result through resamplingParams and currentRenderPassData (BaseRenderableSeries.js:705-729), a resamplingHash cache skips re-resampling on unchanged frames, and the resampled point-series vectors (this.pointSeries, xyyTempPointSeries in band/OHLC) are reused across frames, not recreated.",
+   "XY, band, spline-band, rectangle and text Y ranges use one native MinMaxWithIndex or MinMaxPairWithIndex call per vector; BaseDataSeries.getWindowedYRange is memoized on changeCount and xRange.",
+   "Render data transforms (spline) are cached on requiresTransform, indexRange and resamplingHash (RenderDataTransforms/BaseRenderDataTransform.js:29-56), so the draw path and the Y-range path do not run them twice per frame.",
+   "Pen and brush caches return the cached native object for equal parameters (Pen2DCache.create). The heatmap palette texture is rebuilt only when gradientStops, opacity or hasNaNs change, and heatmap normalization only when the color-map min/max or the data change. HeatmapColorMap min/max setters therefore cause no texture rebuild.",
+   "No DOM or layout reads, timers, addEventListener, Intl, toLocaleString, RegExp, JSON, measureText or readPixels in the slice files (detect patterns run over all 52 files). EventHandler subscriptions to dataSeries, effect and colorMap are unsubscribed when those objects are replaced.",
+   "delete() paths free their wasm vectors and providers: BaseRenderableSeries (drawing providers, data series, effect, point marker, resampler, point series, label provider, transform), stacked series (accumulated, bottom and animation vectors), collections (accumulatedValues0, unwound X), band/OHLC temp point series, heatmap/contour zLabelProvider. Glow and Shadow effects create their native effect once in the constructor.",
+   "Small per-frame, per-series allocations (the supportsResampling array literal, PerformanceDebugHelper option objects built even when debugging is off, RenderPassData and wrapped point series, getVisibleSeries() filters, forEach closures) are short-lived and scale with series count, not points; not reported.",
+   "Stacked computeYRange always passes containsNaN = true (BaseStackedCollection.js:523, StackedColumnCollection.js:300, StackedXyCollection.js:230), which the code comment says blocks a SIMD path. This is a constant factor inside wasm, and the flag would have to be OR-ed across layers and disabled for 100% mode with zero sums; not reported.",
+   "BaseRenderableSeries.pushPalettedColors (per-color push_back) has no callers. ColumnBindings.resolve is a linear find over 2 slots.",
+   "StackedXyCollection.draw copies each layer's transformed y values once per frame with copyDoubleVector (one native memcpy) only when a renderDataTransform is set; not reported."
+  ],
+  "not_checked": [
+   "The C++/wasm engine (resampler, MinMax/MinMaxWithIndex internals, DrawPointsVec, palette and texture objects) ships only as .wasm. The GPU cost of the per-frame work above was not examined.",
+   "Files outside this slice that the call paths pass through: DrawingProviders/*, HitTest/*, DataLabels/*, RenderDataTransforms/*, Animations/*, Polar/* series, SciChartRenderer, AxisBase2D and the data-series classes. Seen in passing, for those slices to confirm: UniformHeatmapDrawingProvider.draw calls SCRTFillTextureFloat32 every frame even when normalization is cached (a possible full heat-texture re-upload on unchanged data); SciChartRenderer.prepareSeriesRenderData resamples series that are not visible (no isVisible check, SC-44); BaseDataSeries animation vectors are resized to 0 after an animation but keep their capacity.",
+   "Real data scale, update rates and devices: no app was provided, so every cost here is a static hypothesis, and severity assumes typical streaming, financial or Gantt-style workloads. None of it was measured.",
+   "Correctness issues noticed but not reviewed further: StackedColumnCollection.zeroLineY changes do not mark the accumulation dirty (StackedColumnCollection.js:405-408 vs :317-324); BaseStackedCollection.isEnoughDataToDraw indexes the children by the visible count (:823-833); StackedXyCollection takes source Float64Array views before buildUnwoundXValues reserves memory (:42 vs :52), so a heap growth at that moment can detach the views on FIFO stacks.",
+   "The polar renderable-series subfolder and the 3D series are not in this slice's file list."
+  ]
+ },
+ {
+  "slice": "s04-drawing-providers",
+  "candidates": 10,
+  "kept": null,
+  "checked_no_findings": [
+   "Line, Column, StackedColumn, Rectangle, OHLC/Candle, Bubble, Triangle, LineSegment and BoxPlot drawing providers create their native drawing providers and param objects once (in the constructor or onAttachSeries), reuse them with Reset() on every draw, and delete them in delete().",
+   "Pens and brushes come from Pen2DCache/BrushCache, which compare their parameters and return the cached native object, so they are not recreated per frame. The exception is Mountain's per-frame createBrush side effect, reported above.",
+   "Data reaches wasm by vector reference (SetXValues/SetYValues). There are no per-frame JS copies of whole datasets in the standard providers, and draws are clipped to the visible index range through getStartAndCount. The exception is error bars, reported above.",
+   "The palette loops read data through typed-array views (vectorToArrayViewF64/Ui32) rather than get(i)/set(i), and the shouldUpdatePalette/isRangeIndependant gate works for every provider except Mountain and PolarBand.",
+   "The NativeObject helpers (getVertex, getTextureVertex, getVector4, getVectorColorTextureVertex) reuse cached native objects per canvas.",
+   "The uniform heatmap's palette texture is memoized in recreatePalette (it compares hasNaNs, opacity and gradientStops), and getNormalizedVector is cached until the data changes. Only the texture upload lacks a dirty check, as reported.",
+   "BaseRenderDataTransform reuses this.pointSeries (SC-24) and gates reruns on data, indexRange or resampling hash. PolarInterpolateLine/Band reuse their in/out params and point series and rerun only when visibleRange.diff or the settings change.",
+   "BoxPlot and Error prepareTemp*Vectors write through typed-array views into reused SCRTDoubleVectors (resizeFast), not through per-element embind calls.",
+   "The point-marker subclasses (Ellipse, Square, Cross, X, Triangle, Sprite) call Canvas 2D drawSprite only when the texture is rebuilt, never per frame.",
+   "HeatmapHelpers.getColorDataForTexture writes through a HEAPU32 subarray, not per-pixel embind, and uses copyWithin for repeated rows.",
+   "No DOM layout reads, style writes, timers, event listeners, observers, RegExp, Intl, JSON or readPixels/getImageData appear on the draw path in this slice. getImageData appears only in the CanvasTexture rebuild path, reached through the point marker.",
+   "PerformanceDebugHelper.mark returns early when debugging is disabled; only an options object literal is allocated per call.",
+   "Teardown: the providers delete their native objects in delete() and unsubscribe from dataSeries.dataChanged. The leaks found are per frame (PolarHeatmap, Contours) and per re-attach (ErrorSeries), both reported."
+  ],
+  "not_checked": [
+   "What the C++ engine does inside SCRTFillTextureFloat32, SCRTCreatePalette, SCRTHeatmapSeriesDrawingProvider and SCRTSplineHelperCubicSpline: GPU allocations, upload paths and any internal caching. The engine ships only as .wasm, so the GPU-side parts of those findings are hypotheses.",
+   "Measured cost: this is a static review with no traces, so every finding is 'not measured' and comes with a measure.md recipe.",
+   "Files outside the slice that these findings touch: CanvasTexture.copyTexture's two embind .set calls per pixel (slice s06), the BaseRenderableSeries.getYRange/updateTransformedValues double transform run (slice s03), and BaseDataSeries.getMetadataAt/validateIndex (slice s08).",
+   "SmearSeriesDrawingProvider and HeightSeriesDrawingProvider are exported, but no built-in series uses them. Smear runs a per-colour-point embind loop (get plus push_back) and recreates both of its textures on every draw. Height runs a per-frame NumberUtil.MinMax scan when normalise is on. Both affect custom series only and are not ranked.",
+   "A correctness issue, not performance: BoxPlotSeriesDrawingProvider.prepareTempCapVectors/prepareTempMedianVectors (lines 201-213, 234-242) write at the absolute index i*4 or i*2 into vectors sized count*4 or count*2. When the chart is zoomed (startIndex > 0), part of the caps and medians are silently dropped and stale values are drawn.",
+   "Another correctness issue, not performance: BoxPlot, Height, Smear and PolarBand call this.delete() from onDetachSeries, which also deletes palettingState.paletteTextureCache, so re-attaching the series may throw.",
+   "Real data scales and app configurations, such as whether apps share one heatmap data series between a heatmap and a contour series, and how often surfaces redraw in practice."
+  ]
+ },
+ {
+  "slice": "s05-labels-hittest-anim",
+  "candidates": 5,
+  "kept": null,
+  "checked_no_findings": [
+   "Series data animations: Wave/Sweep/Scale/Fade calculateAnimationValues call native SCRTAnimationHelper* into existing vectors; SeriesAnimation.calculateDataSeriesAnimationValues interpolates through Float64Array views and resizes only when sizes differ, so there is no per-frame data copy or allocation.",
+   "animationHelpers per-frame FSM checks allocate tiny arrays (is([...]), includes) at O(1) per series per frame: young garbage, not reported (V8-06).",
+   "Sorted-data and point hit tests (BaseHitTestProvider.hitTestDataPoint/hitTestXSlice, Column, Ohlc, Band, Mountain, Scatter, Bubble, Error, Impulse, BoxPlot, StackedColumn, StackedMountain, Triangle, Text) use native SCRTHitTestHelper.GetNearestXyPoint/GetNearestTriangle followed by O(1) reads; polar data-point and polar mountain providers use native GetNearestPolarXyPoint.",
+   "Heatmap hit tests: uniform is O(1); non-uniform scans JS cell-offset arrays (O(width + height)), which is cheap at realistic sizes.",
+   "Heatmap, non-uniform heatmap and contour data labels cull to the visible range; the uniform heatmap gates generation on 'first label fits in a cell'; getZValues returns the stored array; non-uniform cell sizes are cached.",
+   "TextDataLabelProvider's value->text cache is bounded (MAX_CACHE_SIZE 10,000, cleared on overflow) and cleared by every format setter (LIFE-05 satisfied).",
+   "Detect sweep over all 87 slice files found no measureText, toLocale*/Intl, new RegExp, JSON, DOM geometry reads, style writes, listeners, timers or rAF in slice code. Note: Date_* numeric formats reach utils/date.js toLocaleDateString(locale, options) per label per frame via formatNumber (V8-09); that file belongs to the axis/text slice.",
+   "RolloverModifierRenderableSeriesProps registers no listeners or timers, and delete() releases its marker and tooltip annotations.",
+   "Polar renderable series classes are configuration only (drawing-provider wiring, getIndicesRange overrides); PolarColumnRenderableSeries.getDataPointWidth uses native MinMax for unsorted X.",
+   "Low, not reported: BandSeriesDataLabelProvider builds a new LineSeriesDataLabelProvider (toJSON + onAttach) on every render when singleLabel is false (BandSeriesDataLabelProvider.js:84-90); DataLabelState calls renderContext.getFont twice per render (DataLabelState.js:15 and :22); PolarHeatMapDataLabelProvider.shouldGenerate returns true, which drops the base heatmap's 'label fits in cell' gate, so enabled polar heatmap labels are generated for every visible cell on every render.",
+   "Dead code: hitTestHelpers.js:481 testPolarIsHitForColumn is neither exported nor called. If it were wired up, StartEnd mode would leak xCenterValuesVector, because only widthVector is deleted at :669-671.",
+   "Non-performance observations: TextSeriesHitTestProvider.hitTest reads dataLabelProvider.dataLabels, which BaseDataLabelProvider.drawLabels empties after every draw (BaseDataLabelProvider.js:187), so isHit is false between renders. DataLabelState.js:37-41 dereferences renderPassData.indexRange in the branch where it is undefined. PolarDataLabelState.updateCache (PolarDataLabelState.js:24-31) ignores its index argument, so neighbour coordinates equal the current point's."
+  ],
+  "not_checked": [
+   "Native cost inside the wasm engine (CalculateStringBounds glyph metrics, DrawStringAdvanced batching, SCRTHitTestHelper searches, GetCoordinate). The C++ engine ships only as .wasm.",
+   "How embind call overhead compares with the native work per label or per segment, and at what N the O(N) hit-test scans exceed the frame or INP budget. That needs measure.md#fps and measure.md#inp on real hardware; all findings are static and not measured.",
+   "Callers and internals outside this slice: how often RolloverModifier/CursorModifier update (modifiers slice), Intl cost in utils/date.js (axis/text slice), BasePointMarker/CanvasTexture rebuild internals, and the BaseRenderableSeries draw and animation orchestration (renderable-series slice).",
+   "Polar drawing providers (Polar/DrawingProviders/*), which are not in this slice's file list.",
+   "Real-world data scale for FastLineSegment, FastRectangle and polar column series with hover modifiers. No chart contract was given, so the scale figures in the findings are assumptions.",
+   "Fifo and sweeping index-mapping correctness of the data-label views (DataLabelState) when wasm memory grows mid-loop. The per-label native allocations can in principle trigger growth and detach the views."
+  ]
+ },
+ {
+  "slice": "s06-axis-text",
+  "candidates": 7,
+  "kept": null,
+  "checked_no_findings": [
+   "Numeric label formatting (formatNumber: toFixed, toPrecision, toExponential, toEngineering) runs only for new ticks: LabelProviderBase2D.tickToText caches the text per tick, and the cache is cleared at 1000 entries.",
+   "Tick generation (NumericTickProvider, LogarithmicTickProvider, Numeric/DateTime/Index delta calculators) is O(visible ticks) per frame with a few NumberUtil wasm calls per tick, bounded by maxAutoTicks x minorsPerMajor; no data scans.",
+   "Coordinate calculators are cached in AxisCore.coordCalcCache and invalidated on visibleRange, size or flip changes. CategoryAxisBase.prepareRenderData re-creates one wasm calculator per frame but deletes the old one, so there is no leak and the cost is low.",
+   "Wasm temporaries in the text paths (GetLineBounds in getLabelSizesNative and calculateLineHightForNativeFont, TSRVector2 in PolarAxisRenderer and PolarAxisBase.reverseTransform, NiceDoubleScale result in NumericDeltaCalculator) are always paired with delete(); vertex and rect vectors come from the pooled NativeObject cache.",
+   "Gridlines, ticks and bands use pooled native vectors and one drawLinesNative or drawRects call each per frame.",
+   "Native-text axis labels (the default) draw from the WASM font atlas in one batch; no canvas or texture per label. In canvas-text mode the textures are shared through labelCache by text and style.",
+   "dpiAdjustedLabelStyle is cached; the style check in getLabels compares fields, so an unchanged style keeps its styleId.",
+   "SmartDateLabelProvider (textVariesForSameTick) re-formats every label every frame with a few Date objects per label: small per axis in a Node sanity check, not reported.",
+   "In native-text mode, label sizes for new ticks skip the shared labelCache lookup (getLabelSizesNative is called directly): small, not reported.",
+   "AxisBase2D.measure regenerates ticks and labels on every render (getTicks(true)) even when range and size are unchanged; the per-axis cost is small after the caches above, not reported.",
+   "AxisTitleRenderer/TitleRenderer and NativeAxisRenderer modifier labels call nativeFont.End() per item per frame, which splits the text batch (SC-45): a few extra flushes per chart, low.",
+   "labelCache.styleCache never removes styles whose use count reaches 0: grows only with distinct styles (useSharedCache:false, DPI changes), and the scan runs only on invalidation; low.",
+   "Teardown: AxisBase2D.delete releases pens, brushes and both renderers; TitleRendererBase unsubscribes from DpiHelper.dpiChanged; DpiHelper adds one global resize listener (singleton); no timers or observers in this slice.",
+   "TextureManager.createTextureFromImageData uploads with one HEAP8.set and one ccall (bulk), and the scratch canvas uses willReadFrequently:true, which matches its getImageData use (no GPU readback stall)."
+  ],
+  "not_checked": [
+   "The C++/wasm engine (font atlas build, CalculateStringBounds/DrawStringAdvanced cost, IndexCalculator.UpdateVec complexity per data change for DiscontinuousDateAxis/BaseValueAxis) ships only as .wasm and is out of scope.",
+   "Whether and when Chrome allocates the 2D backing store of the per-axis scratch canvases (this sets the real size of the memory finding) needs measure.md#mem.",
+   "GPU-side cost of the per-label drawTexture calls and of the per-frame texture create, upload and delete was not traced; it needs measure.md#gpu on real hardware.",
+   "Real label working-set sizes in user dashboards (the threshold for the labelCache prune finding) and how common app-side LabelProvider setter writes are.",
+   "Callers outside this slice (annotations, RolloverModifier/CursorModifier, BrushCache, drawing providers) were read only to establish call rates, not reviewed in full.",
+   "3D axes (Charting3D) and the embind invoker overhead in _glue-pretty/scichart.js were not measured.",
+   "No browser measurement was run. Node micro-scripts in agent-scratch only sanity-checked mechanisms (the Intl formatter construction cost, SmartDate formatting cost) and are not app timings."
+  ]
+ },
+ {
+  "slice": "s07-annotations-legend",
+  "candidates": 10,
+  "kept": null,
+  "checked_no_findings": [
+   "svg-only invalidation is coalesced to one rAF per frame (SciChartSurface.js:581-589), so pointer moves do not render more than once per frame (EVT-03 satisfied)",
+   "HtmlCustomAnnotation: size cached in sizeProperty and refreshed in a ResizeObserver callback; update() writes left/top/size without reading layout; observer disconnected in delete()",
+   "TextAnnotation / CustomAnnotation / PolarPointerAnnotation: SVG rebuilt only when isDirty, position-dependent, or selected; getSvgDomRect result cached between rebuilds",
+   "RubberBandSvgRect: element created once; per-move updates are attribute writes only, with no layout reads",
+   "SciChartLegend / ManualLegend / SciChart3DLegend update() is guarded by isDirty, so the per-render cost is one boolean check",
+   "ManualLegend and pie legend items: DOM-only listeners, no external subscriptions (no leak beyond the shared removeEventListeners issue)",
+   "Render-context annotations (Line, Box, Arc, PolarArc, LineArrow, AxisMarker, Horizontal/VerticalLine) use pen/brush caches and shared native scratch objects (getVectorArcVertex, getArcVertex, getVector4, getTextBounds); BoxAnnotation's per-draw SCRTColumnDrawingParams is deleted in the same call; x/yValues SCRTDoubleVector are reused",
+   "AnnotationBase.convertCartesianToPolar creates and deletes a TSRVector2 per call (drag path only), so no wasm leak",
+   "OverviewCustomResizableAnnotation pointer listeners are removed in onDetach (detachCursorListeners); the per-move offsetX read is cheap while layout is clean, and its cursor write is usually a same-value no-op, so not reported",
+   "AdornerLayer.selectAnnotation and annotation click/hover hit tests run per click or per move over cached borders (arithmetic only)",
+   "SciChartPieSurface.deleteInternals clears this.deletables on every draw, so the per-draw pie segment listeners are not leaked",
+   "LegendModifier detach removes the legend div; DOM nodes are released apart from the subscription leak reported"
+  ],
+  "not_checked": [
+   "No measurement was run: all costs above are static (S/H). Frame and INP effects need measure.md#fps / #inp / #mem on real hardware",
+   "Whether Chromium skips invalidation for same-value SVG setAttribute (premise of the low-severity attribute-rewrite finding)",
+   "GPU batching cost of NativeTextAnnotation's per-annotation immediate font flush (getFont(..., drawEarly=true) at NativeTextAnnotation.js:326 + font.End() at :415). It looks intentional for z-order with backgrounds and needs measure.md#gpu",
+   "Helpers/drawLabel (drawAxisMarkerAnnotation, drawLineAnnotation, drawModifiersAxisLabel) label texture creation used by AxisMarker/HorizontalLine/VerticalLine/LineAnnotation: other slice",
+   "Modifier internals beyond the call paths cited (RolloverModifier tooltip positioning, CursorModifier, LegendModifier, OverviewRangeSelectionModifier) and SciChartPieSurface.draw's synchronous redraw per segment setter: other slices",
+   "C++/wasm engine (out of scope)",
+   "Observed but not performance: TextAnnotation and legend templates interpolate user text into HTML unescaped (XSS risk); SvgAnnotationBase.update never resets style.display after a NaN coordinate; RolloverTooltipSvgAnnotation.clear does not reset svgDOMRect (stale size if anchors are used)"
+  ]
+ },
+ {
+  "slice": "s08-data-series",
+  "candidates": 9,
+  "kept": null,
+  "checked_no_findings": [
+   "Numeric ingestion (appendRangeN/appendBufferRangeN -> appendDoubleVectorFromJsArray / FIFOVectorProvider.appendArray): one resizeFast plus one HEAPF64.set per array, subarray views for Float64Array input, at most two writes on FIFO wrap. Bulk, no per-point crossing.",
+   "isNumberArray/isTypedArray and the Guard checks in append paths are O(1); they do not scan the input arrays.",
+   "DataDistributionCalculator: NaN and sort detection scan only the new batch, only while the flags are undefined, and stop once a flag turns false. Flags set in the constructor skip them.",
+   "BaseDataSeries.getXRange: memoized on changeCount. Sorted data reads only the first and last value; unsorted data runs one native MinMax per data change, not per frame when the data is static. Each MinMax result is deleted in finally.",
+   "BaseDataSeries.getWindowedYRange: binary search (NumberUtil.FindIndex) plus one native MinMaxWithIndex per included array, memoized on changeCount/xRange/value type/yRangeMode. Xyy and Hlc windowed Y also use native MinMaxWithIndex and delete the results.",
+   "All other NumberUtil.MinMax/MinMaxWithIndex results in the slice are deleted (BaseDataSeries.js:684,744,1463; XyyDataSeries.js:239-240; XyxyDataSeries.js; HlcDataSeries.js:229,284,302-303). The only leak is HlcDataSeries.getXRange (reported).",
+   "vectorToArray (Array.from copy) is used only by toJSON/getOptions, getColumnValues and filters' serialization, not on per-frame paths.",
+   "Point series wrappers (BasePointSeriesWrapped and subclasses) are small JS objects with no wasm memory. Resampled point series own wasm vectors, are reused across frames (XyDataSeries.toPointSeries reuses the passed pointSeries; TableDataSeries shares one), and are deleted in delete().",
+   "BaseDataSeries.delete frees x/y/index vectors, animation vectors and string columns. clear() keeps capacity (SC-04) and resets the distribution flags.",
+   "StringColumnStore: compaction is amortized every 64 appended rows and uses typed-array views; encode uses a Map lookup; getValuesCopy and the non-FIFO codes path use a view.",
+   "NonUniformHeatmapDataSeries copies cell offsets into wasm once per zValues replacement, not per frame.",
+   "DataPointSelectionPaletteProvider returns pre-parsed colors and a shared object (no per-point parsing or allocation beyond the call).",
+   "PerformanceDebugHelper.mark returns early when debug is off; the only cost left is the small options object built at each call site.",
+   "FIFO metadata append (appendRangeFifo) is O(batch) per append. Its two known correctness bugs are documented in the source and are not a performance issue."
+  ],
+  "not_checked": [
+   "C++/wasm internals: the SCRTDoubleVector.resizeFast growth policy (geometric or exact), whether SCRTFillVectorSequential in getNativeIndexes refills from 0 or only the new tail (it runs per frame for category-axis palettes while the count grows), whether MinMaxWithIndex reads FIFO vectors in logical order (the base class already relies on it), and the per-call overhead of embind in the shipped build.",
+   "No runtime measurement was taken: every finding is static (S) and needs the named measure.md recipe before any speed claim.",
+   "Outside this slice, seen only as call context: ExtremeResamplerHelper.calculateResamplingHash builds a JSON.stringify + split('') hash of ResamplingParams per series per frame, and TableDataSeries.toPointSeries (esm/Charting/Model/TableDataSeries.js:519) repeats it. UniformHeatmapDrawingProvider calls SCRTFillTextureFloat32 (a full texture upload) on every draw. BaseRenderableSeries.supportsResampling allocates an array per call. EventHandler.raiseEvent slices its handler list per event. Filters under Charting/Model/Filters recompute on dataChanged.",
+   "Correctness issues seen in passing (not performance): DataDistributionCalculator checks NaN only in the first Y array, so NaN in OHLC high/low goes undetected; appendBufferRangeN skips sort/NaN detection; the appendRangeFifo metadata bugs documented in esm/utils/array.js; insertMetadataRange's use of the global `length` (folded into its finding).",
+   "Real data scale and the app's chart contract (points, update rate, autoRange settings) are unknown. Severities assume the scales named in each finding."
+  ]
+ },
+ {
+  "slice": "s09-filters-numerics-utils",
+  "candidates": 7,
+  "kept": null,
+  "checked_no_findings": [
+   "XyMovingAverageFilter append paths are incremental: non-FIFO calculate(this.count()) and FIFO appendLatestMA cost O(appended + length); updating the last point costs O(length).",
+   "XyCustomFilter/XyScaleOffsetFilter and the Xyy/Xyz/Ohlc/Hlc custom and scale-offset filters: append/update/insert/remove are incremental (only the new or changed points); filterAll runs only on setter changes (scale, offset, filterFunction), where O(n) is required.",
+   "XyRatioFilter append/insert/remove are incremental; areSourcesInSync is O(1).",
+   "ChartData SeriesInfo classes: plain field copies per hit-test. SeriesInfo.equals formats 4 values per comparison per pointer move (RolloverTooltipSvgAnnotation.js:44); left out as minor with cheap formatters and few tooltips.",
+   "ResamplingParams: one small object per frame per series; getIndicesRange is a search, not a full scan.",
+   "ExtremeResamplerHelper: native resampler/args/output objects are created once per helper and deleted in delete(); output vectors are reused with resizeFast; no wasm object is created per frame.",
+   "MemoryUsageHelper with debug off: register() short-circuits before generateIdentifier; the DeletableEntity constructor only checks a static flag; the minified bundles (index.min.js/.mjs) contain no NODE_ENV debug branches.",
+   "WasmMemoryDebugHelper: not imported by any runtime module and not exported from esm/index.js; the release glue has no __sciChartMemoryTracking hooks, so it costs nothing when unused.",
+   "PerformanceDebugHelper.mark returns before any work when enableDebug is false; callers still build a small options literal per call (short-lived, not reported).",
+   "Logger: disabled by default; hot callers pass constant strings.",
+   "translate.js/pointUtil.js: arithmetic plus one Point per pointer event (short-lived); fitElementToViewRect/fitSvgToViewRect have no callers.",
+   "memoize: single-entry cache with a rest-args array per call, used a few times per frame; the windowed Y-range memo has a custom comparator.",
+   "colorUtil bit-math helpers are allocation-free; convertColor/convertToPixel/HeightColorUtils are not on per-point paths.",
+   "cookie.js: used once at startup by the license and telemetry code.",
+   "copyVector: one native SCRTMemCopy; calcAverage/math/zeroArray2D/randomPricesDataSource/debug: not called on runtime hot paths.",
+   "tooltip.js spreadTooltips/checkHasOverlap: per pointer move over a handful of tooltips."
+  ],
+  "not_checked": [
+   "No timings: static review only; no trace or heap snapshot was recorded, so every finding is a hypothesis about cost until measured with the named recipe.",
+   "C++/wasm engine cost of the resampler, appendRange copies and memmove (shipped only as .wasm).",
+   "Always-on revocable Proxy around wasmContext (esm/Core/DeletableEntity.js:109, created in esm/Charting/Visuals/createMaster.js:328 and createSingle.js:76; source comment 'TODO use revocable only for memory debug'): every wasmContext.X read goes through a Proxy even with memory debug off. Left to the Core slice; the per-point sites (esm/Charting/Model/PaletteFactory.js:28,74, HeatmapHelpers.js:184) also make a wasm call per point, which dominates.",
+   "MetadataPaletteProvider has no shouldUpdatePalette, so the palette loop runs every render (palette-provider code in another slice; noted in the parseColor finding).",
+   "Package-level tree-shaking: package.json has no sideEffects field and every filter module self-registers at import (for example registerXyMovingAverageFilter() at XyMovingAverageFilter.js:207), so filters stay in bundles that never use them. Script-load slice.",
+   "Un-bundled browser ESM (no bundler defining process.env.NODE_ENV): the DeletableEntity constructor's process.env read would throw and console.warn on every construction, including one WebGlRenderContext2D per frame. Depends on the environment; not verified.",
+   "Correctness issues seen in passing, not performance: XyFilterBase/XyyFilterBase/... delete() deletes the original series (breaks a source shared with another renderable series); custom-filter filterOnUpdate reads native vectors with logical indices on FIFO sources; XyMovingAverageFilter.calculate(start > 0) throws on a FIFO filter; object.areEqual reads object1's keys twice; ResamplingParams.clone reads options.fifoCapacity without a null check; XyyFilterBase/XyzFilterBase constructors assign yfield twice and ignore the y1field option."
+  ]
+ },
+ {
+  "slice": "s10-modifiers-input",
+  "candidates": 7,
+  "kept": null,
+  "checked_no_findings": [
+   "MouseManager listener teardown: all 10 canvas listeners are removed in unsubscribe() (MouseManager.js:84-98), which SciChartSurfaceBase.delete calls (SciChartSurfaceBase.js:475). Handlers are bound once in the constructor, so removal matches.",
+   "Pointer capture: setPointerCapture on master pointerdown and release on pointerup and pointercancel (MouseManager.js:347, :418, :282). Drags need no window or document move listeners.",
+   "Zoom/pan modifiers (ZoomPan, MouseWheelZoom, PinchZoom, XAxisDrag, YAxisDrag, RubberBandXyZoom, PolarPan, PolarMouseWheelZoom, PolarArcZoom, OverviewRangeSelection): per-event work is axis range math and visibleRange or annotation property sets. Rendering is coalesced through invalidateElement into one render per frame (SciChartSurface.js:597-599). There are no layout reads and no per-point work.",
+   "Cursor style writes are guarded by the last applied value (XAxisDragModifier/YAxisDragModifier updateCursor, AnnotationHoverModifier.applyCursor), so there are no repeated style invalidations per move.",
+   "Tooltip size comes from string length (calcTooltipSize.js; RolloverModifierRenderableSeriesProps.getTooltipSize), so modifier code does no measureText, getBBox or DOM measurement per move.",
+   "SeriesSelectionModifier hover: the per-series hitTest per move is inherent and gated by enableHover (default false). The isHovered/isSelected setters are equality-guarded (BaseRenderableSeries.js:256-276).",
+   "Annotation property setters used by the modifiers (x1/x2/y1/y2/isHidden/text/rotation/anchor points) are equality-guarded, so post-render updates do not cause render loops. Cartesian Cursor/Rollover updates in layout-complete are blocked from re-invalidating (isInvalidated stays true until SciChartRenderer.js:188).",
+   "With the default isSvgOnly, rollover and cursor moves invalidate with svgOnly, so the WebGL scene is not redrawn per move (AnnotationBase.js:957-960, SciChartSurface.js:581-588).",
+   "LegendModifier: the legend DOM rebuild is dirty-flagged and runs on the rendered event (SciChartLegendBase.update), so it is not rebuilt per series add or per move.",
+   "PerformanceDebugHelper.mark returns early when debug is disabled (utils/performance.js:220-222). Only an options object literal is allocated per event.",
+   "MouseManager per-event temporaries (getMasterData {}, chartModifierGroups arrays) are small short-lived objects (V8-06) and not reported on their own; the fan-out cost is covered in the sub-chart finding.",
+   "Wheel preventDefault is called only when a modifier handled the event (MouseManager.js:223-225). contextmenu preventDefault is a discrete event.",
+   "BaseDataSeries.getNativeIndexes used by hit tests on category axes is cached, not rebuilt per hit test.",
+   "ZoomExtents/PolarZoomExtents: discrete double-click with a one-off animation.",
+   "DataPointSelectionModifier drag: only the SVG rect properties change per move; selection work happens once on pointerup."
+  ],
+  "not_checked": [
+   "No browser measurement was run; all findings are static (S/H). The dispatch counts in the sub-chart finding come from a Node mock that drives the real cjs MouseManager, not from an app trace.",
+   "Hit-test provider internals and the wasm SCRTHitTestHelper.GetNearestXyPoint cost (O(points) for unsorted data) belong to the renderable-series slice; only the call rate from the modifiers was established here.",
+   "SVG annotation DOM update internals belong to the annotations slice: CursorTooltipSvgAnnotation and RolloverTooltipSvgAnnotation clear()+create() re-parse on each DOM render, RolloverTooltipSvgAnnotation's own Date.now() id (RolloverTooltipSvgAnnotation.js:106), and getBBox in SvgAnnotationBase.getSvgDomRect.",
+   "touch-action: 'none' default on chart canvases (sciChartInitCommon.js:164) is outside this slice and only noted as related.",
+   "Script-load and tree-shaking: every modifier module calls registerType at top level and package.json has no sideEffects field. This is library-wide, so it is left to the loading slice.",
+   "3D modifiers (Charting3D/ChartModifiers) are not in this slice.",
+   "Label formatting cost inside SeriesInfo.formattedX/YValue (axis labelProvider) belongs to the axis/label slice.",
+   "Correctness side effects seen in passing were not evaluated further: a stale first key in activePointerEvents when a touch pointerup is handled before RolloverModifier sees it; the wrong mapped point on other grouped charts from inactive sub-chart re-broadcasts."
+  ]
+ },
+ {
+  "slice": "s11-layout-core-themes",
+  "candidates": 2,
+  "kept": null,
+  "checked_no_findings": [
+   "LayoutManager.layoutChart per-frame allocations (LayoutStrategyAxes.clear makes 8 new arrays; layoutChartCenter makes 4 Rects; each axis gets a Rect plus the layoutAxisParts result object with 2 Rects): small objects that die young (V8-06). setSeriesViewRect is guarded by Rect.isEqual, and resizeAnnotationRootElements is guarded by prevRect.",
+   "Axis setters written per frame by the strategies (offset, axisLength, isPrimaryAxis, viewRect) notify or invalidate only when the value changes. isPrimaryAxis=true on stacked axes skips the loop over sibling axes.",
+   "Stacked strategies (Left/Right vertically stacked, Top/Bottom horizontally stacked): filter/reduce over the axis list and parseSize/parsePc per frame are O(axes), with no DOM or wasm work.",
+   "Inner/central strategies (BaseCenteredAxisLayoutStrategy, CentralAxesLayoutManager): getXAxisById is a linear find over a few axes, the coordinate calculator is cached on the axis, and notifyPropertyChanged runs only on change.",
+   "PolarLayoutManager and Angular/Radial strategies: one setSeriesViewRect per layout, axes.find over 1-2 axes, trig in partialArcLayout once per frame.",
+   "SciChartVerticalGroup/HorizontalGroup per-frame sync (calculateMaxTitleSize, Object.keys in calculateMaxGroupSize, synchronizeAxisSizes): O(N) per chart and O(N^2) per frame across a group of N charts. That is negligible for realistic N (under about 50), and other charts are invalidated only when the group max size changes.",
+   "ObservableArray: asArray returns the backing array (no per-frame copy); add/insert/remove/clear cost is per call; getById and checkIdUniqueness are not on per-frame paths (series cache their axis references).",
+   "EventHandler.raiseEvent: handlers.slice(0) plus a closure per raise is redundant, because unsubscribe and unsubscribeAll already replace the array and forEach ignores elements pushed during iteration. At about 10 raises per frame this is below the reporting threshold.",
+   "Core value types (Rect, NumberRange, Thickness, Point, TypedPoint, Size): immutable plain objects with a single creation path; no wasm objects.",
+   "Animation engine: GenericAnimation and AnimationFiniteStateMachine are advanced from the render loop (rAF-driven) with Date.now deltas. The 3-5 tiny array literals per animation per frame (includes/is) are negligible and exist only while an animation runs. The deprecated animateAny/DoubleAnimator.animate (setInterval 16.67 ms, TASK-09) has no internal callers and is bounded by its duration.",
+   "EasingFunctions: pure arithmetic.",
+   "Themes: ThemeProvider.getPaletteColor caches the gradient; applyOverrides and the theme constructors run once.",
+   "VisibilityObserver: one IntersectionObserver per surface, disconnected in SciChartSurfaceBase delete and when freezeWhenOutOfView is turned off (LIFE-01 satisfied).",
+   "classFactory: Map lookups by string key; createType is not on per-frame paths.",
+   "DeletableEntity: the proxy wraps objects only when MemoryUsageHelper debug is enabled; process.env.NODE_ENV is replaced in the shipped min bundles.",
+   "WebGlHelper.initialize and BuildStamp.checkBuildStamp run once (memoized).",
+   "types/*: TypeScript enums and pure helpers. getIsHorizontal allocates two small arrays per call but is called per axis or per label, not per point.",
+   "Detect sweep (TASK-09, LIFE-01, LIFE-05, LIFE-06, LIFE-09, V8-02, V8-04, V8-08, V8-09, V8-10) over all 160 files: no RegExp, Intl or JSON on hot paths. localStorage is read only once at module init (constants/app.js) and in one-time WebGlHelper.initialize. setInterval appears only in deprecated animateAny. delete on objects appears only in Dictionary and the group size maps on removal paths."
+  ],
+  "not_checked": [
+   "The absolute cost of AxisBase2D.measure (tick generation, label formatting and caching, text measurement), which sets how much F1 and F2 remove. That code is in the axis/text slice (s06), and no timing was taken.",
+   "Whether layout should skip re-measuring axes on frames where visible range, size and style are unchanged (measure always calls getTicks(true)). The root cause is in AxisBase2D, owned by s06.",
+   "SciChartRenderer orchestration, owned by s01/x1. Seen in passing: setTimeout(0) re-invalidation while animations run in renderDomOnly (SciChartRenderer.js:80); SciChartSurface.invalidateElement builds its Logger.debug template string on every call (SciChartSurface.js:572); sciChartSubSurfaceCommon.js:176 relies on a throw and catch on every frame for gradient backgrounds on non-transparent subcharts.",
+   "Eager self-registration at import and the missing package.json sideEffects field (tree-shaking, script-load): owned by s02.",
+   "Runtime measurements of any kind: GPU and wasm engine cost, the real app scale, and device and browser variance. All findings are static (S/H). The only executed check was a mock call count, not timing."
+  ]
+ },
+ {
+  "slice": "s12-pie-3d-surface",
+  "candidates": 7,
+  "kept": null,
+  "checked_no_findings": [
+   "Embind ownership of per-frame and per-event wasm temporaries: CameraController (setters and updateEngineCamera), SciChart3DRenderer.updateWorldDimensions, worldToScreenCoord and SceneLightingController all delete their TSRVector3/pitch-yaw results in finally blocks, so nothing leaks. The glue's FinalizationRegistry covers only smart pointers (_glue-pretty/scichart.js:3739-3757), so these explicit deletes are required, and they are present.",
+   "Hit test: SCRTGetSelectionInfo returns a raw pointer, not an owned value. A Node probe that loaded scichart.wasm plus scichart-charting3d.wasm read $$.ptrType.name = 'SCRTSelectionInfo*'. The missing delete() in RenderableSeriesSceneEntity.hitTestXyz:61 and SurfaceMeshSceneEntity.hitTest:132 is therefore not a wasm-heap leak.",
+   "3D render on demand: invalidateElement sets isInvalidated and requests one canvas draw (SciChart3DSurface.js:580-595). Nothing on the JS side schedules frames while idle. freezeWhenOutOfView is handled by the base surface.",
+   "RenderableSeriesSceneEntity.Update is guarded by state.validate, so data and coordinate uploads happen only on data, axis or property change. Surface mesh height uploads use HEAPF64.set per row plus a native GetCoordinatesVec (bulk, not per point).",
+   "SurfaceMeshSceneEntity color-map texture is rebuilt only when flagged invalid (SCJS-1562 guard). Note: SurfaceMeshSceneEntityState.validate (SurfaceMeshSceneEntity.js:71) ANDs with isColorMapTextureInvalid, so the state always reads invalid and updateSeries/reset run every frame. The heavy branches stay guarded, leaving one small object allocation per frame: a correctness smell, not a material cost.",
+   "CrosshairLinesSceneEntity.Render creates a new 6-vertex SCRTLinesMesh per rendered frame while the crosshair is visible (the previous one is deleted on the next frame). The location changes on each pointer move anyway (the mesh is frozen by design), so only frames with an unchanged location are wasted. Listed under F2 as the same pattern, not reported separately.",
+   "XyzDataSeries3D metadata array extended via .length (XyzDataSeries3D.js:134/142) stays holey but not dictionary-mode. Checked with %HasDictionaryElements in Node 22 for 100k at once and for repeated growth.",
+   "BaseGridDataSeries3D.yRange is cached, and UniformGridDataSeries3D x/zRange are O(1), so the per-frame autorange cost applies only to XyzDataSeries3D.",
+   "3D teardown: SciChart3DSurface.delete unregisters and deletes the scene host, world, watermark objects, clip vectors, root entity tree (children delete their native vectors) and axes. Scene entities delete their params and vectors.",
+   "Pie resize: ResizeObserver callback leads to one changeViewportSize and one redraw per resize, which is acceptable (the per-draw costs are in F3/F6).",
+   "No getBoundingClientRect/getComputedStyle/offset* reads on the 3D render or pointer paths in this slice. The only layout reads are in the pie label code (F3).",
+   "Logger.debug and PerformanceDebugHelper.mark in SciChart3DSurface.invalidateElement build a template string and an options object per invalidate even with debug off: a V8-level micro cost per invalidate, not reported.",
+   "Per-frame small allocations in SciChart3DRenderer.render (annotation array spread and filter, Rect, Date.now, visitEntities closures) and redundant setTimeout(invalidateElement, 0) during animations: small, no finding.",
+   "Vector3, AxisPlane, GizmoEntity, EntityIdProvider, SceneDescriptor, RenderPassInfo3D, Pie constants and enums: no hot-path cost."
+  ],
+  "not_checked": [
+   "Native (C++/wasm) cost: SCRTAxisCubeEntity label-parameter recalculation on every frame (JS sets m_bIsCameraChange = false every frame, AxisCubeEntity.js:81), UpdateMeshesVec mesh rebuilds, the NumberUtil.MinMax kernel, and whether TSRSelectionManager reads the selection buffer with a synchronous glReadPixels per hit test. The glue does contain readPixels (_glue-pretty/scichart.js:8989/9005), but the call site is inside wasm.",
+   "Whether the Emscripten MainLoop rAF runner (_glue-pretty/scichart.js:5822) keeps running and doing native work on frames where no surface is invalidated: engine and createMaster scope, outside this slice.",
+   "SciChartPieLegend/SciChartLegendBase and TooltipModifier3D/OrbitModifier3D internals beyond the call paths cited: outside this slice's file list.",
+   "GPU-side cost of 3D meshes, the selection pass (isHitTestEnabled) and the tooltip's feGaussianBlur filter: needs measure.md#gpu on real hardware.",
+   "Real data scales and update rates: none of the severities are measured. All findings are static (S) or hypotheses (H), with no timing numbers."
+  ]
+ },
+ {
+  "slice": "s13-3d-series-modifiers",
+  "candidates": 6,
+  "kept": null,
+  "checked_no_findings": [
+   "OrbitModifier3D / MouseWheelZoomModifier3D / PinchZoomModifier3D: O(1) camera math per pointer/wheel event; redraw is coalesced by SciChart3DSurface.invalidateElement's isInvalidated flag + TSRRequestCanvasDraw; Array.from in PinchZoom only on 2-touch moves",
+   "ResetCamera3DModifier: one GenericAnimation per double-click, ends after animationDuration",
+   "Point markers: pointsMesh/pointsTexture return engine template meshes/textures (SCRTGetTemplateMesh/Texture), no per-frame texture or mesh creation",
+   "XyzDataSeries3D.appendRange/insertRange use bulk appendDoubleVectorFromJsArray/insertDoubleVectorFromJsArray; range getters delete their wasm temporaries",
+   "XyzDataSeries3D metadata growth via `metadata.length = n` stays in fast (holey, non-dictionary) elements: checked with node --allow-natives-syntax for no-metadata, metadata and mixed streaming appends",
+   "BaseGridDataSeries3D.yRange is cached and cleared in notifyDataChanged; UniformGridDataSeries3D xRange/zRange are O(1); setYValues keeps a reference (no copy)",
+   "Scene-entity state validation (RenderableSeriesSceneEntityState.validate) prevents geometry rebuilds on camera-only frames, so orbit does not re-copy point-cloud or mesh data per frame",
+   "GradientColorPalette/SolidColorBrushPalette create a CanvasTexture only when the palette/mode/resolution/texture size is invalidated, not per frame",
+   "LegendModifier3D: no per-frame work; SeriesSelectionModifier3D unsubscribes series and collection events in onDetach",
+   "TooltipModifier3D/SeriesSelectionModifier3D activePointerEvents map is bounded (deleted on leave/up/cancel)",
+   "XyzSeriesInfo3D/SurfaceMeshSeriesInfo3D enrichment: a few embind gets and 4 worldToScreenCoord calls per hit, wasm temporaries deleted",
+   "Script-load: each class self-registers in its own module (DefaultPointMarkers is a re-export barrel), no eager cross-imports found in the slice"
+  ],
+  "not_checked": [
+   "Whether SCRTGetSelectionInfo performs a synchronous glReadPixels per call: the wasm import/export names (TSRSelectionPass::ReadPixel, glReadPixels) suggest it, but engine code is out of scope",
+   "GPU cost of the selection pass and of UpdateMeshesVec uploads: engine-side, needs measure.md#gpu on real hardware",
+   "Scene-entity files (Primitives/*) belong to slice s12; read only to establish call chains. Seen in passing there: rebuildPointMetadata runs O(n) even with no metadata, Column/PointLine/Scatter run updateSeries immediately and again via the flag, CrosshairLinesSceneEntity creates a new SCRTLinesMesh every Render, SurfaceMeshSceneEntityState.validate is inverted (updateSeries runs every frame, cheap path), SCRTSelectionInfo handles are never deleted",
+   "TooltipSvgAnnotation3D/AnnotationBase/SciChart3DLegend internals (other slices) beyond the invalidation path used in F1",
+   "Real data scales and update rates of target apps (no chart contract available); severities assume 100k-1M point clouds and 5-50 series",
+   "Correctness issues noticed but not performance: TooltipModifier3D uses getFunction without importing it (string templates throw), constructor-supplied pointMarker is never subscribed, meshColorPalette.propertyChanged is never subscribed, shared data series isModified flag is consumed by the first series"
+  ]
+ },
+ {
+  "slice": "x1-frame-path",
+  "candidates": 6,
+  "kept": null,
+  "checked_no_findings": [
+   "Invalidation coalescing: SciChartSurface.invalidateElement (SciChartSurface.js:570-603) sets sciChartRenderer.isInvalidated and sends one TSRRequestCanvasDraw per surface until the render resets it after layout (SciChartRenderer.js:180). Many property or data changes in a frame therefore cost one draw per surface. The svgOnly rAF is cancelled when a full invalidation arrives.",
+   "Multi-surface: TSRRequestCanvasDraw(canvasId) is per canvas, so in JS one create() surface's invalidation does not redraw the other surfaces on the shared context. Sub-charts share the parent canvas, so any sub-chart invalidation re-renders the parent and all sub-charts (SciChartSurface.js:1343-1353). That is inherent to the shared canvas. Full redraws of all surfaces happen only on master-canvas shrink, tab return and context restore.",
+   "DPR: DpiHelper.PIXEL_RATIO is cached and updated from a window resize listener. No devicePixelRatio read happens on the frame path.",
+   "Canvas size: there is no per-frame canvas size check. Sizes come from one ResizeObserver per surface (sciChartInitCommon.js:222). onResize is deferred with setTimeout(0), which shows one frame of stretched old content during resize but no blank frame, because the redraw lands in the next rAF before paint.",
+   "Copy to destination: copyCanvasUtils.js does one drawImage with globalCompositeOperation 'copy' per drawn surface, from the master WebGL canvas (created with the default preserveDrawingBuffer:false, copied in the same task). No getImageData or readPixels on the frame path.",
+   "Hidden tab: the engine loop runs on rAF, so it pauses. Data invalidations while hidden coalesce into one pending request per surface. visibilitychange forces one redraw on return.",
+   "labelCache.pruneCache() per surface per frame is gated by time and size (LabelCache.js:102).",
+   "PerformanceDebugHelper.mark returns early when disabled (performance.js:221). Only an options object literal is allocated per call.",
+   "Native helper objects (getVertex, getVectorColorVertex, getVectorRectVertex, getVector4) are cached per wasm context in NativeObject.js. The resampled point series is reused through resamplingHash (ExtremeResamplerHelper.js:45).",
+   "WatermarkController.update and setCoordSvgTranslation per frame are cheap property sets. updateWatermark makes one wasm call.",
+   "Logger.debug template string in invalidateElement (SciChartSurface.js:572) is built on every call, even with logging off. This is cheap at the coalesced call rate; it matters only for app-side per-point append loops (SC-01). Not reported.",
+   "WebGlRenderContext2D.getFont 'SCRT_Loading' path (WebGlRenderContext2D.js:541) polls with setTimeout(100) per text call only while a font loads, so it is startup-bounded.",
+   "SciChartVerticalGroup / SynchronizedLayoutManager.trySynchronizeLayouts invalidate only when group sizes change. They converge without ping-pong.",
+   "suspender.lock() per frame in doDrawingLoop and onRenderSurfaceDraw is one closure plus a Set add/delete, which is negligible."
+  ],
+  "not_checked": [
+   "What the native (C++) main-loop iteration does on an idle tick, and whether the native side draws and copies only requested destinations. The .wasm is out of scope; I decoded only the call graph for emscripten_set_main_loop and emscripten_cancel_main_loop.",
+   "GPU cost of rendering each surface into the shared master canvas followed by one drawImage copy per surface per frame in create() mode. This needs measure.md#gpu on real hardware.",
+   "Whether Blink invalidates style, the clip resource and paint when setAttribute writes an unchanged value on SVG clipPath rects. This decides how much of the F2 DOM work turns into style or paint cost.",
+   "WebGPU path (IS_WEB_GPU, per-canvas swap chains) and the 3D surface frame path (SciChart3DSurface, family.drawFrame).",
+   "Per-draw-call wasm parameter objects in WebGlRenderContext2D (new SCRTDrawLinesParams/SCRTDrawRectsParams plus delete per gridline, band, border or annotation draw). Noted on the frame path and left to the drawing slice.",
+   "Per-frame work inside axes, labels, series drawing providers, data labels and SVG/HTML annotation update(). Left to their own slices.",
+   "MouseManager modifierGroup broadcast: each pointer move on a grouped chart copies args to every other 2D surface on the page (MouseManager.js:328-332). This is the input slice; not weighed here.",
+   "Real data scale, update rates and surface counts of any particular app. Severities assume streaming dashboards with tens of surfaces."
+  ]
+ },
+ {
+  "slice": "x2-data-and-lifecycle",
+  "candidates": 7,
+  "kept": null,
+  "checked_no_findings": [
+   "Data ingest copy path: appendRange/appendRangeN do one HEAPF64.set per array per call for both number[] and Float64Array (utils/ccall/appendDoubleVectorFromJsArray.js:67-90). FIFO ring writes take at most 2 set() calls (Charting/Model/DoubleVectorProvider.js:21-80). No per-point wasm crossings on the plain XyDataSeries path.",
+   "DataDistributionCalculator.onAppend/onInsert/onUpdate check only the new batch (O(batch)), and only when containsNaN or isSorted is undefined. Existing data is never rescanned (Charting/Model/DataDistributionCalculator/DataDistributionCalculator.js:19-43).",
+   "getXRange is memoized by changeCount and O(1) for sorted data. The wasm MinMax full scan happens only for unsorted data, once per change (BaseDataSeries.js:657-697).",
+   "Y autorange works on the resampled point series (O(viewport)), or uses wasm MinMaxWithIndex over the visible index window found by binary search, memoized by changeCount + xRange (BaseDataSeries.js:703-765, BaseRenderableSeries.js:686-703). Autorange skips hidden series (AxisBase2D.js:991-1003).",
+   "Resampling reuses the native ResamplingArgs/output objects and each series' XyPointSeriesResampled across frames (ExtremeResamplerHelper.js:91-100, XyDataSeries.js:144-160). There is no per-frame wasm object creation on the data path.",
+   "Hidden series (isVisible=false) are resampled once after hiding; afterwards the stale ResamplingParams short-circuits (ExtremeResamplerHelper.js:56-62, reset only in draw at BaseRenderableSeries.js:662 and in the isVisible setter at :326). SC-44's 'still resampled while streaming' was not observed in 6.0.6.",
+   "Invalidation coalescing: invalidateElement requests at most one engine draw per frame via sciChartRenderer.isInvalidated (SciChartSurface.js:596-600). Suspended or frozen (freezeWhenOutOfView) surfaces return early. visibilitychange forces one redraw on return.",
+   "Surface teardown: delete() removes the visibilitychange listener, the ResizeObserver (deletable from subscribeToResize), the IntersectionObserver (freezeWhenOutOfView), pointer/wheel listeners (Core/Mouse/MouseManager.js:84-95), the DpiHelper subscription and the registry entry. It deletes series, data series, axes, annotations and modifiers. A scripted check found a matching deleteSafe for every Pen2DCache/BrushCache/TextureCache/PaletteCache field (57 sites), so WebGlRenderContext2D.webGlResourcesRefs entries leave on delete.",
+   "DpiHelper registers one window resize listener per page (LIFE-14 OK). HtmlCustomAnnotation disconnects its ResizeObserver on delete.",
+   "Bounded caches: labelCache is pruned to maxSize 200 (LabelCache.js:107-129, called per render), tickToText is capped at 1000 entries (LabelProviderBase2D.js:517-520), and the NativeObject per-context scratch objects are reused rather than created per call.",
+   "createSingle teardown halts the engine, deletes the frame renderer and render-loop manager, revokes the context proxy and frees the per-context native scratch cache (createSingle.js:177-193, :198-201).",
+   "The wasm context Proxy (createWasmContextRevocableProxy) has an empty handler in production. It is only touched per call, not per point, so it is not material."
+  ],
+  "not_checked": [
+   "C++/wasm side (out of scope): whether the engine main loop keeps ticking on rAF while idle. The glue imports both emscripten_set_main_loop and emscripten_async_call, so the glue alone cannot show which is used; measure.md#fps idle check decides it. Also not checked: GPU upload/draw cost, and the SCRTFillVectorSequential cost for category-axis index vectors when the count grows each frame (BaseDataSeries.js:586-597).",
+   "Filters (s09 slice): XyLinearTrendFilter.filterAll recomputes all sums and rewrites all n output points through growing JS arrays plus clear()+appendRange on every append of the source series (Charting/Model/Filters/XyLinearTrendFilter.js:51-90). XyFilterBase's default filterOnAppend calls filterAll. Left to the filters slice.",
+   "Embind generic-invoker allocation per call (_glue-pretty/scichart.js:4648-4680) as a glue-wide cost belongs to the s02 slice. It is cited here only as a multiplier for the stacked-collection finding.",
+   "Correctness, not performance, found in passing: BaseDataSeries.appendBufferRangeN passes an ArrayBuffer to HEAPF64.set, which copies 0 elements (checked in Node), so the resized vectors keep uninitialized values (utils/ccall/appendDoubleVectorFromJsArray.js:120, called from BaseDataSeries.js:242-275). XyFilterBase.delete() deletes the original (possibly shared) series (XyFilterBase.js delete). StackedXyCollection takes y views before buildUnwoundXValues' reserve(), which can detach them on heap growth (fixed by the stacked-collection diff).",
+   "Other slices' hot paths seen but not reviewed: per-draw wasm param objects in WebGlRenderContext2D (frame path), MouseManager otherSurfaces registry scans per pointer event (modifiers), per-frame getFont/getStyleId scans and label text (axis/text).",
+   "Nothing was measured: no browser run, and no app chart contract was available, so the scale figures are assumptions stated per finding."
+  ]
+ }
+]
