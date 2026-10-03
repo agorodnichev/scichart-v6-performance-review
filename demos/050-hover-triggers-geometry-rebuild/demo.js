@@ -33,7 +33,10 @@ async function demo(P) {
   rs.hovered.subscribe(() => P.count("hover flips"));
   rs.selected.subscribe(() => P.count("selection flips"));
   P.hookMethod(scs.sciChart3DRenderer, "render", { name: "3D render()" });
-  const uploadBytes = (r) => r.total("gl.bufferData", "bytes") + r.total("gl.bufferSubData", "bytes") + r.total("gpu.writeBuffer", "bytes");
+  // WebGPU uploads rebuilt geometry through new buffers created with mappedAtCreation; count their size too.
+  if (window.GPUDevice) P.hookMethod(GPUDevice.prototype, "createBuffer", { name: "gpu mapped buffers", bytes: (a) => (a[0] && a[0].mappedAtCreation ? a[0].size : 0) });
+  const uploadBytes = (r) => r.total("gl.bufferData", "bytes") + r.total("gl.bufferSubData", "bytes") + r.total("gpu.writeBuffer", "bytes") + r.total("gpu mapped buffers", "bytes");
+  const writeBufferBytes = (r) => r.total("gpu.writeBuffer", "bytes");
   const pointer = P.pointer(scs);
 
   async function scenario(label) {
@@ -56,6 +59,7 @@ async function demo(P) {
       perFlip: flips ? r.total("updateSeries()") / flips : 0,
       pointsWalked: r.total("rebuildPointMetadata()", "bytes"),
       uploadBytes: uploadBytes(r),
+      writeBufferBytes: writeBufferBytes(r),
       rebuildMs: r.total("updateSeries()", "t"),
       renders: r.total("3D render()"),
     });

@@ -4,7 +4,7 @@ const META = {
   issue: "issues/057-point-marker-rebuilds-three-textures-eagerly.md",
   severity: "medium",
   claim: "BasePointMarker.notifyPropertyChanged() and resumeUpdates() call recreateSpriteTextures() straight away, which builds three CanvasTextures (sprite, stroke mask, fill mask): three canvases, three getImageData readbacks and three uploads. N setters cost N rebuilds, and the two masks are only read when the series has a point-marker palette provider.",
-  method: "<p>An XyScatterRenderableSeries (1,000 points, EllipsePointMarker, no palette provider). Three scenarios: (1) fill, stroke and width set in one task, then one frame to draw, repeated 20 times; (2) a ScatterAnimation that animates the point-marker style for 800 ms (it suspends updates, runs five setters and resumes on each animation frame); (3) constructing a SpritePointMarker from a 24 x 24 image. The demo counts CanvasTexture builds (CanvasTexture.copyTexture), canvas elements created, getImageData readbacks and SCRTFillTextureAbgr uploads.</p><p>A/B: the issue's fix applied to BasePointMarker.prototype: a property change only invalidates the cache and asks for a redraw, resumeUpdates only asks for a redraw, the next draw builds the sprite, and the masks are built on first use. Its sprite uses window.devicePixelRatio as the library's DpiHelper does by default; the demo checks that the sprite size matches the library's.</p>",
+  method: "<p>An XyScatterRenderableSeries (1,000 points, EllipsePointMarker set through series.pointMarker, no palette provider). Three scenarios: (1) fill, stroke and width set in one task, then one frame to draw, repeated 20 times; (2) a ScatterAnimation that animates the point-marker style for 800 ms (it suspends updates, runs five setters and resumes on each animation frame); (3) constructing a SpritePointMarker from a 24 x 24 image. The demo counts CanvasTexture builds (CanvasTexture.copyTexture), canvas elements created, getImageData readbacks and SCRTFillTextureAbgr uploads.</p><p>A/B: the issue's fix applied to BasePointMarker.prototype: a property change only invalidates the cache and asks for a redraw, resumeUpdates only asks for a redraw, the next draw builds the sprite, and the masks are built on first use. Its sprite uses window.devicePixelRatio as the library's DpiHelper does by default; the demo checks that the sprite size matches the library's.</p>",
 };
 
 async function demo(P) {
@@ -19,8 +19,9 @@ async function demo(P) {
   const marker = new EllipsePointMarker(wasm, { width: 9, height: 9, strokeThickness: 1, fill: "#4e79a7", stroke: "#1d2b64" });
   const scatter = new XyScatterRenderableSeries(wasm, {
     dataSeries: new XyDataSeries(wasm, { xValues: xs, yValues: xs.map((x) => Math.sin(x / 60) + 0.2 * Math.sin(x / 7)), isSorted: true, containsNaN: false }),
-    pointMarker: marker,
   });
+  // Through the setter: it wires marker.invalidateParentCallback (a marker passed in the constructor options never gets one).
+  scatter.pointMarker = marker;
   sciChartSurface.renderableSeries.add(scatter);
   // A small image for the sprite marker scenario.
   const img = await new Promise((resolve) => {
@@ -94,9 +95,10 @@ async function demo(P) {
     const r = await P.during(async () => {
       for (let i = 0; i < TASKS; i++) {
         flip = !flip;
-        marker.fill = flip ? "#f28e2b" : "#4e79a7"; // three setters in one task
-        marker.stroke = flip ? "#7a3d00" : "#1d2b64";
-        marker.width = flip ? 11 : 9;
+        const m = scatter.pointMarker;
+        m.fill = flip ? "#f28e2b" : "#4e79a7"; // three setters in one task
+        m.stroke = flip ? "#7a3d00" : "#1d2b64";
+        m.width = flip ? 11 : 9;
         await P.nextFrame();
         await P.nextFrame();
       }
@@ -123,15 +125,22 @@ async function demo(P) {
     return res;
   }
 
-  P.status("Style changes, library as shipped…");
+  // Setter and constructor scenarios first: a style animation replaces the series' marker (beforeAnimationStart).
+  P.status("Three setters, library as shipped…");
   const setS = await threeSetters("as shipped");
-  const aniS = await animate("as shipped", { width: 18, height: 18, strokeThickness: 2, fill: "#e15759", stroke: "#ffffff" });
-  const sprS = await spriteCtor("as shipped");
-  P.status("Style changes, with the lazy-texture fix…");
+  P.status("Three setters, with the lazy-texture fix…");
   applyFix(true);
   const setF = await threeSetters("with fix");
-  const aniF = await animate("with fix", { width: 9, height: 9, strokeThickness: 1, fill: "#4e79a7", stroke: "#1d2b64" });
+  applyFix(false);
+  const sprS = await spriteCtor("as shipped");
+  applyFix(true);
   const sprF = await spriteCtor("with fix");
+  applyFix(false);
+  P.status("Point-marker style animation, library as shipped…");
+  const aniS = await animate("as shipped", { width: 18, height: 18, strokeThickness: 2, fill: "#e15759", stroke: "#ffffff" });
+  P.status("Point-marker style animation, with the lazy-texture fix…");
+  applyFix(true);
+  const aniF = await animate("with fix", { width: 9, height: 9, strokeThickness: 1, fill: "#4e79a7", stroke: "#1d2b64" });
   applyFix(false);
   wasm.SCRTFillTextureAbgr = fillAbgr;
 
@@ -156,6 +165,7 @@ async function demo(P) {
     notes: [
       `Patched sprite size matches the library's: ${sameSize ? "yes" : "NO"}. The fixed column uploads the sprite twice per rebuild (copyTexture, then the opacity pass getSprite() runs on a cold cache); the shipped rebuild skips that opacity pass, which is the visible difference the issue's trade-off describes.`,
       "No palette provider here, so the stroke and fill masks are never read; with a point-marker palette provider the fix builds them on first use. Counts do not depend on hardware.",
+      "The marker is attached with series.pointMarker = marker. A marker passed in the series constructor options gets no invalidateParentCallback (BaseRenderableSeries assigns pointMarkerProperty directly), so its setters rebuild the textures but do not request a redraw.",
     ],
     metrics: { tasks: TASKS, setS, setF, aniS, aniF, sprS, sprF, sameSize },
   });

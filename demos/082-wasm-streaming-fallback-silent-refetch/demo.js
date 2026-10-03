@@ -1,6 +1,6 @@
 const META = {
   id: "082",
-  title: "A wrong wasm Content-Type makes SciChart fetch scichart.wasm twice and compile from an ArrayBuffer, silently",
+  title: "A wrong wasm Content-Type silently triggers a second fetch and an ArrayBuffer compile",
   issue: "issues/082-wasm-streaming-fallback-silent-refetch.md",
   severity: "low",
   claim: "getCompiledWasmModule() wraps WebAssembly.compileStreaming(fetch(url)) in .catch(() => fetchAndCompile(url)): when streaming compile fails (for example because the server sends application/octet-stream), the library fetches the file again, waits for the whole body, compiles from an ArrayBuffer, and drops the error without a console message.",

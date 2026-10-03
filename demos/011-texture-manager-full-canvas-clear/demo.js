@@ -41,7 +41,6 @@ async function demo(P) {
   await P.sleep(600);
 
   // ---- scratch-canvas tracking (local helper: the harness counts every canvas, these are only TextureManager's)
-  P.watch.canvas2d();
   const C2D = CanvasRenderingContext2D.prototype;
   const scratch = new WeakSet();
   const dirty = new WeakMap(); // ctx -> furthest extent read back since the last clear

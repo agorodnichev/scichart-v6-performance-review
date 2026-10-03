@@ -1,6 +1,6 @@
 const META = {
   id: "079",
-  title: "Deleting one create() chart clears and re-adds the native destination of every other chart",
+  title: "Deleting one create() chart re-adds the native destination of every other chart",
   issue: "issues/079-delete-rebuilds-native-destinations-for-all-charts.md",
   severity: "medium",
   claim: "Each create() surface's delete runs resyncNativeDestinations(): ClearDestinations() on the shared render loop, then a new SCRTSurfaceDestination.implement() + AddDestination() for every surviving chart. Removing one of N charts costs N-1 re-adds; tearing down a view of N charts costs N(N-1)/2. Under WebGPU every survivor also gets a new swap chain and a forced redraw.",

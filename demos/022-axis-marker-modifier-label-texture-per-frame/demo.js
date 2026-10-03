@@ -80,7 +80,6 @@ async function demo(P) {
       e = create();
       if (!e || !e.bitmapTexture) return e;
       cache.set(key, e);
-      P.count("patch: cache misses");
     }
     return { bitmapTexture: e.bitmapTexture.clone(), textureWidth: e.textureWidth, textureHeight: e.textureHeight };
   };

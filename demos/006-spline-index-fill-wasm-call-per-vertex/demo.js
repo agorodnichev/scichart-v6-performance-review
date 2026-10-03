@@ -22,7 +22,9 @@ async function demo(P) {
     n = points;
     const xs = Array.from({ length: n }, (_, i) => i);
     const k = n / 10000;
+    const previous = spline.dataSeries;
     spline.dataSeries = new XyDataSeries(wasm, { xValues: xs, yValues: xs.map((x) => Math.sin(x / (300 * k)) + 0.3 * Math.sin(x / (23 * k))), isSorted: true, containsNaN: false });
+    if (previous) previous.delete();
     xAxis.visibleRange = new NumberRange(0, n * 0.8);
   }
   useData(1000);

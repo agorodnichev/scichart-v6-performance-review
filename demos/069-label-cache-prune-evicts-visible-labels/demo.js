@@ -130,6 +130,7 @@ async function demo(P) {
     notes: [
       "Counts do not depend on hardware; times do. The ranges never change, so every label created during a run is one that the prune removed while it was still on screen.",
       "In canvas-text mode each re-created label is a Canvas 2D rasterization, a getImageData and a texture upload (each also clears the 1920x1080 scratch canvas, issue 011). setMaxSize(n) above the number of labels on screen is the issue's app-side workaround; the library fix would skip entries used within minAge.",
+      `The library's labelCacheTooSmall performance warning fires only when one prune removes more than maxSize entries; here each prune removes ${nat.removedPerPrune.toFixed(0)} (maxSize ${defaultMaxSize}), so this churn is never reported.`,
     ],
     metrics: { nat, natFix, tex, texFix, defaultMaxSize },
   });

@@ -4,7 +4,7 @@ const META = {
   issue: "issues/005-mountain-palette-cache-forced-dirty-every-frame.md",
   severity: "high",
   claim: "MountainSeriesDrawingProvider.createBrush() runs on every draw and sets palettingState.requiresUpdate = true, so a palette provider whose shouldUpdatePalette() returns false is still called once per drawn point on every redraw. The polar band path (PolarMountain, PolarBand) has no palette cache check at all.",
-  method: "<p>Left: a FastMountainRenderableSeries and a FastBandRenderableSeries (y1 = 0, the issue's suggested alternative), 100,000 points each, default resampling. Right: a PolarMountainRenderableSeries with 100,000 points. Each series has its own fill palette provider that follows the documented cache pattern: shouldUpdatePalette() returns true once and then false, isRangeIndependant is true, and the colours depend only on the data.</p><p>Each phase forces 60 redraws with no data or viewport change (invalidateElement() once per frame, as when another series or a modifier redraws the surface) and counts overrideFillArgb calls per redraw for each series, next to the number of points the series draws.</p><p>A/B: MountainSeriesDrawingProvider.prototype.createBrush is wrapped so that it marks the palette dirty only when the brush cache really built a new brush (the library fix from the issue), and the same 60 redraws run again. The issue lists no workaround for the polar path, so it runs as shipped only.</p>",
+  method: "<p>Left: a FastMountainRenderableSeries and a FastBandRenderableSeries with y1 on a constant baseline (the issue's suggested alternative), 100,000 points each, default resampling. Right: a PolarMountainRenderableSeries with 100,000 points. Each series has its own fill palette provider that follows the documented cache pattern: shouldUpdatePalette() returns true once and then false, isRangeIndependant is true, and the colours depend only on the data.</p><p>Each phase forces 60 redraws with no data or viewport change (invalidateElement() once per frame, as when another series or a modifier redraws the surface) and counts overrideFillArgb calls per redraw for each series, next to the number of points the series draws.</p><p>A/B: MountainSeriesDrawingProvider.prototype.createBrush is wrapped so that it marks the palette dirty only when the brush cache really built a new brush (the library fix from the issue), and the same 60 redraws run again. The issue lists no workaround for the polar path, so it runs as shipped only.</p>",
 };
 
 async function demo(P) {
@@ -16,7 +16,7 @@ async function demo(P) {
 
   // Fill palette provider using the documented cache (SC-23): recompute only when told to.
   class CachedFillPalette {
-    constructor(label) { this.label = label; this.calls = 0; this.dirty = true; this.fillPaletteMode = EFillPaletteMode.SOLID; }
+    constructor() { this.calls = 0; this.dirty = true; this.fillPaletteMode = EFillPaletteMode.SOLID; }
     onAttached() {}
     onDetached() {}
     get isRangeIndependant() { return true; }
@@ -31,7 +31,7 @@ async function demo(P) {
   const wasm = cart.wasmContext, cs = cart.sciChartSurface;
   cs.xAxes.add(new NumericAxis(wasm));
   cs.yAxes.add(new NumericAxis(wasm, { visibleRange: new NumberRange(-2.2, 1.2) }));
-  const mountainPP = new CachedFillPalette("mountain"), bandPP = new CachedFillPalette("band"), polarPP = new CachedFillPalette("polar");
+  const mountainPP = new CachedFillPalette(), bandPP = new CachedFillPalette(), polarPP = new CachedFillPalette();
   const mountain = new FastMountainRenderableSeries(wasm, {
     dataSeries: new XyDataSeries(wasm, { xValues: xs, yValues: ys, isSorted: true, containsNaN: false }),
     fill: "#4e79a7", stroke: "#2b4c7e", paletteProvider: mountainPP,
@@ -144,7 +144,7 @@ async function demo(P) {
       ["Resampling off: time in applyStrokeFillPaletting per frame, ms", shippedAll.paletteMs, fixedAll.paletteMs, null, null],
     ],
     notes: [
-      "The band column comes from the same redraws as the first column: it goes through the same applyStrokeFillPaletting code, and only the mountain provider forces the update. Counts do not depend on hardware; times do.",
+      "The band column comes from the same redraws as the first column: it goes through the same applyStrokeFillPaletting code, and only the mountain drawing provider forces the update. Counts do not depend on hardware; times do.",
       "The first rows use the library default, where each series draws its resampled points. The resampling-off rows (30 redraws each) show the case the issue sizes: one callback per visible point, here all 100,000.",
       polarUngated ? "Polar: PolarBandSeriesDrawingProvider.applyFillFillPaletting has no requiresUpdate or shouldUpdatePalette check, so PolarMountain, PolarBand and PolarStackedMountain recompute on every redraw. The issue lists no app-side workaround for them." : "Polar: the per-redraw recompute did not show in this run.",
     ],

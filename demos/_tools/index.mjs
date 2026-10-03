@@ -37,31 +37,49 @@ function combined(res) {
 const esc = (s) => String(s ?? "").replace(/\|/g, "\\|").replace(/\s+/g, " ").trim();
 
 // ---------------------------------------------------------------- demos/README.md
-const rows = [], skippedRows = [], tally = {};
+const rows = [], skippedRows = [], pendingRows = [], tally = {};
 let env = null;
 for (const f of findings) {
   const id = f.id, issue = issueFiles[id];
-  if (demoDirs[id]) {
+  if (demoDirs[id] && !gists[id]) {
+    pendingRows.push(`| ${id} | ${f.severity} | [${esc(f.title)}](../issues/${issue}) | Demo in progress ([source](${demoDirs[id]}/)) |`);
+  } else if (demoDirs[id]) {
     const res = results(id), c = combined(res), g = gists[id];
     tally[c.key] = (tally[c.key] || 0) + 1;
     const any = res.webgpu || res.webgl;
     if (!env && any && any.env) env = any.env;
-    rows.push(`| ${id} | ${f.severity} | [${esc(f.title)}](../issues/${issue}) | ${g ? `[JSFiddle](${g.fiddle})` : "not published"} · [source](${demoDirs[id]}/) | ${word(res.webgl && res.webgl.verdict)} | ${word(res.webgpu && res.webgpu.verdict)} | ${esc(any && any.headline)} |`);
+    rows.push(`| ${id} | ${f.severity} | [${esc(f.title)}](../issues/${issue}) | [JSFiddle](${g.fiddle}) · [source](${demoDirs[id]}/) | ${word(res.webgl && res.webgl.verdict)} | ${word(res.webgpu && res.webgpu.verdict)} | ${esc(any && any.headline)} |`);
+  } else if (skipped[id]) {
+    skippedRows.push(`| ${id} | ${f.severity} | [${esc(f.title)}](../issues/${issue}) | ${esc(skipped[id])} |`);
   } else {
-    skippedRows.push(`| ${id} | ${f.severity} | [${esc(f.title)}](../issues/${issue}) | ${esc(skipped[id] || "No demo yet.")} |`);
+    pendingRows.push(`| ${id} | ${f.severity} | [${esc(f.title)}](../issues/${issue}) | Demo in progress |`);
   }
 }
 const chrome = env && /(?:Headless)?Chrome\/([\d.]+)/.exec(env.ua);
 const summary = [
   `${rows.length} of ${findings.length} issues have a demo`,
   ...Object.entries(tally).map(([k, n]) => `${n} ${k === "mixed" ? "with different verdicts per renderer" : word(k).toLowerCase()}`),
-  `${skippedRows.length} without a demo`,
-].join(" · ");
+  skippedRows.length ? `${skippedRows.length} without a demo (see why)` : null,
+  pendingRows.length ? `${pendingRows.length} in progress` : null,
+].filter(Boolean).join(" · ");
 const readme = `# Demos
 
 One page per issue. Each page loads SciChart.js 6.0.6 from jsDelivr, drives the scenario the issue describes (hover, streaming, zoom, create/delete...), **counts** what the issue claims (calls per frame, bytes uploaded, native objects created vs deleted, rAF requests...), and shows a verdict with a small table. Where the issue's workaround can be applied at runtime, the page runs the scenario twice, as shipped and with the workaround, to show the cause.
 
-Open a JSFiddle link and wait a few seconds: the verdict and table appear under the chart. **Run again** re-runs it; the renderer menu switches between SciChart's default, WebGL and WebGPU (the page reloads). The fiddles load from secret gists, so they are unlisted but open to anyone with the link.
+## How to open a demo
+
+- **In the browser:** click a **JSFiddle** link in the table below (or in the Demo column of the [main index](../README.md#index), or the Demo row at the top of each issue file). The demo runs by itself; after a few seconds the verdict and the measurement table appear under the chart in JSFiddle's result pane (enlarge or scroll the pane). **Run again** re-runs it; the renderer menu switches between SciChart's default, WebGL and WebGPU (the page reloads). The fiddles load from secret gists: unlisted, but open to anyone with the link.
+- **Locally**, as full pages without JSFiddle (needs Node and Python 3):
+
+```bash
+git clone -b demos https://github.com/agorodnichev/scichart-v6-performance-review.git
+cd scichart-v6-performance-review/demos
+node _tools/build.mjs
+python3 -m http.server 8770 --bind 127.0.0.1 -d .
+```
+
+  then open `http://127.0.0.1:8770/_dist/NNN/index.html` (for example [`_dist/012/index.html`](http://127.0.0.1:8770/_dist/012/index.html) once the server runs).
+- **Headless**, verdicts in the terminal: `cd _tools && npm install && cd .. && node _tools/verify.mjs 012` (Chrome in /Applications, server above running).
 
 **${summary}.**
 
@@ -73,8 +91,8 @@ ${rows.join("\n")}
 
 ## Issues without a demo
 
-${skippedRows.length ? `| # | Severity | Issue | Why there is no demo |\n|---|---|---|---|\n${skippedRows.join("\n")}` : "None."}
-
+${skippedRows.length ? `| # | Severity | Issue | Why there is no demo |\n|---|---|---|---|\n${skippedRows.join("\n")}` : "None so far."}
+${pendingRows.length ? `\n## In progress\n\n| # | Severity | Issue | Status |\n|---|---|---|---|\n${pendingRows.join("\n")}\n` : ""}
 ## How the demos work
 
 - Each fiddle's JS panel starts with the demo code (\`META\` and \`demo(P)\`), followed by the shared measurement harness ([\`_shared/probe.js\`](_shared/probe.js)). The harness sets the renderer flag, injects \`https://cdn.jsdelivr.net/npm/scichart@6.0.6/index.min.js\`, installs counters (browser APIs, wasm calls, embind object creation and deletion), drives frames and synthetic pointer input, and renders the table.
@@ -105,14 +123,15 @@ if (hdr >= 0) {
     const id = /^\| \[(\d{3})\]/.exec(lines[i])[1];
     const cells = lines[i].split(" | ");
     let cell;
-    if (demoDirs[id]) {
-      const c = combined(results(id)), g = gists[id];
-      cell = g ? `[${c.key === "mixed" ? "see demo" : word(c.key).toLowerCase()}](${g.fiddle})` : word(c.key).toLowerCase();
-    } else cell = "none";
+    if (demoDirs[id] && gists[id]) {
+      const c = combined(results(id));
+      cell = `[${c.key === "mixed" ? "see demo" : word(c.key).toLowerCase()}](${gists[id].fiddle})`;
+    } else if (skipped[id]) cell = "none";
+    else cell = "in progress";
     if (withDemo) { cells[cells.length - 1] = `${cell} |`; lines[i] = cells.join(" | "); } else lines[i] += ` ${cell} |`;
   }
   let out = lines.join("\n");
-  const section = `## Demos\n\nBrowser demos that measure the issues: [\`demos/\`](demos/README.md) (one JSFiddle per issue, verdicts on WebGL and WebGPU). ${summary}. The Demo column in the index links each fiddle.\n`;
+  const section = `## Demos\n\nEach issue with a demo has a page that runs the issue's scenario on SciChart.js 6.0.6 and measures it in the browser (verdicts checked on WebGL and WebGPU). ${summary}.\n\n- **Open in the browser:** the **Demo** column of the [index](#index) below links each issue's JSFiddle page; the verdict and the numbers appear under the chart after a few seconds. The full list with the measured headline per issue: [demos/README.md](demos/README.md).\n- **Run locally** as plain pages: \`cd demos && node _tools/build.mjs && python3 -m http.server 8770 --bind 127.0.0.1 -d .\`, then open \`http://127.0.0.1:8770/_dist/NNN/index.html\` ([details](demos/README.md#how-to-open-a-demo)).\n`;
   if (/## Demos\n[\s\S]*?\n(?=## )/.test(out)) out = out.replace(/## Demos\n[\s\S]*?\n(?=## )/, section + "\n");
   else out = out.replace(/\n## Verification status/, `\n${section}\n## Verification status`);
   writeFileSync(join(repo, "README.md"), out);
@@ -123,12 +142,12 @@ for (const f of findings) {
   const id = f.id, p = join(repo, "issues", issueFiles[id]);
   let text = read(p);
   let row;
-  if (demoDirs[id]) {
-    const c = combined(results(id)), g = gists[id];
-    row = `| Demo | ${g ? `[JSFiddle](${g.fiddle})` : "not published yet"}: ${c.text} ([source](../demos/${demoDirs[id]}/)) |`;
-  } else {
-    row = `| Demo | none: ${esc(skipped[id] || "no demo yet")} |`;
-  }
+  if (demoDirs[id] && gists[id]) {
+    const c = combined(results(id));
+    row = `| Demo | [JSFiddle](${gists[id].fiddle}): ${c.text} ([source](../demos/${demoDirs[id]}/)) |`;
+  } else if (skipped[id]) {
+    row = `| Demo | none: ${esc(skipped[id])} |`;
+  } else continue;
   if (/^\| Demo \|.*\|$/m.test(text)) text = text.replace(/^\| Demo \|.*\|$/m, row);
   else text = text.replace(/^(\| Verification \|.*\|)$/m, `$1\n${row}`);
   writeFileSync(p, text);

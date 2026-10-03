@@ -8,8 +8,10 @@ const META = {
 };
 
 async function demo(P) {
-  const { NumericAxis3D, PointLineRenderableSeries3D, ColumnRenderableSeries3D, XyzDataSeries3D, EllipsePointMarker3D, PointLine3DSceneEntity, ColumnSceneEntity,
-    RenderableSeriesSceneEntity, BasePointMarker3D, Vector3 } = P.SciChart;
+  const { NumericAxis3D, PointLineRenderableSeries3D, ColumnRenderableSeries3D, XyzDataSeries3D, EllipsePointMarker3D, CubePointMarker3D, PointLine3DSceneEntity, ColumnSceneEntity,
+    Vector3 } = P.SciChart;
+  // Base classes are not on the UMD namespace; reach them through the prototype chain.
+  const RenderableSeriesSceneEntityProto = Object.getPrototypeOf(PointLine3DSceneEntity.prototype);
   const N = 100000, CLICKS = 5, APPENDS = 5;
 
   const { sciChart3DSurface: scs, wasmContext: wasm } = await P.createSurface3D("chart", { worldDimensions: new Vector3(200, 200, 200) });
@@ -19,8 +21,10 @@ async function demo(P) {
   const line = new PointLineRenderableSeries3D(wasm, {
     dataSeries: new XyzDataSeries3D(wasm, { xValues: xs, yValues: ys, zValues: zs }),
     stroke: "#4e79a7", strokeThickness: 2,
-    pointMarker: new EllipsePointMarker3D(wasm, { size: 2, fill: "#4e79a7" }),
   });
+  // Assigned through the setter: a marker passed in the constructor options is stored without
+  // subscribing to its propertyChanged, so pointMarker.size changes would not reach the series at all.
+  line.pointMarker = new EllipsePointMarker3D(wasm, { size: 2, fill: "#4e79a7" });
   scs.renderableSeries.add(line);
   await P.sleep(1000);
 
@@ -59,7 +63,7 @@ async function demo(P) {
   const plOrig = plProto.notifySeriesPropertyChanged;
   plProto.notifySeriesPropertyChanged = function (propertyName) {
     // the issue's fix: only set the dirty flag; the next frame's Update() rebuilds once
-    RenderableSeriesSceneEntity.prototype.notifySeriesPropertyChanged.call(this, propertyName);
+    RenderableSeriesSceneEntityProto.notifySeriesPropertyChanged.call(this, propertyName);
   };
   P.status("Part 1: three style sets per click, flag only (fix)…");
   const lineFixed = await styleClicks("point-line, flag only");
@@ -72,6 +76,7 @@ async function demo(P) {
   for (let x = 0; x < 50; x++) for (let z = 0; z < 50; z++) { cx.push(x); cz.push(z); cy.push(1 + Math.sin(x / 6) * Math.cos(z / 6)); }
   const columnsDs = new XyzDataSeries3D(wasm, { xValues: cx, yValues: cy, zValues: cz });
   const columns = new ColumnRenderableSeries3D(wasm, { dataSeries: columnsDs, fill: "#59a14f" });
+  columns.pointMarker = new CubePointMarker3D(wasm, { fill: "#59a14f" }); // the documented pattern: assign the marker after construction
   scs.renderableSeries.add(columns);
   await P.sleep(800);
 
@@ -90,7 +95,7 @@ async function demo(P) {
   }
   P.status("Part 2: one appendRange at a time, as shipped…");
   const colShipped = await appends("columns, as shipped");
-  let owner = BasePointMarker3D.prototype, fillDesc;
+  let owner = Object.getPrototypeOf(columns.pointMarker), fillDesc; // walks up to BasePointMarker3D.prototype
   while (owner && !(fillDesc = Object.getOwnPropertyDescriptor(owner, "fill"))) owner = Object.getPrototypeOf(owner);
   Object.defineProperty(owner, "fill", {
     configurable: true, enumerable: fillDesc.enumerable, get: fillDesc.get,
@@ -121,6 +126,7 @@ async function demo(P) {
     notes: [
       "Each synchronous rebuild is the full data path (strokeDashArray copy, rebuildPointMetadata over all points, native UpdateMeshesVec) inside the caller's input task, and the frame-time rebuild overwrites it before anything is drawn. The handler duration is what an INP measurement sees; it depends on hardware, the counts do not.",
       "Column part: ColumnSceneEntity.updateSeries writes pointMarker.fill = series.fill on every rebuild; the setter has no equality check, so the series notifies 'pointMarker.fill' and invalidates the surface from inside the frame, which costs one more render with no rebuild.",
+      "Both markers are assigned through series.pointMarker = ..., as the library docs show. A marker passed in the constructor options (or the default column marker) is stored without subscribing to its propertyChanged: then pointMarker.size changes neither rebuild nor redraw, and the column extra frame does not happen.",
     ],
     metrics: { N, lineShipped, lineFixed, colShipped, colFixed },
   });

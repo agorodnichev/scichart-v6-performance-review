@@ -1,6 +1,6 @@
 const META = {
   id: "068",
-  title: "buildChart() parses a definition string with a reviver: one JS call per value, two per XY point",
+  title: "buildChart() parses definition strings with a reviver: two JS calls per XY data point",
   issue: "issues/068-builder-json-reviver-runs-per-data-point.md",
   severity: "medium",
   claim: "buildChart(div, jsonString) and the other Builder entry points call JSON.parse(definition, chartReviver). The parser then calls chartReviver for every value in the tree, including every element of xValues and yValues, although only five keys need reviving and the rest is a null-to-NaN swap.",

@@ -1,6 +1,6 @@
 const META = {
   id: "054",
-  title: "Deleting a createSingle() chart wipes the page-wide label cache: other charts re-measure labels and leak font keys",
+  title: "createSingle() delete wipes the global label cache: labels re-measured, font keys leaked",
   issue: "issues/054-createsingle-delete-wipes-global-label-cache.md",
   severity: "medium",
   claim: "The createSingle() delete handler calls labelCache.resetCache(), which clears every label and text style on the page, not just the deleted chart's. Style ids are never reused, so on its next frame every other chart gets a new style id, re-measures all its tick labels, and adds a new SCRTFontKey per font to its wasm context while the old one stays alive.",

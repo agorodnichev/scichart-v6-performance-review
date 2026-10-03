@@ -91,6 +91,7 @@ async function demo(P) {
   lp.useNativeText = true;
   xAxis.labelProvider.useNativeText = true;
   lpBase.getLabels = getLabels0;
+  lp.formatLabelProperty = f0;
 
   const reproduced = unique.writes >= 0.9 && unique.yLabels > 0 && unique.created >= 0.8 * unique.yLabels &&
     uniqueGuarded.created <= 0.1 * uniqueGuarded.yLabels && uniqueGuarded.writes === 0;

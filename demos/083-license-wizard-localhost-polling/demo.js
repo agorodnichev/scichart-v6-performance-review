@@ -1,6 +1,6 @@
 const META = {
   id: "083",
-  title: "Without a license key, any page polls http://localhost:24278 for the licensing wizard, whatever its host",
+  title: "Without a license key, every page polls localhost:24278 for the license wizard, on any host",
   issue: "issues/083-license-wizard-localhost-polling-on-any-host.md",
   severity: "low",
   claim: "With no runtime key and no license cookie, applyLicense() starts fetching http://localhost:24278/license and retries every 5 s, up to 10 times. The only hostname test in licenseManager2D.js (hostname.startsWith(\"localhost\")) decides whether a console message is printed; the requests are sent on every host.",

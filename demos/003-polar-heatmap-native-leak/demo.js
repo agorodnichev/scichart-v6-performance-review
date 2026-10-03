@@ -204,7 +204,7 @@ async function demo(P) {
     ],
     notes: [
       "Counts do not depend on hardware. Each live object is a wasm-heap allocation that nothing can free later: it stays until the page is closed. Its byte size is not visible from JS.",
-      `Error bars (other location in the issue): ${ebLeak ? "reproduced" : "not reproduced"}: as shipped ${ebShipped.args.created} SCRTLineDrawingParams and ${ebShipped.provider.created} SCRTLineSegmentDrawingProvider were created and ${ebShipped.args.deleted + ebShipped.provider.deleted} deleted over ${CYCLES} cycles.`,
+      `Error bars (other location in the issue) ${ebLeak ? "leak too" : "did not leak here"}: as shipped, ${CYCLES} detach/attach cycles created ${ebShipped.args.created} SCRTLineDrawingParams and ${ebShipped.provider.created} SCRTLineSegmentDrawingProvider and deleted ${ebShipped.args.deleted + ebShipped.provider.deleted}; freeing them in onDetachSeries leaves ${ebFixed.args.live + ebFixed.provider.live}.`,
       `wasm memory: ${heapBefore} MB before the redraw phases, ${heapAfter} MB after (the heap grows in large steps, so a few hundred small objects do not show here).`,
     ],
     metrics: { frames: FRAMES, polarShipped, polarFixed, contShipped, contFixed, ebShipped, ebFixed, heapBefore, heapAfter },
