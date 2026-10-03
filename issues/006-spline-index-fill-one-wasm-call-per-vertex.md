@@ -8,7 +8,7 @@
 | Pipeline stage | JS execution (`js`) |
 | Metric | frame time |
 | Evidence | S — static, mechanism certain (not measured) |
-| Verification | **not yet verified**: reviewer-only candidate, see README "Verification status" |
+| Verification | verified by an independent adversarial reviewer (corrected) |
 | Rule | TASK-13, SC-06, SC-12 (web-performance skill) |
 | Effort to fix | small |
 
@@ -34,7 +34,7 @@ SciChartRenderer.js:354 -> BaseRenderableSeries.js:624 renderDataTransform.runTr
 
 indexes is an SCRTDoubleVector. Each .set(k, v) goes through the embind method wrapper (argument count, this-pointer validation, wire conversion) and a wasm call, instead of a plain store into linear memory. The rest of the transform is a single bulk wasm call (SCRTSplineHelperCubicSpline), so this loop is the JS-side cost that grows with the output. For unresampled input the spline covers every point regardless of indexRange, so rerunning on each indexRange change recomputes an identical result.
 
-**Scale where it matters:** Output size = input points x (interpolationPoints + 1), which is 11x by default. 10k input points means about 110k embind calls per run.
+**Scale where it matters:** Output size = transform input points x (interpolationPoints + 1), which is 11x by default. The input is the whole data series when it is not resampled (rs.toPointSeries(), ExtremeResamplerHelper.js:24-29 and :64-69). When it is resampled (spline series keep the default supportsResampling), the input is the resampled set, which scales with the viewport width. 10k input points means about 110k embind calls per run, on every pan or zoom frame that moves the visible index window.
 
 ## Fix (library side)
 
@@ -78,5 +78,5 @@ measure.md#fps, `pan` and `stream` on a SplineLineRenderableSeries with 10k poin
 ## Review notes
 
 - Found by reviewer slice `s04-drawing-providers`.
-- Not yet adversarially verified. The code quote and line numbers come from the slice reviewer; re-check them before acting.
+- Adversarial verification (corrected): Re-read SplineRenderDataTransform.js:1-62: code_quote matches lines 53-61 verbatim (primary :59). indexes is the output point series' SCRTDoubleVector (createPointSeries :11-13 -> XyPointSeriesResampled; BasePointSeriesResampled.js:14 `new wasmContext.SCRTDoubleVector()`), and set(_iIndex, _dValue) is an embind method (types/types/TSciChart.d.ts:474). The loop therefore makes one embind call per output vertex. Caller chain: SciChartRenderer.js:354 -> BaseRenderableSeries.draw :593 -> renderDataTransform.runTransform :624 -> BaseRenderDataTransform.runTransform :29-56. The rerun gate is requiresTransform OR indexRange != lastIndexRange OR resamplingHash changed (:31-33). renderPassData.indexRange is rp.indexesRange or getIndicesRange(xAxis.visibleRange) (ExtremeResamplerHelper.js:17-69, SciChartRenderer.js:641), so it changes on pan and zoom frames whenever the visible index window moves. -> runTransformInternal :14 -> populateSourceIndexes :42 (or :30 on the NaN path). The transform is wired in SplineLineRenderableSeries.js:55 and SplineMountainRenderableSeries.js:53. The Y-range path (getYRange BaseRenderableSeries.js:694-695 -> updateTransformedValues -> :1285) also calls runTransform. getResampledPointSeries can replace currentRenderPassData with a new indexRange first (:715-720), so a second run per frame is plausible but not certain; it stays marked as a hypothesis. No cache or early return protects the loop once the transform reruns. SC-06 and TASK-13 both name per-item get/set across the wasm boundary as the thing to avoid, and nothing in their Avoid fields excuses it here. Fix checked: vectorToArrayViewF64 (utils/vectorToArray.js:74-87) builds a Float64Array over HEAPF64 at dataPtr(0) with size(). It is taken after resizeFast, and nothing in the loop allocates, so the view cannot be detached. If resizeFast could not grow (it returns the size reached), out-of-range typed-array writes are no-ops, which is safer than the current set(). The import path ../../../../utils/vectorToArray resolves to esm/utils/vectorToArray, and this.wasmContext is set in the base constructor (:23). Severity high is kept: per pan, zoom or stream frame x per output vertex. Evidence S is kept. CORRECTED scale only. Spline series keep the default supportsResampling (BaseRenderableSeries.js:1167), so the transform input is the whole data series when it is not resampled (rs.toPointSeries()) and the resampled set when it is. The output is that input x (interpolationPoints + 1).
 
