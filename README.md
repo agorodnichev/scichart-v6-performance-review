@@ -22,9 +22,9 @@ Nothing here is measured. Every issue names the recipe that would measure it.
 
 | Status | Issues |
 |---|---|
-| Verified by an adversarial reviewer (confirmed or corrected) | 57 |
+| Verified by an adversarial reviewer (confirmed or corrected) | 58 |
 | Refuted by an adversarial reviewer (file kept, marked) | 0 |
-| **Not yet verified** (reviewer only) | 37 |
+| **Not yet verified** (reviewer only) | 36 |
 
 Each issue file and the index below show its own verification status; all high-severity issues are verified. Unverified issues are strong candidates: re-check the quoted line and the caller chain before acting. Raw data for resuming: [`data/findings.json`](data/findings.json) (`verified: false`).
 
@@ -71,7 +71,7 @@ Each issue file and the index below show its own verification status; all high-s
 | [037](issues/037-canvastexture-per-pixel-embind-copy.md) | medium | JS execution | CanvasTexture.copyTexture copies pixels into wasm with two embind UIntVector.set() calls per pixel: up to 131,072 boundary calls for one 256x256 gradient | `esm/Charting/Visuals/TextureManager/CanvasTexture.js:122` | S | yes | small |
 | [038](issues/038-pie-legend-rebuilt-on-every-pie-invalidate.md) | medium | JS execution | SciChartPieLegend.update has no dirty check, so the whole legend DOM is rebuilt on every pie invalidate: 11 times per segment or checkbox click with animation on, and once per segment property set when animate is false | `esm/Charting/Visuals/Legend/SciChartPieLegend.js:58` | S | yes | small |
 | [039](issues/039-gradient-palette-wasm-clamp-per-point.md) | medium | JS execution | PaletteFactory gradient palettes do an integer clamp through wasm (NumberUtil.Constrain) plus a wasm count() for every point on every frame | `esm/Charting/Model/PaletteFactory.js:25` | S | yes | small |
-| [040](issues/040-table-renumber-rows-embind-set-per-row.md) | medium | Tasks and scheduling | Tabular TableDataSeries renumbers row positions with one embind xValues.set(i, i) per remaining row after every remove or insert | `esm/Charting/Model/TableDataSeries.js:350` | S | no | small |
+| [040](issues/040-table-renumber-rows-embind-set-per-row.md) | medium | Tasks and scheduling | Tabular TableDataSeries renumbers row positions with one embind xValues.set(i, i) per remaining row after every remove or insert | `esm/Charting/Model/TableDataSeries.js:346` | S | yes | small |
 | [041](issues/041-moving-average-insert-remove-recompute-tail.md) | medium | JS execution | XyMovingAverageFilter recomputes every output after an insert/remove index, a full pass for prepend or front-trim | `esm/Charting/Model/Filters/XyMovingAverageFilter.js:67` | S | no | small |
 | [042](issues/042-ratio-filter-divisor-subscription-never-removed.md) | medium | Memory and lifecycle | XyRatioFilter never unsubscribes from divisorSeries.dataChanged; a deleted filter keeps running (and throwing) on every divisor update | `esm/Charting/Model/Filters/XyRatioFilter.js:21` | S | no | small |
 | [043](issues/043-resampling-hash-json-split-per-frame.md) | medium | JS execution | Resampling hash per frame per series: JSON.stringify of the params, then a one-string-per-character array and a reduce callback per character | `esm/utils/hash.js:2` | S | no | small |
@@ -138,7 +138,7 @@ Each issue file and the index below show its own verification status; all high-s
 | `s05-labels-hittest-anim` | 5 | 3 verified, 0 refuted, 2 not verified |
 | `s06-axis-text` | 7 | 7 verified, 0 refuted, 0 not verified |
 | `s07-annotations-legend` | 10 | 9 verified, 0 refuted, 1 not verified |
-| `s08-data-series` | 9 | 2 verified, 0 refuted, 4 not verified |
+| `s08-data-series` | 9 | 3 verified, 0 refuted, 3 not verified |
 | `s09-filters-numerics-utils` | 7 | 3 verified, 0 refuted, 3 not verified |
 | `s10-modifiers-input` | 7 | 1 verified, 0 refuted, 6 not verified |
 | `s11-layout-core-themes` | 2 | not verified yet |

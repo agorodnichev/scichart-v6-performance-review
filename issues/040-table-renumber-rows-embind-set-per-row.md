@@ -3,12 +3,12 @@
 | | |
 |---|---|
 | Package | `scichart@6.0.6` (npm, ESM build) |
-| Location | `esm/Charting/Model/TableDataSeries.js:350` |
+| Location | `esm/Charting/Model/TableDataSeries.js:346` |
 | Severity | **medium** |
 | Pipeline stage | Tasks and scheduling (`tasks`) |
 | Metric | frame time (per data update) |
 | Evidence | S — static, mechanism certain (not measured) |
-| Verification | **not yet verified**: reviewer-only candidate, see README "Verification status" |
+| Verification | verified by an independent adversarial reviewer (corrected) |
 | Rule | SC-06, TASK-13 (web-performance skill) |
 | Effort to fix | small |
 
@@ -41,20 +41,36 @@ Writing the sequence 0..n-1 is a trivial loop, but each element is written throu
 +++ b/esm/Charting/Model/TableDataSeries.js
 -import { vectorToArray } from "../../utils/vectorToArray";
 +import { vectorToArray, vectorToArrayViewF64 } from "../../utils/vectorToArray";
-@@
+@@ deleteRowAtPosition(rowPosition)
+-        const xValues = this.getNativeXValues();
+         const n = this.count();
++        // Take the view after super.removeAt (a native edit can move the buffer). The loop treats every
++        // element independently, so a FIFO series' physical order does not matter here.
++        const xView = vectorToArrayViewF64(this.getNativeXValues(), this.webAssemblyContext);
+         let shifted = false;
+         for (let i = 0; i < n; i++) {
+-            const x = xValues.get(i);
++            const x = xView[i];
+             if (x > rowPosition) {
+-                xValues.set(i, x - 1);
++                xView[i] = x - 1;
+                 shifted = true;
+             }
+         }
+@@ renumberRowPositions(fromIndex)
      renumberRowPositions(fromIndex) {
 -        const xValues = this.getNativeXValues();
          const n = this.count();
 -        for (let i = Math.max(0, fromIndex); i < n; i++) {
 -            xValues.set(i, i);
 -        }
-+        // insert/remove throw on FIFO (throwIfFifo), so this vector is linear; take the view after the native edit
++        // Callers run after removeAt/removeRange/insertRangeN, which throw on FIFO (throwIfFifo),
++        // so the vector is linear; take the view after the native edit and do not keep it.
 +        const xView = vectorToArrayViewF64(this.getNativeXValues(), this.webAssemblyContext);
 +        for (let i = Math.max(0, fromIndex); i < n; i++) {
 +            xView[i] = i;
 +        }
      }
-@@ deleteRowAtPosition (same: read and write through one view instead of get()/set() per row)
 ```
 
 **Trade-off:** The view must be created after the native remove or insert (an allocation can detach it) and must not be kept. No behavior change otherwise.
@@ -77,5 +93,5 @@ measure.md#fps, scenario "stream": a tabular TableDataSeries with 100k rows, app
 ## Review notes
 
 - Found by reviewer slice `s08-data-series`.
-- Not yet adversarially verified. The code quote and line numbers come from the slice reviewer; re-check them before acting.
+- Adversarial verification (corrected): Quote matches TableDataSeries.js:346-352 verbatim (primary moved from :350, the set() line, to :346 where the quote starts). rg shows three callers of renumberRowPositions: removeAt :217 (only when isTabular), removeRange :234 (only when isTabular) and insertRange :493 (always); removeRow :238 and removeRows :242 delegate to them, and insertRow/insertRows delegate to insertRange. Each runs after the native edit: BaseDataSeries.removeAt :423-436 (getNativeXValues().removeAt, per-column removeAt, string stores, then notifyDataChanged), removeRange :447-460, insertRangeN :383-411. All three throw on FIFO first (throwIfFifo at BaseDataSeries.js:428, :454, :396), so the x vector is linear when renumbering runs and a view index equals the logical index. No batching or guard: the loop does one embind set() per row from fromIndex to count(). deleteRowAtPosition :252-273 does get() + set() for every row, also with no guard. vectorToArrayViewF64 is exported from esm/utils/vectorToArray.js:74 and builds the view from dataPtr/size, so taking it after the native edit is correct. SC-06 Do/Avoid (scichart.md:154) supports a view used at once. Severity medium kept: the rate is per data update (per removal or insert call), not per frame by itself; a per-message removeRow is an app pattern SC-01 already advises against. Evidence S: n-fromIndex crossings per call is certain from the code. Corrected the fix diff to spell out deleteRowAtPosition instead of a comment.
 
