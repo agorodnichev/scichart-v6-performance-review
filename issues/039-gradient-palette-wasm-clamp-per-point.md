@@ -3,12 +3,12 @@
 | | |
 |---|---|
 | Package | `scichart@6.0.6` (npm, ESM build) |
-| Location | `esm/Charting/Model/PaletteFactory.js:28` |
+| Location | `esm/Charting/Model/PaletteFactory.js:25` |
 | Severity | **medium** |
 | Pipeline stage | JS execution (`js`) |
 | Metric | frame time |
 | Evidence | S — static, mechanism certain (not measured) |
-| Verification | **not yet verified**: reviewer-only candidate, see README "Verification status" |
+| Verification | verified by an independent adversarial reviewer (corrected) |
 | Rule | TASK-13 (web-performance skill) |
 | Effort to fix | small |
 
@@ -47,7 +47,7 @@ Clamping an integer to [0, n] is two compare-and-select operations that V8 inlin
 +            const mapIndex = raw > 0 ? Math.min(raw, colorData.length - 1) : 0;
 ```
 
-**Trade-off:** A NaN lerpFactor (count === 1, or a NaN y) now maps explicitly to index 0 instead of depending on the wasm int conversion. The per-point count() call remains. Hoisting it needs a per-frame hook, such as a shouldUpdatePalette() that caches the count and returns true, but the point-marker path may not call that hook.
+**Trade-off:** For finite values the result is unchanged. Edge cases now have a defined result: a NaN lerpFactor (count === 1, or a NaN y) maps to index 0, and +Infinity (createYGradient with yRange.diff 0 and y above min) maps to the last color. Before, the result depended on how the wasm Constrain converts its arguments, which the package does not show. The per-point count() call remains. Hoisting it needs a per-frame hook, such as a shouldUpdatePalette() that caches the count and returns true, but the point-marker path may not call that hook.
 
 ## App-side workaround
 
@@ -68,5 +68,5 @@ measure.md#fps, scenario "pan" on a 200k-point line series with a PaletteFactory
 ## Review notes
 
 - Found by reviewer slice `s08-data-series`.
-- Not yet adversarially verified. The code quote and line numbers come from the slice reviewer; re-check them before acting.
+- Adversarial verification (corrected): Quote matches PaletteFactory.js:25-29 verbatim (primary moved from :28, the Constrain line, to :25 where the quote starts); createYGradient has the same Constrain at :74. Confirmed NumberUtil.Constrain is the embind static on the wasm context (types/types/TSciChart.d.ts:237-245, registered via __embind_register_class_class_function in _glue-pretty/scichart.js:4694) while a JS NumberUtil.constrain exists at esm/Core/NumberUtil.js:11. getDataSeriesValuesCount (BaseRenderableSeries.js:818-819) -> BaseDataSeries.count() (:549-551) -> xValues.size(), a second embind call per point. Caller chain: LineSeriesDrawingProvider.draw (:85) -> applyStrokePaletting (:143) -> BaseSeriesDrawingProvider.js loop :148 -> overrideStrokeArgb :156 -> doFunc; applyStrokeFillPaletting loop :254 -> overridePaletteProviderColors :262 (stroke + fill); PointMarkerDrawingProvider.overridePaletteProviderColors :129 -> overridePointMarkerArgb -> doFunc twice. No guard: the palette object has no shouldUpdatePalette, so BaseSeriesDrawingProvider.js:393-395 sets requiresUpdate every frame. The loop runs over the point series (resampled count when resampling is on, all visible points when off). TASK-13 Avoid does not excuse a per-item call. Severity medium kept: per frame and per point, but a constant-factor overhead (2 cheap crossings per point) that only applies to PaletteFactory gradient users, with the point count bounded by resampling in the default case. Evidence S: the crossings happen on every repaint. Fix diff checked: identical for finite values; edge cases noted in the trade-off. The glue's integer toWireType passes values through unchanged (scichart.js:5261-5290), so the old NaN/Infinity result depended on the wasm parameter type, which the package does not show.
 

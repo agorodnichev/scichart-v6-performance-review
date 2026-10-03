@@ -2277,7 +2277,7 @@
   "effort": "small",
   "primary": {
    "path": "esm/Charting/Model/PaletteFactory.js",
-   "line": 28,
+   "line": 25,
    "note": "createGradient doFunc"
   },
   "code_quote": "        const doFunc = (xValue, yValue, index, opacity = 1) => {\n            const count = renderSeries.getDataSeriesValuesCount();\n            const lerpFactor = index / (count - 1);\n            const mapIndex = webAssemblyContext.NumberUtil.Constrain(Math.round(lerpFactor * (colorData.length - 1)), 0, colorData.length - 1);\n            const result = colorData[mapIndex];",
@@ -2312,14 +2312,16 @@
   "scale": "Any series using PaletteFactory.createGradient or createYGradient. Per frame: visible points x (1 for stroke + 1 for fill + 2 for markers) doFunc calls, each with 1-2 JS->wasm crossings.",
   "why_it_costs": "Clamping an integer to [0, n] is two compare-and-select operations that V8 inlines. Routing it through an embind static call adds a boundary crossing per point, and the count lookup adds another, inside a loop that already reads typed-array views for x and y.",
   "fix_diff": "--- a/esm/Charting/Model/PaletteFactory.js\n+++ b/esm/Charting/Model/PaletteFactory.js\n@@ createGradient doFunc\n-            const mapIndex = webAssemblyContext.NumberUtil.Constrain(Math.round(lerpFactor * (colorData.length - 1)), 0, colorData.length - 1);\n+            const raw = Math.round(lerpFactor * (colorData.length - 1));\n+            const mapIndex = raw > 0 ? Math.min(raw, colorData.length - 1) : 0; // NaN -> 0\n@@ createYGradient doFunc\n-            const mapIndex = webAssemblyContext.NumberUtil.Constrain(Math.round(lerpFactor * (colorData.length - 1)), 0, colorData.length - 1);\n+            const raw = Math.round(lerpFactor * (colorData.length - 1));\n+            const mapIndex = raw > 0 ? Math.min(raw, colorData.length - 1) : 0;",
-  "trade_off": "A NaN lerpFactor (count === 1, or a NaN y) now maps explicitly to index 0 instead of depending on the wasm int conversion. The per-point count() call remains. Hoisting it needs a per-frame hook, such as a shouldUpdatePalette() that caches the count and returns true, but the point-marker path may not call that hook.",
+  "trade_off": "For finite values the result is unchanged. Edge cases now have a defined result: a NaN lerpFactor (count === 1, or a NaN y) maps to index 0, and +Infinity (createYGradient with yRange.diff 0 and y above min) maps to the last color. Before, the result depended on how the wasm Constrain converts its arguments, which the package does not show. The per-point count() call remains. Hoisting it needs a per-frame hook, such as a shouldUpdatePalette() that caches the count and returns true, but the point-marker path may not call that hook.",
   "verify": "measure.md#fps, scenario \"pan\" on a 200k-point line series with a PaletteFactory.createGradient stroke and unsorted X or resampling off, so the loop covers every point. 5 runs per side. Pass: \"win\" on frameP95Ms, and doFunc self time drops in the trace-summary window.",
   "app_workaround": "Write your own gradient palette provider that clamps with Math.min/Math.max and caches the count in shouldUpdatePalette(). Or precompute the colors once into metadata.",
   "slice": "s08-data-series",
-  "verified": false,
+  "verified": true,
   "merged_from": [],
   "file": "039-gradient-palette-wasm-clamp-per-point.md",
-  "refuted": false
+  "refuted": false,
+  "verdict": "corrected",
+  "verification_notes": "Quote matches PaletteFactory.js:25-29 verbatim (primary moved from :28, the Constrain line, to :25 where the quote starts); createYGradient has the same Constrain at :74. Confirmed NumberUtil.Constrain is the embind static on the wasm context (types/types/TSciChart.d.ts:237-245, registered via __embind_register_class_class_function in _glue-pretty/scichart.js:4694) while a JS NumberUtil.constrain exists at esm/Core/NumberUtil.js:11. getDataSeriesValuesCount (BaseRenderableSeries.js:818-819) -> BaseDataSeries.count() (:549-551) -> xValues.size(), a second embind call per point. Caller chain: LineSeriesDrawingProvider.draw (:85) -> applyStrokePaletting (:143) -> BaseSeriesDrawingProvider.js loop :148 -> overrideStrokeArgb :156 -> doFunc; applyStrokeFillPaletting loop :254 -> overridePaletteProviderColors :262 (stroke + fill); PointMarkerDrawingProvider.overridePaletteProviderColors :129 -> overridePointMarkerArgb -> doFunc twice. No guard: the palette object has no shouldUpdatePalette, so BaseSeriesDrawingProvider.js:393-395 sets requiresUpdate every frame. The loop runs over the point series (resampled count when resampling is on, all visible points when off). TASK-13 Avoid does not excuse a per-item call. Severity medium kept: per frame and per point, but a constant-factor overhead (2 cheap crossings per point) that only applies to PaletteFactory gradient users, with the point count bounded by resampling in the default case. Evidence S: the crossings happen on every repaint. Fix diff checked: identical for finite values; edge cases noted in the trade-off. The glue's integer toWireType passes values through unchanged (scichart.js:5261-5290), so the old NaN/Infinity result depended on the wasm parameter type, which the package does not show."
  },
  {
   "id": "040",
