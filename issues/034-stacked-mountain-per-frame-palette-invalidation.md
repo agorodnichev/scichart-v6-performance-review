@@ -8,7 +8,7 @@
 | Pipeline stage | Tasks and scheduling (`tasks`) |
 | Metric | frame time (pan, zoom, cursor-driven redraws) |
 | Evidence | S — static, mechanism certain (not measured) |
-| Verification | **not yet verified**: reviewer-only candidate, see README "Verification status" |
+| Verification | verified by an independent adversarial reviewer (corrected) |
 | Rule | SC-23, V8-07 (web-performance skill) |
 | Effort to fix | small |
 
@@ -31,7 +31,7 @@ SciChartRenderer series draw (esm/Charting/Services/SciChartRenderer.js:354 / :6
 
 The documented way to skip per-vertex palette work on frames without new data is shouldUpdatePalette() returning false, with isRangeIndependant (SC-23). The collection's own per-frame property write sets requiresUpdate before the provider is asked, so the cache never hits, and every redraw (pan, zoom, cursor move) recomputes and re-creates the palette for every layer.
 
-**Scale where it matters:** Only stacked mountains with a paletteProvider are affected. The cost is visible points x layers per frame, for example 5 layers x 20k points: 100k palette callbacks plus 5 native palette objects created per frame. Without a palette provider, what remains is a pen-cache lookup and a DpiHelper.adjustStrokeSize allocation per layer per frame.
+**Scale where it matters:** Only stacked mountains whose palette provider opts into caching are affected: shouldUpdatePalette() returns false, and for pan or zoom also isRangeIndependant is true (a range-dependent provider recomputes anyway when the start or count changes, BaseSeriesDrawingProvider.js:367-376; a provider without shouldUpdatePalette, or DefaultPaletteProvider, recomputes on every render by design, :394-396). For those, the lost saving is visible points x layers per render, for example 5 layers x 20k points: 100k palette callbacks plus 5 native palette objects created per render, on pan, zoom and cursor-driven redraws. Without a palette provider, what remains is a pen-cache lookup (Pen2DCache.create reuses the pen, since it compares dash arrays with areArraysEqual) and a DpiHelper.adjustStrokeSize allocation per layer per render.
 
 ## Fix (library side)
 
@@ -72,5 +72,5 @@ measure.md#fps, `pan` scenario and a cursor-move redraw scenario on a 5-layer St
 ## Review notes
 
 - Found by reviewer slice `s03-renderable-series`.
-- Not yet adversarially verified. The code quote and line numbers come from the slice reviewer; re-check them before acting.
+- Adversarial verification (corrected): Re-read StackedXyCollection.js:155-212 (quote matches :196-201; same write at :191 on the transform path), BaseStackedMountainRenderableSeries.js:204-208 (setter has no equality check, unlike strokeY1 at :140-146) and BandSeriesDrawingProvider.js:170-180 (STROKE_Y1_DASH_ARRAY sets palettingState.requiresUpdate = true at :178). Chain confirmed: SciChartRenderer.js:354/:670 rs.draw -> StackedXyCollection.draw (StackedMountainCollection extends StackedXyCollection, StackedMountainCollection.js:32) -> setter on every visible child each render -> BaseRenderableSeries.draw (:593) -> BandSeriesDrawingProvider.draw -> applyStrokeFillPaletting (:123) -> BaseSeriesDrawingProvider.shouldUpdatePalette (:360-397) can only set requiresUpdate, never clear it, so the check at :235-237 never skips and the per-point loop (:256-275) plus PaletteCache.create (:282, new SCRTCreatePalette at Drawing/PaletteCache.js:24) run every render. Pen2DCache.create (Drawing/Pen2DCache.js) compares dash arrays with areArraysEqual, so the pen itself is reused, as the scale says. The advanced applyPaletting path returns before the check (:229-233) and is unaffected. Fix checked: the setter guard alone suffices (areArraysEqual([], []) is true), the import path ../../../utils/array resolves to esm/utils/array.js:12, and no other per-render write resets requiresUpdate for stacked mountains. Corrected scale: the extra cost exists only for providers that opt into caching (shouldUpdatePalette returning false); a provider without shouldUpdatePalette, or DefaultPaletteProvider, recomputes every render by design, and a range-dependent provider recomputes anyway when pan or zoom changes start/count. Severity medium kept (SC-23 impact medium; affects only cached paletted stacked mountains).
 
