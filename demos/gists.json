@@ -53,6 +53,24 @@
     "fiddle": "https://jsfiddle.net/gh/gist/library/pure/10d3fa1deed16487db613392cdd65235/",
     "gistUrl": "https://gist.github.com/10d3fa1deed16487db613392cdd65235"
   },
+  "016": {
+    "gist": "cdedcd3e2e690bcd3d7af4d34c4d5394",
+    "dir": "016-hlc-getxrange-minmax-leak",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/cdedcd3e2e690bcd3d7af4d34c4d5394/",
+    "gistUrl": "https://gist.github.com/cdedcd3e2e690bcd3d7af4d34c4d5394"
+  },
+  "017": {
+    "gist": "802f7c181e1f4c2defa83613059e7e9e",
+    "dir": "017-parsecolor-uncached-per-point-palette",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/802f7c181e1f4c2defa83613059e7e9e/",
+    "gistUrl": "https://gist.github.com/802f7c181e1f4c2defa83613059e7e9e"
+  },
+  "018": {
+    "gist": "0556b0ee913da2c40a32ee2bb9152673",
+    "dir": "018-filters-on-fifo-source-grow-unbounded",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/0556b0ee913da2c40a32ee2bb9152673/",
+    "gistUrl": "https://gist.github.com/0556b0ee913da2c40a32ee2bb9152673"
+  },
   "021": {
     "gist": "eb260d17a53d0c6e3dfeedaf5ce73d65",
     "dir": "021-stacked-accumulation-push-back-rebuild",
@@ -64,6 +82,12 @@
     "dir": "023-rollover-cursor-tooltip-svg-reparse",
     "fiddle": "https://jsfiddle.net/gh/gist/library/pure/2527ec4678f5faddde04ba00da42e16a/",
     "gistUrl": "https://gist.github.com/2527ec4678f5faddde04ba00da42e16a"
+  },
+  "024": {
+    "gist": "5c054001a12138465fa59eb7a575c293",
+    "dir": "024-linear-trend-filter-full-recompute-per-append",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/5c054001a12138465fa59eb7a575c293/",
+    "gistUrl": "https://gist.github.com/5c054001a12138465fa59eb7a575c293"
   },
   "027": {
     "gist": "a9c69252ac92e115113c4e4ff04161b5",
@@ -100,6 +124,36 @@
     "dir": "038-pie-legend-rebuilt-per-invalidate",
     "fiddle": "https://jsfiddle.net/gh/gist/library/pure/1af150e9aa62bcd73d07235128bc0ae2/",
     "gistUrl": "https://gist.github.com/1af150e9aa62bcd73d07235128bc0ae2"
+  },
+  "039": {
+    "gist": "b12b7b62ea39b4131b117f8705e32adb",
+    "dir": "039-gradient-palette-wasm-clamp-per-point",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/b12b7b62ea39b4131b117f8705e32adb/",
+    "gistUrl": "https://gist.github.com/b12b7b62ea39b4131b117f8705e32adb"
+  },
+  "040": {
+    "gist": "54aacd7a6845a95dc7cd75f8694ee06d",
+    "dir": "040-table-renumber-rows-embind-set-per-row",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/54aacd7a6845a95dc7cd75f8694ee06d/",
+    "gistUrl": "https://gist.github.com/54aacd7a6845a95dc7cd75f8694ee06d"
+  },
+  "041": {
+    "gist": "06c7b45a1b9e6ebdfc1cd6e28e39490b",
+    "dir": "041-moving-average-insert-remove-recompute-tail",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/06c7b45a1b9e6ebdfc1cd6e28e39490b/",
+    "gistUrl": "https://gist.github.com/06c7b45a1b9e6ebdfc1cd6e28e39490b"
+  },
+  "042": {
+    "gist": "36c6a8b081598a822b4bc55fdb59085d",
+    "dir": "042-ratio-filter-divisor-subscription-never-removed",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/36c6a8b081598a822b4bc55fdb59085d/",
+    "gistUrl": "https://gist.github.com/36c6a8b081598a822b4bc55fdb59085d"
+  },
+  "043": {
+    "gist": "324c5508c89132536fbe16b9de952c3b",
+    "dir": "043-resampling-hash-json-split-per-frame",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/324c5508c89132536fbe16b9de952c3b/",
+    "gistUrl": "https://gist.github.com/324c5508c89132536fbe16b9de952c3b"
   },
   "047": {
     "gist": "ad5fce75f9c8aa855d78ba36c49ebc0d",
@@ -143,6 +197,18 @@
     "fiddle": "https://jsfiddle.net/gh/gist/library/pure/d0c5a221be903a0e83160dc5b5dee2cb/",
     "gistUrl": "https://gist.github.com/d0c5a221be903a0e83160dc5b5dee2cb"
   },
+  "061": {
+    "gist": "f713b758a829ec4302edd679efd71a38",
+    "dir": "061-string-column-range-append-per-cell-crossings",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/f713b758a829ec4302edd679efd71a38/",
+    "gistUrl": "https://gist.github.com/f713b758a829ec4302edd679efd71a38"
+  },
+  "062": {
+    "gist": "4cdd9a657ddecb049c8213cee8b5485d",
+    "dir": "062-heatmap-full-renormalize-on-any-change",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/4cdd9a657ddecb049c8213cee8b5485d/",
+    "gistUrl": "https://gist.github.com/4cdd9a657ddecb049c8213cee8b5485d"
+  },
   "065": {
     "gist": "cb154fd7856f52ead5b4727480362f28",
     "dir": "065-pie-sync-redraw-timer-animations",
@@ -184,6 +250,12 @@
     "dir": "084-stacked-column-collection-provider-leak",
     "fiddle": "https://jsfiddle.net/gh/gist/library/pure/9310235ca34c16f2181d9ebc06c37688/",
     "gistUrl": "https://gist.github.com/9310235ca34c16f2181d9ebc06c37688"
+  },
+  "085": {
+    "gist": "70c76d555ebdc2b8c60da74c9d250d81",
+    "dir": "085-insert-metadata-range-copies-whole-array",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/70c76d555ebdc2b8c60da74c9d250d81/",
+    "gistUrl": "https://gist.github.com/70c76d555ebdc2b8c60da74c9d250d81"
   },
   "086": {
     "gist": "abc0473d5c6302ba16146f8a873dbfca",
