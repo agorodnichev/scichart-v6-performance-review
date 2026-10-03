@@ -162,7 +162,7 @@ async function demo(P) {
       ["  frame interval p95, ms", moveShipped.p95, moveFixed.p95, null],
     ],
     notes: [
-      "Counts do not depend on hardware; times do. A DOM-only render tears down and re-parses the tooltip SVG (with a new filter id) and repaints it, one animation frame after the full render. While the pointer keeps moving, the next move's full invalidation usually cancels that frame, which is why the moving phase shows few DOM-only renders; the extra frame is certain after the pointer stops, and after every full render of a live chart under a resting pointer.",
+      "Counts do not depend on hardware; times do. A DOM-only render tears down and re-parses the tooltip SVG (with a new filter id) and repaints it, one animation frame after the full render. While the pointer keeps moving (or data arrives before every frame), the next full invalidation usually cancels that frame, which is why the moving phase shows few DOM-only renders; the extra frame lands whenever a full render is not followed by another full invalidation before the next frame: after the pointer stops, or after an occasional data update under a resting pointer, as here.",
       "Polar line hit tests loop over every point in JavaScript (PolarLineSeriesHitTestProvider), so the second pass per move costs as much as the first. The control shows the same template's Date.now() id without the extra frame: CursorModifier updates in onParentSurfaceLayoutComplete, before invalidation is re-armed.",
     ],
     metrics: { restShipped, restFixed, moveShipped, moveFixed, series: SERIES },

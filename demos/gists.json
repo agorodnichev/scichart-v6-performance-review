@@ -89,6 +89,12 @@
     "fiddle": "https://jsfiddle.net/gh/gist/library/pure/5c054001a12138465fa59eb7a575c293/",
     "gistUrl": "https://gist.github.com/5c054001a12138465fa59eb7a575c293"
   },
+  "025": {
+    "gist": "8dae0fb7ec373bb600d80e41e4bce814",
+    "dir": "025-datapointselection-metadata-objects",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/8dae0fb7ec373bb600d80e41e4bce814/",
+    "gistUrl": "https://gist.github.com/8dae0fb7ec373bb600d80e41e4bce814"
+  },
   "027": {
     "gist": "a9c69252ac92e115113c4e4ff04161b5",
     "dir": "027-engine-raf-loop-never-stops",
@@ -154,6 +160,24 @@
     "dir": "043-resampling-hash-json-split-per-frame",
     "fiddle": "https://jsfiddle.net/gh/gist/library/pure/324c5508c89132536fbe16b9de952c3b/",
     "gistUrl": "https://gist.github.com/324c5508c89132536fbe16b9de952c3b"
+  },
+  "044": {
+    "gist": "b18ab9f565ed5563ff6b5157fd8df34c",
+    "dir": "044-subchart-move-rebroadcast",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/b18ab9f565ed5563ff6b5157fd8df34c/",
+    "gistUrl": "https://gist.github.com/b18ab9f565ed5563ff6b5157fd8df34c"
+  },
+  "045": {
+    "gist": "869326ed5573792c1689cceaf8ad313c",
+    "dir": "045-rollover-double-hit-test",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/869326ed5573792c1689cceaf8ad313c/",
+    "gistUrl": "https://gist.github.com/869326ed5573792c1689cceaf8ad313c"
+  },
+  "046": {
+    "gist": "2fa2c2508b9f34e156875a97955daf1d",
+    "dir": "046-polar-cursor-extra-frame",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/2fa2c2508b9f34e156875a97955daf1d/",
+    "gistUrl": "https://gist.github.com/2fa2c2508b9f34e156875a97955daf1d"
   },
   "047": {
     "gist": "ad5fce75f9c8aa855d78ba36c49ebc0d",
@@ -239,6 +263,18 @@
     "fiddle": "https://jsfiddle.net/gh/gist/library/pure/a033d8429f93f75587566d51acbecf9a/",
     "gistUrl": "https://gist.github.com/a033d8429f93f75587566d51acbecf9a"
   },
+  "076": {
+    "gist": "e710bb00eec11306e308ac47e9fb8afc",
+    "dir": "076-pointer-offsetx-forced-layout",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/e710bb00eec11306e308ac47e9fb8afc/",
+    "gistUrl": "https://gist.github.com/e710bb00eec11306e308ac47e9fb8afc"
+  },
+  "077": {
+    "gist": "fd478605c56b0a0c4983f7527c2f5b51",
+    "dir": "077-nonpassive-wheel-listener",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/fd478605c56b0a0c4983f7527c2f5b51/",
+    "gistUrl": "https://gist.github.com/fd478605c56b0a0c4983f7527c2f5b51"
+  },
   "080": {
     "gist": "5682ffc022303d4517e25834557142f3",
     "dir": "080-invalidateelement-debug-string",
@@ -292,6 +328,12 @@
     "dir": "092-svg-annotations-rewrite-unchanged-attributes",
     "fiddle": "https://jsfiddle.net/gh/gist/library/pure/69122af960cdcf3822f58d79f10b433f/",
     "gistUrl": "https://gist.github.com/69122af960cdcf3822f58d79f10b433f"
+  },
+  "093": {
+    "gist": "2d9fc23b666ce21f10069a2856ff3d10",
+    "dir": "093-annotation-hover-target-list",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/2d9fc23b666ce21f10069a2856ff3d10/",
+    "gistUrl": "https://gist.github.com/2d9fc23b666ce21f10069a2856ff3d10"
   },
   "094": {
     "gist": "bb48e400ad0609c6f67457204f08ae41",
