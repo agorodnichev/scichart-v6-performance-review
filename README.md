@@ -22,9 +22,9 @@ Nothing here is measured. Every issue names the recipe that would measure it.
 
 | Status | Issues |
 |---|---|
-| Verified by an adversarial reviewer (confirmed or corrected) | 21 |
+| Verified by an adversarial reviewer (confirmed or corrected) | 22 |
 | Refuted by an adversarial reviewer (file kept, marked) | 0 |
-| **Not yet verified** (reviewer only) | 73 |
+| **Not yet verified** (reviewer only) | 72 |
 
 Verified so far: all issues of `s01-surface-render` and `s02-init-loading`, plus the high-severity issues of the slices listed in the coverage table. Unverified issues are strong candidates: re-check the quoted line and the caller chain before acting. Raw data for resuming: [`data/findings.json`](data/findings.json) (`verified: false`).
 
@@ -40,7 +40,7 @@ Verified so far: all issues of `s01-surface-render` and `s02-init-loading`, plus
 | [006](issues/006-spline-index-fill-one-wasm-call-per-vertex.md) | high | JS execution | SplineRenderDataTransform writes the source index of every interpolated vertex with one wasm call per vertex, on every data change and every pan/zoom frame | `esm/Charting/Visuals/RenderableSeries/RenderDataTransforms/SplineRenderDataTransform.js:59` | S | yes | small |
 | [007](issues/007-polar-column-label-leaks-native-linebounds.md) | high | Memory and lifecycle | Radial (vertical) PolarColumn data labels leak one native TSRTextLineBounds per label on every render | `esm/Charting/Visuals/RenderableSeries/Polar/DataLabels/PolarColumnSeriesDataLabelProvider.js:199` | S | yes | small |
 | [008](issues/008-line-segment-hittest-full-scan-embind-get.md) | high | Tasks and scheduling | Line-segment hit tests (and unsorted-line hover selection) scan the whole series in JS, 3 passes, with an embind get() per value, on every pointer move | `esm/Charting/Visuals/RenderableSeries/HitTest/hitTestHelpers.js:193` | S | yes | small |
-| [009](issues/009-rectangle-hittest-unsorted-scan-y-before-x.md) | high | Tasks and scheduling | Rectangle and polar-column hit tests always run the O(N) scan and evaluate the Y test (4 embind calls) for every column before the X test | `esm/Charting/Visuals/RenderableSeries/HitTest/hitTestHelpersRectangleSeries.js:156` | S | no | small |
+| [009](issues/009-rectangle-hittest-unsorted-scan-y-before-x.md) | high | Tasks and scheduling | Rectangle and polar-column hit tests always run the O(N) scan and evaluate the Y test (4 embind calls) for every column before the X test | `esm/Charting/Visuals/RenderableSeries/HitTest/hitTestHelpersRectangleSeries.js:156` | S | yes | small |
 | [010](issues/010-date-format-new-icu-formatter-per-call.md) | high | JS execution | Date labels and cursor/tooltip values call toLocaleDateString(locale, options), which builds a new ICU formatter on every call, on every pointer move | `esm/utils/date.js:6` | S | no | small |
 | [011](issues/011-texture-manager-clears-full-1920x1080-per-label.md) | high | Paint and raster | TextureManager clears its entire 1920x1080 CPU scratch canvas (8.3 MB) for every label texture, whatever the label size | `esm/Charting/Visuals/TextureManager/TextureManager.js:92` | S | no | small |
 | [012](issues/012-rollover-marker-typo-rebuilds-svg-and-forces-layout.md) | high | Layout | RolloverMarkerSvgAnnotation never caches its color (=== typo), so every render re-parses each marker SVG and forces a layout through getBBox | `esm/Charting/Visuals/Annotations/RolloverMarkerSvgAnnotation.js:34` | S | no | small |
@@ -135,7 +135,7 @@ Verified so far: all issues of `s01-surface-render` and `s02-init-loading`, plus
 | `s02-init-loading` | 7 | 7 verified, 0 refuted, 0 not verified |
 | `s03-renderable-series` | 8 | not verified yet |
 | `s04-drawing-providers` | 10 | 5 verified, 0 refuted, 5 not verified |
-| `s05-labels-hittest-anim` | 5 | 2 verified, 0 refuted, 3 not verified |
+| `s05-labels-hittest-anim` | 5 | 3 verified, 0 refuted, 2 not verified |
 | `s06-axis-text` | 7 | not verified yet |
 | `s07-annotations-legend` | 10 | not verified yet |
 | `s08-data-series` | 9 | not verified yet |

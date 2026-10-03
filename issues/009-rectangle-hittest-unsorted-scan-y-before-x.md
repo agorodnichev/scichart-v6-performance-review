@@ -8,7 +8,7 @@
 | Pipeline stage | Tasks and scheduling (`tasks`) |
 | Metric | INP (pointermove processing) and frame time while hovering |
 | Evidence | S — static, mechanism certain (not measured) |
-| Verification | **not yet verified**: reviewer-only candidate, see README "Verification status" |
+| Verification | verified by an independent adversarial reviewer (corrected) |
 | Rule | SC-06, V8-01, GPU-28 (web-performance skill) |
 | Effort to fix | small |
 
@@ -56,7 +56,7 @@ RectangleSeriesHitTestProvider.hitTestForBox ignores sorting and always calls th
 
 ## App-side workaround
 
-Override hitTestForBox in a RectangleSeriesHitTestProvider subclass (the class documents it as the extension point) to call hitTestHelpersRectangleSeries.hitTestForBox(..., isSorted, isPolar) when the data is sorted and the columns do not overlap, and assign it to rs.hitTestProvider. Or exclude large rectangle series from Rollover/Cursor hit tests (showRollover = false / includeSeries(rs, false)).
+Exclude large rectangle series from Rollover/Cursor hit tests (rs.rolloverModifierProps.showRollover = false or modifier.includeSeries(rs, false)), and keep enableHover off in SeriesSelectionModifier. For sorted, non-overlapping columns in EColumnMode.Mid or Start on a non-vertical chart, override hitTestForBox in a RectangleSeriesHitTestProvider subclass (the class documents it as the extension point). The override calls the exported hitTestHelpersRectangleSeries.hitTestForBox(..., isVertical, dataSeries.dataDistributionCalculator.isSortedAscending, isPolar), and you assign the subclass to rs.hitTestProvider. That gives an O(log N) lookup, but the sorted helper returns x1Value undefined and computes isWithinDataBounds differently. It does not cover StartEnd, StartWidth or MidWidth rectangles (Gantt-style data), which always take the O(N) scan. For those, apply the Y-after-X reordering in the override by copying hitTestForBoxUnsorted.
 
 ## Verify
 
@@ -72,5 +72,5 @@ measure.md#fps with a 'hover' scenario hook that drives CursorModifier at 120 mo
 ## Review notes
 
 - Found by reviewer slice `s05-labels-hittest-anim`.
-- Not yet adversarially verified. The code quote and line numbers come from the slice reviewer; re-check them before acting.
+- Adversarial verification (corrected): Re-read HitTest/hitTestHelpersRectangleSeries.js:1-280. The code_quote matches lines 150-158 verbatim, with testIsYHit at :156. testIsYHit (:3-25) makes 2 vector get() calls (:4-5) and 2 yCoordinateCalculator.getCoordinate calls (:20-21, native GetCoordinate per CoordinateCalculatorBase.js:52-53). It has no side effects, and its result is read only in isBothHit$ (:158), which requires isXHit$. The final isHit is recomputed from scratch at :252-253. So deferring Y behind X preserves results exactly. The X loops (:186-242) read X through vectorToArrayViewF64 views (:183-184) but call getCoordinate 1-2 times per element. testIsXHitFn returns a new object per element (:148), and on non-vertical polar charts it also builds a 2-element array and a forEach closure (:140). Provider: RectangleSeriesHitTestProvider.js hitTestXSlice :60, hitTestDataPoint :64 and hitTestForDataPointSelectionModifier :56 all -> hitTest :27 -> :45 this.hitTestForBox -> :71 always hitTestForBoxUnsorted (the sorted call at :72-86 is commented out). Wiring: FastRectangleRenderableSeries.js:360, PolarColumnRenderableSeries.js:115, PolarStackedColumnRenderableSeries.js:325. Pointer chain, verified for 008: MouseManager.js:70/:107/:114/:322 (synchronous) -> RolloverModifier.js:273 update -> :579 -> :346-350 hitTestXSlice/hitTestDataPoint, and CursorModifier.js:456-460 and SeriesSelectionModifier.js:159 (enableHover) the same way. Per render while hovering via SciChartRenderer.js:174 -> RolloverModifier.js:294. Rules SC-06 and V8-01 apply; their Avoid fields excuse only small collections. Severity high and evidence S are kept: a certain O(N) scan per pointer event per series. Scale is N-dependent and stated as such (small polar column counts are cheap). The fix diff is correct and minimal. CORRECTED app_workaround only. The sorted helper is selected only for EColumnMode.Mid/Start (hitTestForBox :269), never for vertical charts (:266-267), and returns x1Value undefined (:102). It also computes isWithinDataBounds differently (:72-96). So overriding hitTestForBox does not help StartEnd/StartWidth/MidWidth rectangles (Gantt-style data, the verify scenario), and it changes the hit info for X1. The workaround now says so.
 
