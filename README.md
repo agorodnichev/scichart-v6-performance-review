@@ -22,9 +22,9 @@ Nothing here is measured. Every issue names the recipe that would measure it.
 
 | Status | Issues |
 |---|---|
-| Verified by an adversarial reviewer (confirmed or corrected) | 81 |
+| Verified by an adversarial reviewer (confirmed or corrected) | 82 |
 | Refuted by an adversarial reviewer (file kept, marked) | 0 |
-| **Not yet verified** (reviewer only) | 13 |
+| **Not yet verified** (reviewer only) | 12 |
 
 Each issue file and the index below show its own verification status; all high-severity issues are verified. Unverified issues are strong candidates: re-check the quoted line and the caller chain before acting. Raw data for resuming: [`data/findings.json`](data/findings.json) (`verified: false`).
 
@@ -86,7 +86,7 @@ Each issue file and the index below show its own verification status; all high-s
 | [052](issues/052-subchart-wrapper-write-then-read-per-frame.md) | medium | Layout | DataValue sub-charts with a wrapper container write wrapper styles and then read section clientWidth/clientHeight on every frame, which forces one layout per sub-chart | `esm/Charting/Visuals/SciChartSubSurface.js:214` | S | yes | medium |
 | [053](issues/053-offscreen-charts-render-by-default-freeze-drops-redraw.md) | medium | GPU draw | Off-screen charts render and copy on every invalidation by default; the opt-in freeze never redraws on return, and returning to the tab force-renders even frozen charts | `esm/Charting/Visuals/SciChartSurfaceBase.js:614` | S | yes | small |
 | [054](issues/054-createsingle-delete-wipes-global-label-cache.md) | medium | Memory and lifecycle | Deleting a createSingle chart resets the page-wide label/style cache: every live chart re-measures labels and each live context gains a new SCRTFontKey per font in use | `esm/Charting/Visuals/createSingle.js:192` | S | yes | small |
-| [055](issues/055-webgpu-specialhtmltargets-retains-deleted-canvases.md) | medium | Memory and lifecycle | WebGPU: each chart's canvas is registered in wasmContext.specialHTMLTargets and never removed on delete | `esm/Charting/Visuals/createMaster.js:288` | S | no | small |
+| [055](issues/055-webgpu-specialhtmltargets-retains-deleted-canvases.md) | medium | Memory and lifecycle | WebGPU: each chart's canvas is registered in wasmContext.specialHTMLTargets and never removed on delete | `esm/Charting/Visuals/createMaster.js:288` | S | yes | small |
 | [056](issues/056-error-bars-process-full-dataset-every-frame.md) | medium | JS execution | The error-bar provider draws and pre-processes every data point on each redraw, ignoring the visible index range; on log axes it makes about 20 wasm calls per point | `esm/Charting/Visuals/RenderableSeries/DrawingProviders/ErrorSeriesDrawingProvider.js:101` | S | yes | medium |
 | [057](issues/057-point-marker-rebuilds-three-textures-eagerly.md) | medium | GPU upload | Every point-marker property set, and every resumeUpdates, rebuilds three canvas textures (sprite, stroke mask, fill mask) at once, though the masks are used only with a point-marker palette provider | `esm/Charting/Visuals/PointMarkers/BasePointMarker.js:347` | S | yes | medium |
 | [058](issues/058-data-labels-repeat-native-linebounds-per-label.md) | medium | JS execution | Data-label generation makes 2-3 native GetLineBounds allocations per label per frame, and they are loop-invariant in TextDataLabelProvider | `esm/Charting/Visuals/RenderableSeries/DataLabels/DataLabelProvider.js:411` | S | no | medium |
@@ -145,7 +145,7 @@ Each issue file and the index below show its own verification status; all high-s
 | `s12-pie-3d-surface` | 7 | 7 verified, 0 refuted, 0 not verified |
 | `s13-3d-series-modifiers` | 6 | 5 verified, 0 refuted, 0 not verified |
 | `x1-frame-path` | 6 | 3 verified, 0 refuted, 1 not verified |
-| `x2-data-and-lifecycle` | 7 | 1 verified, 0 refuted, 2 not verified |
+| `x2-data-and-lifecycle` | 7 | 2 verified, 0 refuted, 1 not verified |
 
 Per-slice notes on what was checked and found fine, and what static review could not decide: [`data/coverage.json`](data/coverage.json).
 

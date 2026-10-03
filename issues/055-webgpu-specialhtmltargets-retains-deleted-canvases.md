@@ -8,7 +8,7 @@
 | Pipeline stage | Memory and lifecycle (`memory`) |
 | Metric | memory |
 | Evidence | S — static, mechanism certain (not measured) |
-| Verification | **not yet verified**: reviewer-only candidate, see README "Verification status" |
+| Verification | verified by an independent adversarial reviewer (confirmed) |
 | Rule | LIFE-05, SC-28 (web-performance skill) |
 | Effort to fix | small |
 
@@ -73,5 +73,5 @@ measure.md#mem with the WebGPU backend: mount and unmount a chart whose root id 
 ## Review notes
 
 - Found by reviewer slice `x2-data-and-lifecycle`.
-- Not yet adversarially verified. The code quote and line numbers come from the slice reviewer; re-check them before acting.
+- Adversarial verification (confirmed): Re-read createMaster.js:278-293 (code_quote matches :284-289 verbatim; specialHTMLTargets set at :288 under WebGpuHelper.getWebGpuSupported()) and :581-612 (addExternalDestinationNative sets the key at :588; unregister at :608-610 only deletes the externalDestinations entry). rg over esm and _glue-pretty finds no delete of a specialHTMLTargets key anywhere: the glue declares the registry once as a module-closure var (_glue-pretty/scichart.js:6816), reads it in findEventTarget (:6820) and exports it (:10102). Call chain confirmed: createMultichart -> createChildSurface (createMaster.js:138 -> :384) -> addNativeDestination (:456 -> :278). Delete chain: SciChartSurfaceBase.delete (:470) removeDestination (:473) -> deletables (:481) -> 2D deletable (createMaster.js:415-455) -> resyncNativeDestinations (:623-654) re-adds only survivors via addNativeDestination (:632), so the deleted '#<root>_2D' key keeps pointing at the detached canvas; 3D deletable (:516-544) likewise. Key is `${rootId}_2D` (sciChartInitCommon.js:24, root id taken from the user's div at :100, never generated), so growth needs unique root ids per mount, as the scale field says. autoDisposeWasmContextValue defaults to false (SciChartSurfaceBase.js:819), so the Module lives for the session. Fix checked: same-id replacement deletes the old surface (:409) before addNativeDestination for the new one (:456), so the key is set again; the delete runs after resync and before the auto-dispose branch, so the proxy is still live. Rule LIFE-05 Do ('never keep removed elements in ... module state') fits exactly. Medium kept: WebGPU-only (IS_WEB_GPU: flag or auto mode on Mac, constants/app.js:37) and app-dependent ids, retained bytes per entry unknown (H part already stated).
 
