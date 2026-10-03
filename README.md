@@ -22,9 +22,9 @@ Nothing here is measured. Every issue names the recipe that would measure it.
 
 | Status | Issues |
 |---|---|
-| Verified by an adversarial reviewer (confirmed or corrected) | 28 |
+| Verified by an adversarial reviewer (confirmed or corrected) | 29 |
 | Refuted by an adversarial reviewer (file kept, marked) | 0 |
-| **Not yet verified** (reviewer only) | 66 |
+| **Not yet verified** (reviewer only) | 65 |
 
 Verified so far: all issues of `s01-surface-render` and `s02-init-loading`, plus the high-severity issues of the slices listed in the coverage table. Unverified issues are strong candidates: re-check the quoted line and the caller chain before acting. Raw data for resuming: [`data/findings.json`](data/findings.json) (`verified: false`).
 
@@ -46,7 +46,7 @@ Verified so far: all issues of `s01-surface-render` and `s02-init-loading`, plus
 | [012](issues/012-rollover-marker-typo-rebuilds-svg-and-forces-layout.md) | high | Layout | RolloverMarkerSvgAnnotation never caches its color (=== typo), so every render re-parses each marker SVG and forces a layout through getBBox | `esm/Charting/Visuals/Annotations/RolloverMarkerSvgAnnotation.js:34` | S | yes | small |
 | [013](issues/013-svgline-axis-label-getbbox-every-render-even-hidden.md) | high | Layout | CursorModifier's default SVG crosshair (SvgLineAnnotation) rewrites its axis labels and calls getBBox on every render, also while the crosshair is hidden | `esm/Charting/Visuals/Annotations/SvgLineAnnotation.js:331` | S | yes | small |
 | [014](issues/014-legend-rebuild-leaks-isvisiblechanged-handlers-and-dom.md) | high | Memory and lifecycle | Every legend rebuild leaks one rs.isVisibleChanged subscription per series, and with it the old detached legend DOM; detach never releases them | `esm/Charting/Visuals/Legend/SciChartLegendBase.js:54` | S | yes | small |
-| [015](issues/015-overview-annotation-forced-layout-and-adorner-reparse-per-re.md) | high | Layout | SciChartOverview's range-selection annotations force a layout (getBoundingClientRect, result unused) and re-parse the grip adorner on every overview render | `esm/Charting/Visuals/Annotations/OverviewCustomResizableAnnotation.js:230` | S | no | small |
+| [015](issues/015-overview-annotation-forced-layout-and-adorner-reparse-per-re.md) | high | Layout | SciChartOverview's range-selection annotations force a layout (getBoundingClientRect, result unused) and re-parse the grip adorner on every overview render | `esm/Charting/Visuals/Annotations/OverviewCustomResizableAnnotation.js:230` | S | yes | small |
 | [016](issues/016-hlc-getxrange-leaks-minmax-result.md) | high | Memory and lifecycle | HlcDataSeries.getXRange (horizontal error bars) leaks one wasm SCRTDoubleRange per call and rescans the full data each time | `esm/Charting/Model/HlcDataSeries.js:186` | S | no | small |
 | [017](issues/017-parsecolor-uncached-per-point-palette.md) | high | JS execution | parseColorToUIntArgb re-parses the same color strings for every point on every render (no cache) | `esm/utils/parseColor.js:31` | S | no | small |
 | [018](issues/018-filters-on-fifo-source-grow-unbounded.md) | high | Memory and lifecycle | Filters over a FIFO source append on every source append but default to a non-FIFO output, so they grow without bound | `esm/Charting/Model/Filters/XyFilterBase.js:32` | S | no | small |
@@ -137,7 +137,7 @@ Verified so far: all issues of `s01-surface-render` and `s02-init-loading`, plus
 | `s04-drawing-providers` | 10 | 5 verified, 0 refuted, 5 not verified |
 | `s05-labels-hittest-anim` | 5 | 3 verified, 0 refuted, 2 not verified |
 | `s06-axis-text` | 7 | 3 verified, 0 refuted, 4 not verified |
-| `s07-annotations-legend` | 10 | 3 verified, 0 refuted, 7 not verified |
+| `s07-annotations-legend` | 10 | 4 verified, 0 refuted, 6 not verified |
 | `s08-data-series` | 9 | not verified yet |
 | `s09-filters-numerics-utils` | 7 | not verified yet |
 | `s10-modifiers-input` | 7 | not verified yet |
