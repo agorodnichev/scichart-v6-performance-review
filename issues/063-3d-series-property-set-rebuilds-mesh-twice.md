@@ -8,8 +8,8 @@
 | Pipeline stage | JS execution (`js`) |
 | Metric | INP (also frame time) |
 | Evidence | S — static, mechanism certain (not measured) |
-| Verification | **not yet verified**: reviewer-only candidate, see README "Verification status" |
-| Rule | DATA-06 (web-performance skill) |
+| Verification | verified by an independent adversarial reviewer (corrected) |
+| Rule | CNV-01 (web-performance skill) |
 | Effort to fix | medium |
 
 ## Code
@@ -93,5 +93,5 @@ measure.md#inp: a button that sets stroke, strokeThickness and pointMarker.size 
 ## Review notes
 
 - Found by reviewer slice `s12-pie-3d-surface`.
-- Not yet adversarially verified. The code quote and line numbers come from the slice reviewer; re-check them before acting.
+- Adversarial verification (corrected): Re-read PointLine3DSceneEntity.js:52-63 (quote matches verbatim; :60 is the sync updateSeries) and updateSeries :73-105 (native setters, strokeDashArray copy, rebuildPointMetadata O(N) loop RenderableSeriesSceneEntity.js:78-106, UpdateMeshesVec :104). Chain: setter e.g. stroke BaseRenderableSeries3D.js:134-138 (equality-guarded) or pointMarker setter :175-180 / pointMarker property events :329-331 -> notifyPropertyChanged :312-318 -> sceneEntity.notifySeriesPropertyChanged -> sync updateSeries -> super RenderableSeriesSceneEntity.js:53-56 sets isRenderableSeriesPropertyChanged, and :315-317 invalidates. Nothing resets the flag after the sync rebuild, so the next frame's Update (:31-38) sees validate() false (RenderableSeriesSceneEntityState.js:86-89) and calls updateSeries again, then reset (:97-103). Same for ScatterPointsSceneEntity.js:55-57 and ColumnSceneEntity.js:43-56. Column: updateSeries :74-76 writes pointMarker3D.fill unconditionally; BasePointMarker3D.js:59-62 has no equality check and raises propertyChanged (:80-83) -> series notifies 'pointMarker.fill' -> flag set + invalidateElement; reset() in the same Update clears the flag, but SciChart3DSurface.invalidateElement (:569-598) already requested a draw because render() cleared isInvalidated at its start (SciChart3DRenderer.js:72), so exactly one extra frame with no rebuild. Fix checked: updateSeries returns early without currentRenderPassData (:75), the pointMarker setter does not delete the old marker (:175-180) and Update runs before the native draw, so deferring to the frame is safe; the Column else-if rewrite keeps OPACITY handling; the fill equality guard stops the self-notify. Severity medium (discrete property sets; an app animating pointMarker.size pays 2x per frame) and evidence S kept. Correction: rule DATA-06 -> CNV-01 (handlers set dirty flags and the frame draws the latest state; DATA-06 is about live data message flushing, which this is not).
 

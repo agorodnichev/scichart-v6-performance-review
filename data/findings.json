@@ -3578,7 +3578,7 @@
   "stage": "js",
   "severity": "medium",
   "evidence": "S",
-  "rule": "DATA-06",
+  "rule": "CNV-01",
   "metric": "INP (also frame time)",
   "effort": "medium",
   "primary": {
@@ -3617,10 +3617,12 @@
    }
   ],
   "slice": "s12-pie-3d-surface",
-  "verified": false,
+  "verified": true,
   "merged_from": [],
   "file": "063-3d-series-property-set-rebuilds-mesh-twice.md",
-  "refuted": false
+  "refuted": false,
+  "verdict": "corrected",
+  "verification_notes": "Re-read PointLine3DSceneEntity.js:52-63 (quote matches verbatim; :60 is the sync updateSeries) and updateSeries :73-105 (native setters, strokeDashArray copy, rebuildPointMetadata O(N) loop RenderableSeriesSceneEntity.js:78-106, UpdateMeshesVec :104). Chain: setter e.g. stroke BaseRenderableSeries3D.js:134-138 (equality-guarded) or pointMarker setter :175-180 / pointMarker property events :329-331 -> notifyPropertyChanged :312-318 -> sceneEntity.notifySeriesPropertyChanged -> sync updateSeries -> super RenderableSeriesSceneEntity.js:53-56 sets isRenderableSeriesPropertyChanged, and :315-317 invalidates. Nothing resets the flag after the sync rebuild, so the next frame's Update (:31-38) sees validate() false (RenderableSeriesSceneEntityState.js:86-89) and calls updateSeries again, then reset (:97-103). Same for ScatterPointsSceneEntity.js:55-57 and ColumnSceneEntity.js:43-56. Column: updateSeries :74-76 writes pointMarker3D.fill unconditionally; BasePointMarker3D.js:59-62 has no equality check and raises propertyChanged (:80-83) -> series notifies 'pointMarker.fill' -> flag set + invalidateElement; reset() in the same Update clears the flag, but SciChart3DSurface.invalidateElement (:569-598) already requested a draw because render() cleared isInvalidated at its start (SciChart3DRenderer.js:72), so exactly one extra frame with no rebuild. Fix checked: updateSeries returns early without currentRenderPassData (:75), the pointMarker setter does not delete the old marker (:175-180) and Update runs before the native draw, so deferring to the frame is safe; the Column else-if rewrite keeps OPACITY handling; the fill equality guard stops the self-notify. Severity medium (discrete property sets; an app animating pointMarker.size pays 2x per frame) and evidence S kept. Correction: rule DATA-06 -> CNV-01 (handlers set dirty flags and the frame draws the latest state; DATA-06 is about live data message flushing, which this is not)."
  },
  {
   "id": "064",
