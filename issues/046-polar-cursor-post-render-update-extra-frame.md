@@ -8,7 +8,7 @@
 | Pipeline stage | Tasks and scheduling (`tasks`) |
 | Metric | frame time (extra rAF + SVG rebuild), also per-move script time |
 | Evidence | S — static, mechanism certain (not measured) |
-| Verification | **not yet verified**: reviewer-only candidate, see README "Verification status" |
+| Verification | verified by an independent adversarial reviewer (corrected) |
 | Rule | SC-14 (web-performance skill) |
 | Effort to fix | small |
 
@@ -26,9 +26,9 @@ Full render: SciChartRenderer.render sets isInvalidated = false (SciChartRendere
 
 ## Why it costs
 
-Every full render while hovering leaves one more animation frame that tears down and re-parses the tooltip SVG, which has a feGaussianBlur filter with a new id, and repaints it. The first frame after the pointer stops therefore does one more render than needed. Each move also hit-tests every series twice: in the handler, then again after the render.
+After each full render while the pointer rests in the series area over a hit series, update() schedules one more animation frame (renderDomOnly) that tears down and re-parses the tooltip SVG, which has a feGaussianBlur filter with a new id, and repaints it. A full invalidation that arrives before that frame cancels it (SciChartSurface.js:593-595), so during continuous movement it is mostly absorbed. It shows as one extra frame after the pointer stops, and as one extra DOM-only frame after each full render of a live chart while the user hovers. Each move also hit-tests every series twice: in the handler, then again after the render that the moved radial/circular line triggered.
 
-**Scale where it matters:** Polar charts with PolarCursorModifier({ showTooltip: true }) or a tooltipLegendTemplate; N series. This runs per pointer event and after every full render while the pointer is in the series area.
+**Scale where it matters:** Polar charts with PolarCursorModifier({ showTooltip: true }) or a tooltipLegendTemplate (showTooltip defaults to false, PolarCursorModifier.js:84), with N series. The extra frame needs at least one series hit, because the default template returns a constant "<svg></svg>" otherwise (CursorModifier.js:668-669). The double hit test per pointermove also needs a radial or circular line (showRadialLine/showCircularLine), whose move forces a full render.
 
 ## Fix (library side)
 
@@ -74,5 +74,5 @@ measure.md#fps idle check: polar chart with PolarCursorModifier({ showTooltip: t
 ## Review notes
 
 - Found by reviewer slice `s10-modifiers-input`.
-- Not yet adversarially verified. The code quote and line numbers come from the slice reviewer; re-check them before acting.
+- Adversarial verification (corrected): Re-read PolarCursorModifier.js:246-279 (modifierMouseMove -> update at :267; onParentSurfaceRendered -> update at :277-278), :200-222 (tooltip is a CursorTooltipSvgAnnotation with defaultCursorTooltipSvgTemplate), :522-532 (getSeriesInfos hit-tests every included series), :533-621 (update; seriesInfos set at :619 only when showTooltip || tooltipLegendTemplate, showTooltip defaults to false at :84); SciChartRenderer.js:88-320 (render: layout-complete hooks :169-182, isInvalidated = false at :188, onParentSurfaceRendered at :318 -> :742-758), :39-81 (renderDomOnly does not call any modifier hook, so there is no loop); CursorTooltipSvgAnnotation.js:52-62 (content guard), :137-146 (clear()+create()); CursorModifier.js:663-712 (Date.now() filter id; constant "<svg></svg>" when no series is hit), :292-298 (cartesian CursorModifier uses onParentSurfaceLayoutComplete); DomAnnotationBase.js:247-250 (svgOnly unless reDrawChartOnChange; SciChartDefaults.alwaysRedrawFullChartOnSvgChange = false at SciChartDefaults.js:128); SciChartSurface.js:581-600 (svgOnly path schedules requestAnimationFrame(renderDomOnly) when not invalidated; a later full invalidate cancels it). Mechanism confirmed: after every full render with the pointer in the series area and at least one series hit, the post-render update() builds a new SVG string that never equals the previous one, so it schedules a renderDomOnly frame that tears down and re-parses the tooltip SVG. Every pointermove moves the render-context radial/circular LineAnnotations (full invalidate), so the post-render update repeats the handler's hit test of every series. Corrections: why_it_costs and scale overstated the extra frame; the scheduled rAF is cancelled when a full invalidation arrives first (SciChartSurface.js:593-595), so during continuous movement it is usually absorbed, and the extra frame is certain after the pointer stops or on idle-hover full renders, and only when a series is hit and showTooltip or tooltipLegendTemplate is set. The double hit test per move needs showTooltip/tooltipLegendTemplate plus a radial or circular line (both default on). Fix diff checked: changes in onParentSurfaceLayoutComplete run before :188, so the new positions land in the same frame and their invalidations are absorbed. Severity medium and evidence S kept.
 
