@@ -2,7 +2,7 @@
 
 Static performance review of the published npm package [`scichart@6.0.6`](https://www.npmjs.com/package/scichart/v/6.0.6) (ESM build: 822 JS files, ~97k lines of compiled, unminified TypeScript, plus the emscripten glue). The C++ engine ships only as `.wasm` and is out of scope.
 
-**One issue, one file:** [`issues/`](issues/) · 94 open issues: **28 high**, 51 medium, 15 low.
+**One issue, one file:** [`issues/`](issues/) · 94 open issues: **28 high**, 50 medium, 16 low.
 
 ## Method
 
@@ -22,9 +22,9 @@ Nothing here is measured. Every issue names the recipe that would measure it.
 
 | Status | Issues |
 |---|---|
-| Verified by an adversarial reviewer (confirmed or corrected) | 50 |
+| Verified by an adversarial reviewer (confirmed or corrected) | 51 |
 | Refuted by an adversarial reviewer (file kept, marked) | 0 |
-| **Not yet verified** (reviewer only) | 44 |
+| **Not yet verified** (reviewer only) | 43 |
 
 Each issue file and the index below show its own verification status; all high-severity issues are verified. Unverified issues are strong candidates: re-check the quoted line and the caller chain before acting. Raw data for resuming: [`data/findings.json`](data/findings.json) (`verified: false`).
 
@@ -101,7 +101,7 @@ Each issue file and the index below show its own verification status; all high-s
 | [067](issues/067-embind-generic-invoker-per-call-alloc.md) | medium | JS execution | Every embind call runs two generic rest/spread layers: craftInvokerFunction's shared invokerFn (DYNAMIC_EXECUTION=0, no EMBIND_AOT) and the 'p'-signature getDynCaller/dynCall wrapper | `_glue-pretty/scichart.js:4648` | H | yes | small |
 | [068](issues/068-builder-json-reviver-runs-per-data-point.md) | medium | JS execution | The Builder parses definition strings with a reviver, so JSON.parse calls chartReviver for every value, including every data point in xValues/yValues | `esm/Builder/helpers/chartReviver.js:6` | H | yes | small |
 | [069](issues/069-label-cache-prune-evicts-visible-labels.md) | medium | GPU upload | labelCache.pruneCache evicts labels that are on screen whenever the visible label set exceeds maxSize (200), every 200 ms, and they are re-created on the next frame | `esm/Charting/Visuals/Axis/LabelProvider/LabelCache.js:103` | H | yes | small |
-| [070](issues/070-label-provider-setters-flush-cache-without-change.md) | medium | JS execution | LabelProvider setters (precision, numericFormat, prefix, postfix, formatLabel...) flush the label caches even when the value is unchanged | `esm/Charting/Visuals/Axis/LabelProvider/LabelProvider.js:48` | H | no | small |
+| [070](issues/070-label-provider-setters-flush-cache-without-change.md) | low | JS execution | LabelProvider setters (precision, numericFormat, prefix, postfix, formatLabel...) flush the label caches even when the value is unchanged | `esm/Charting/Visuals/Axis/LabelProvider/LabelProvider.js:48` | H | yes | small |
 | [071](issues/071-two-1920x1080-scratch-canvases-per-axis.md) | medium | Memory and lifecycle | Every axis owns two 1920x1080 willReadFrequently scratch canvases (axis renderer and title renderer), each about 7.9 MiB of CPU bitmap once used | `esm/Charting/Visuals/TextureManager/TextureManager.js:23` | H | no | small |
 | [072](issues/072-textannotation-text-change-reparses-and-measures-twice.md) | medium | JS execution | TextAnnotation rebuilds its whole SVG through the HTML parser and calls getBBox one to two times on every text change | `esm/Charting/Visuals/Annotations/TextAnnotation.js:198` | H | no | small |
 | [073](issues/073-nativetext-wraps-and-remeasures-every-frame.md) | medium | JS execution | NativeTextAnnotation with wrapTo re-wraps and re-measures its text on every frame, allocating one wasm LineBounds per word | `esm/Charting/Visuals/Annotations/NativeTextAnnotation.js:359` | H | no | small |
@@ -136,7 +136,7 @@ Each issue file and the index below show its own verification status; all high-s
 | `s03-renderable-series` | 8 | 5 verified, 0 refuted, 3 not verified |
 | `s04-drawing-providers` | 10 | 9 verified, 0 refuted, 1 not verified |
 | `s05-labels-hittest-anim` | 5 | 3 verified, 0 refuted, 2 not verified |
-| `s06-axis-text` | 7 | 5 verified, 0 refuted, 2 not verified |
+| `s06-axis-text` | 7 | 6 verified, 0 refuted, 1 not verified |
 | `s07-annotations-legend` | 10 | 5 verified, 0 refuted, 5 not verified |
 | `s08-data-series` | 9 | 1 verified, 0 refuted, 5 not verified |
 | `s09-filters-numerics-utils` | 7 | 3 verified, 0 refuted, 3 not verified |
