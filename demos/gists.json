@@ -107,6 +107,18 @@
     "fiddle": "https://jsfiddle.net/gh/gist/library/pure/0556b0ee913da2c40a32ee2bb9152673/",
     "gistUrl": "https://gist.github.com/0556b0ee913da2c40a32ee2bb9152673"
   },
+  "019": {
+    "gist": "d40376bd6a35d425a0cbd127f0cc8777",
+    "dir": "019-3d-autorange-full-scan",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/d40376bd6a35d425a0cbd127f0cc8777/",
+    "gistUrl": "https://gist.github.com/d40376bd6a35d425a0cbd127f0cc8777"
+  },
+  "020": {
+    "gist": "d004b02a3d5dea3228c0badd9431fbe0",
+    "dir": "020-mesh-tooltip-render-loop",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/d004b02a3d5dea3228c0badd9431fbe0/",
+    "gistUrl": "https://gist.github.com/d004b02a3d5dea3228c0badd9431fbe0"
+  },
   "021": {
     "gist": "eb260d17a53d0c6e3dfeedaf5ce73d65",
     "dir": "021-stacked-accumulation-push-back-rebuild",
@@ -136,6 +148,12 @@
     "dir": "025-datapointselection-metadata-objects",
     "fiddle": "https://jsfiddle.net/gh/gist/library/pure/8dae0fb7ec373bb600d80e41e4bce814/",
     "gistUrl": "https://gist.github.com/8dae0fb7ec373bb600d80e41e4bce814"
+  },
+  "026": {
+    "gist": "31083c7d2abcb756d8bc1ee0b9adb7d2",
+    "dir": "026-3d-hittest-per-series",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/31083c7d2abcb756d8bc1ee0b9adb7d2/",
+    "gistUrl": "https://gist.github.com/31083c7d2abcb756d8bc1ee0b9adb7d2"
   },
   "027": {
     "gist": "a9c69252ac92e115113c4e4ff04161b5",
@@ -263,11 +281,29 @@
     "fiddle": "https://jsfiddle.net/gh/gist/library/pure/ad5fce75f9c8aa855d78ba36c49ebc0d/",
     "gistUrl": "https://gist.github.com/ad5fce75f9c8aa855d78ba36c49ebc0d"
   },
+  "048": {
+    "gist": "85ee78e009e2143210cf0d4f8e8d8922",
+    "dir": "048-3d-axis-descriptor-push",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/85ee78e009e2143210cf0d4f8e8d8922/",
+    "gistUrl": "https://gist.github.com/85ee78e009e2143210cf0d4f8e8d8922"
+  },
   "049": {
     "gist": "348b5da582d41b89ce9e6265ed6eb4ef",
     "dir": "049-pie-label-forced-layout",
     "fiddle": "https://jsfiddle.net/gh/gist/library/pure/348b5da582d41b89ce9e6265ed6eb4ef/",
     "gistUrl": "https://gist.github.com/348b5da582d41b89ce9e6265ed6eb4ef"
+  },
+  "050": {
+    "gist": "b673d6e7b69ab60d5205e218a617f308",
+    "dir": "050-hover-triggers-geometry-rebuild",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/b673d6e7b69ab60d5205e218a617f308/",
+    "gistUrl": "https://gist.github.com/b673d6e7b69ab60d5205e218a617f308"
+  },
+  "051": {
+    "gist": "8c9a9cbac6767167b811d1dbda9c7933",
+    "dir": "051-tooltip3d-stale-after-leave",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/8c9a9cbac6767167b811d1dbda9c7933/",
+    "gistUrl": "https://gist.github.com/8c9a9cbac6767167b811d1dbda9c7933"
   },
   "052": {
     "gist": "3c571989601271c913e7a79453e9c083",
@@ -335,6 +371,18 @@
     "fiddle": "https://jsfiddle.net/gh/gist/library/pure/4cdd9a657ddecb049c8213cee8b5485d/",
     "gistUrl": "https://gist.github.com/4cdd9a657ddecb049c8213cee8b5485d"
   },
+  "063": {
+    "gist": "7ff63fce336ce7bd124a1acd63b8fe9d",
+    "dir": "063-3d-property-set-double-rebuild",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/7ff63fce336ce7bd124a1acd63b8fe9d/",
+    "gistUrl": "https://gist.github.com/7ff63fce336ce7bd124a1acd63b8fe9d"
+  },
+  "064": {
+    "gist": "5c6d05eb28040ad3bcf1d39f4d0332c8",
+    "dir": "064-3d-tooltip-svg-reparse",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/5c6d05eb28040ad3bcf1d39f4d0332c8/",
+    "gistUrl": "https://gist.github.com/5c6d05eb28040ad3bcf1d39f4d0332c8"
+  },
   "065": {
     "gist": "cb154fd7856f52ead5b4727480362f28",
     "dir": "065-pie-sync-redraw-timer-animations",
@@ -389,6 +437,12 @@
     "fiddle": "https://jsfiddle.net/gh/gist/library/pure/29302f94ef6f5ebe82cffd4ae0fafc3a/",
     "gistUrl": "https://gist.github.com/29302f94ef6f5ebe82cffd4ae0fafc3a"
   },
+  "074": {
+    "gist": "db56358e4d08b2c65f788284a4f406bc",
+    "dir": "074-selection-pass-after-detach",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/db56358e4d08b2c65f788284a4f406bc/",
+    "gistUrl": "https://gist.github.com/db56358e4d08b2c65f788284a4f406bc"
+  },
   "075": {
     "gist": "a033d8429f93f75587566d51acbecf9a",
     "dir": "075-rectangle-series-no-visible-range-culling",
@@ -406,6 +460,12 @@
     "dir": "077-nonpassive-wheel-listener",
     "fiddle": "https://jsfiddle.net/gh/gist/library/pure/fd478605c56b0a0c4983f7527c2f5b51/",
     "gistUrl": "https://gist.github.com/fd478605c56b0a0c4983f7527c2f5b51"
+  },
+  "078": {
+    "gist": "b4ecd441907484d868667390182d29c3",
+    "dir": "078-3d-metadata-loop-no-metadata",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/b4ecd441907484d868667390182d29c3/",
+    "gistUrl": "https://gist.github.com/b4ecd441907484d868667390182d29c3"
   },
   "079": {
     "gist": "ac89699b7425ba3b109da404d39a939c",

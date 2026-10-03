@@ -9,6 +9,7 @@
 | Metric | frame time |
 | Evidence | H — hypothesis, depends on data size/hardware (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/b4ecd441907484d868667390182d29c3/): reproduced on WebGL and WebGPU ([source](../demos/078-3d-metadata-loop-no-metadata/)) |
 | Rule | V8-01 (web-performance skill) |
 | Effort to fix | medium |
 

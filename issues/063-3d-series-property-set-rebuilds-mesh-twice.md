@@ -9,8 +9,13 @@
 | Metric | INP (also frame time) |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/7ff63fce336ce7bd124a1acd63b8fe9d/): reproduced on WebGL and WebGPU ([source](../demos/063-3d-property-set-double-rebuild/)) |
 | Rule | CNV-01 (web-performance skill) |
 | Effort to fix | medium |
+
+## Demo findings
+
+Also seen: a 3D pointMarker passed in the series constructor options is never subscribed, so later pointMarker.size changes are silently ignored (the demo assigns markers through the setter). See the [demo](https://jsfiddle.net/gh/gist/library/pure/7ff63fce336ce7bd124a1acd63b8fe9d/).
 
 ## Code
 

@@ -9,6 +9,7 @@
 | Metric | frame time on hover enter/leave and click selection (also INP for selection click) |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/b673d6e7b69ab60d5205e218a617f308/): reproduced on WebGL and WebGPU ([source](../demos/050-hover-triggers-geometry-rebuild/)) |
 | Rule | GPU-08, CNV-07 (web-performance skill) |
 | Effort to fix | small |
 

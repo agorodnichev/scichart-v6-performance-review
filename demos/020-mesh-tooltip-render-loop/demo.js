@@ -4,11 +4,11 @@ const META = {
   issue: "issues/020-mesh-tooltip-hittest-equality-render-loop.md",
   severity: "high",
   claim: "HitTestInfo3D.isEqual compares selectionIjIndices by reference, and every mesh hit test allocates a new Point for it. Each render's tooltip update therefore sees a 'new' hit, invalidates the tooltip, which requests the next render: the chart redraws on every display frame with no input.",
-  method: "<p>One SurfaceMeshRenderableSeries3D (50 x 50 UniformGridDataSeries3D) with a default TooltipModifier3D. The demo first finds a pointer position over the mesh with series.hitTest(), then sends one pointer move there and stops. With no further input it counts, over 2-second windows: SciChart3DRenderer.render() calls, engine draw requests (wasm TSRRequestCanvasDraw), mesh hit tests, HitTestInfo3D.isEqual results, tooltip SVG parses (Range.createContextualFragment) and mesh geometry rebuilds (SurfaceMeshSceneEntity.updateSeries).</p><p>Windows: before the pointer enters (baseline), pointer resting as shipped, and pointer resting at the same position after HitTestInfo3D.isEqual is patched with the issue's app-side workaround (selectionIjIndices compared by value). The patch is removed afterwards.</p>",
+  method: "<p>One SurfaceMeshRenderableSeries3D (50 x 50 UniformGridDataSeries3D) with a default TooltipModifier3D. The demo first finds a pointer position over the mesh with series.hitTest(), then sends one pointer move there and stops. With no further input it counts, over 2-second windows: SciChart3DRenderer.render() calls, engine draw requests (wasm TSRRequestCanvasDraw), mesh hit tests, HitTestInfo3D.isEqual results, tooltip SVG parses (Range.createContextualFragment) and the JS time spent in the surface's drawing loop.</p><p>Windows: before the pointer enters (baseline), pointer resting as shipped, and pointer resting at the same position after HitTestInfo3D.isEqual is patched with the issue's app-side workaround (selectionIjIndices compared by value). The patch is removed afterwards.</p>",
 };
 
 async function demo(P) {
-  const { NumericAxis3D, SurfaceMeshRenderableSeries3D, UniformGridDataSeries3D, GradientColorPalette, TooltipModifier3D, Vector3, Point, HitTestInfo3D, SurfaceMeshSceneEntity } = P.SciChart;
+  const { NumericAxis3D, SurfaceMeshRenderableSeries3D, UniformGridDataSeries3D, GradientColorPalette, TooltipModifier3D, Vector3, Point, HitTestInfo3D } = P.SciChart;
   const GRID = 50, WINDOW = 2000;
 
   const { sciChart3DSurface: scs, wasmContext } = await P.createSurface3D("chart", {
@@ -55,7 +55,6 @@ async function demo(P) {
   P.hookMethod(scs.sciChart3DRenderer, "render", { name: "3D render()" });
   P.hookMethod(scs, "doDrawingLoop", { name: "doDrawingLoop()", time: true });
   P.hookMethod(mesh, "hitTest", { name: "mesh hitTest()" });
-  P.hookMethod(SurfaceMeshSceneEntity.prototype, "updateSeries", { name: "mesh updateSeries()" });
   const shippedIsEqual = HitTestInfo3D.isEqual;
   const countingIsEqual = (impl) => function (a, b) {
     const r = impl(a, b);
@@ -73,7 +72,6 @@ async function demo(P) {
       hitTests: r.total("mesh hitTest()") / s,
       notEqual: r.total("isEqual false") / s,
       parses: r.total("createContextualFragment (HTML/SVG parse)") / s,
-      meshRebuilds: r.total("mesh updateSeries()") / s,
       drawMs: r.total("doDrawingLoop()", "t") / s,
     };
     P.log(`${label}: ${JSON.stringify(res)}`);
@@ -114,13 +112,12 @@ async function demo(P) {
       ["Mesh hit tests per second", baseline.hitTests, shipped.hitTests, fixed.hitTests],
       ["HitTestInfo3D.isEqual returning false, per second", baseline.notEqual, shipped.notEqual, fixed.notEqual],
       ["Tooltip SVG parses per second", baseline.parses, shipped.parses, fixed.parses],
-      ["Mesh geometry rebuilds per second (SurfaceMeshSceneEntity.updateSeries)", baseline.meshRebuilds, shipped.meshRebuilds, fixed.meshRebuilds],
       ["JS time in doDrawingLoop per second, ms", baseline.drawMs, shipped.drawMs, fixed.drawMs],
       ["Display refresh rate, frames per second", refresh, refresh, refresh],
     ],
     notes: [
       "Nothing changes between the two 'pointer resting' windows except the equality check: same pointer position, same data, no input. Each render runs the hit test, finds a new Point in selectionIjIndices, sets tooltipAnnotation.seriesInfo, and that setter invalidates the surface for the next frame.",
-      "Each loop iteration also rebuilds the mesh geometry: SurfaceMeshSceneEntityState.validate() returns super.validate(...) && isColorMapTextureInvalid, which is false after every reset, so every rendered frame of a surface mesh runs updateSeries (an extra defect seen here, not part of this issue). Counts do not depend on hardware; the time row does.",
+      "Each iteration is a full surface render: the JS render pass, the native scene draw with the selection pass (whose cost grows with mesh size and series count), the hit test and the tooltip SVG rebuild. It stops only when the pointer moves off the mesh (or, with issue 051, never, if it leaves the chart from over the mesh). Counts do not depend on hardware; the time row does.",
     ],
     metrics: { refresh, spot, baseline, shipped, fixed },
   });

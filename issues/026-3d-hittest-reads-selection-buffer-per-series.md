@@ -9,6 +9,7 @@
 | Metric | frame time during hover/orbit with many series (also INP for click selection) |
 | Evidence | H — hypothesis, depends on data size/hardware (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/31083c7d2abcb756d8bc1ee0b9adb7d2/): reproduced on WebGL and WebGPU ([source](../demos/026-3d-hittest-per-series/)) |
 | Rule | EVT-03, SC-27 (web-performance skill) |
 | Effort to fix | medium |
 
