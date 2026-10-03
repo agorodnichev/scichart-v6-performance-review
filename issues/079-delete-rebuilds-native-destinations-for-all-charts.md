@@ -8,7 +8,7 @@
 | Pipeline stage | Tasks and scheduling (`tasks`) |
 | Metric | INP (route change or panel close that unmounts charts), also frame time under WebGPU |
 | Evidence | H — hypothesis, depends on data size/hardware (not measured) |
-| Verification | **not yet verified**: reviewer-only candidate, see README "Verification status" |
+| Verification | verified by an independent adversarial reviewer (confirmed) |
 | Rule | V8-01 (web-performance skill) |
 | Effort to fix | medium |
 
@@ -83,5 +83,5 @@ measure.md#inp: a view with 50 create() charts and a click that unmounts it (rou
 ## Review notes
 
 - Found by reviewer slice `x2-data-and-lifecycle`.
-- Not yet adversarially verified. The code quote and line numbers come from the slice reviewer; re-check them before acting.
+- Adversarial verification (confirmed): Re-read createMaster.js:414-417 (code_quote matches verbatim; resync at :417), resyncNativeDestinations :623-654 (clearDestinations('2d') :627, chartInitObj.ClearDestinations() :631, addNativeDestination per survivor :632, readdExternalDestinations :633, WebGPU-only rAF force-invalidate of all survivors :640-653), addNativeDestination :278-293 (createChartDestination, SCRTSurfaceDestination.implement, AddDestination, SetFPSCounterEnabled, addDestination spread at Core/Globals.js:35), and Core/Globals.js:46-55 (unshift per removed entry). Delete chain confirmed: SciChartSurface.delete (SciChartSurface.js:671-714) -> super.delete -> SciChartSurfaceBase.delete removeDestination(this) (:473) then deletables (:481) -> 2D deletable (createMaster.js:415-455). No guard: the resync runs unconditionally per delete, there is no batching or dirty flag, and sub-charts are not separate destinations. 3D deletable resyncs too (:526-528). So deleting k of N charts in one task costs sum of survivors = N(N-1)/2 re-adds for a full teardown. Fix checked: removeDestination already dropped the deleted entry before the deletables run, so dropping the canvas2dId exclusion is safe (MemoryUsageHelper proxies hit the id fallback at Globals.js:126); the deferred microtask runs before any rAF/render, the chartInitializer.Draw lookup (:560-569) ignores the stale native entry anyway; the guard sciChartMaster.wasmContext === wasmContext works because disposeMultiChart clears it (createMaster.js:214) on the immediate auto-dispose path (:434), while the timed dispose path (:426-431) fires after the microtask; the same-id replacement path (:407-456) ends with the new surface in the registry, so the deferred resync re-adds it and the final native list equals the old sync result. Rule V8-01 (merge repeated passes into one) fits an interaction path. Severity medium (once per discrete teardown interaction) and evidence H (cost depends on N and embind crossing cost) are right; effort medium matches the new helper.
 

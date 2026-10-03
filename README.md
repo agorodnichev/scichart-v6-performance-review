@@ -22,9 +22,9 @@ Nothing here is measured. Every issue names the recipe that would measure it.
 
 | Status | Issues |
 |---|---|
-| Verified by an adversarial reviewer (confirmed or corrected) | 82 |
+| Verified by an adversarial reviewer (confirmed or corrected) | 83 |
 | Refuted by an adversarial reviewer (file kept, marked) | 0 |
-| **Not yet verified** (reviewer only) | 12 |
+| **Not yet verified** (reviewer only) | 11 |
 
 Each issue file and the index below show its own verification status; all high-severity issues are verified. Unverified issues are strong candidates: re-check the quoted line and the caller chain before acting. Raw data for resuming: [`data/findings.json`](data/findings.json) (`verified: false`).
 
@@ -110,7 +110,7 @@ Each issue file and the index below show its own verification status; all high-s
 | [076](issues/076-pointer-offsetx-forced-layout-per-event.md) | medium | Layout | Every pointer and wheel event reads MouseEvent.offsetX/offsetY, which forces style and layout whenever anything on the page dirtied layout since the last frame | `esm/Charting/ChartModifiers/ModifierMouseArgs.js:57` | H | yes | medium |
 | [077](issues/077-nonpassive-wheel-listener-on-every-chart.md) | medium | Composite | MouseManager attaches a non-passive wheel listener to every chart canvas, even when no attached modifier uses the wheel, so a page scroll that starts over any chart waits for the main thread | `esm/Core/Mouse/MouseManager.js:74` | H | yes | medium |
 | [078](issues/078-3d-point-metadata-loop-runs-without-metadata.md) | medium | JS execution | Every 3D XYZ series rebuild walks all N metadata entries in JS, even when the series has no metadata and the result is 'all defaults' | `esm/Charting3D/Visuals/Primitives/RenderableSeriesSceneEntity.js:91` | H | yes | medium |
-| [079](issues/079-delete-rebuilds-native-destinations-for-all-charts.md) | medium | Tasks and scheduling | Deleting one create() chart clears and re-adds the native destination of every other chart: O(N) per delete, O(N^2) per dashboard teardown | `esm/Charting/Visuals/createMaster.js:417` | H | no | medium |
+| [079](issues/079-delete-rebuilds-native-destinations-for-all-charts.md) | medium | Tasks and scheduling | Deleting one create() chart clears and re-adds the native destination of every other chart: O(N) per delete, O(N^2) per dashboard teardown | `esm/Charting/Visuals/createMaster.js:417` | H | yes | medium |
 | [080](issues/080-invalidateelement-builds-debug-string-every-call.md) | low | JS execution | invalidateElement builds a Logger.debug template string on every call, even though debug logging is off by default | `esm/Charting/Visuals/SciChartSurface.js:572` | S | yes | small |
 | [081](issues/081-createsingle-context-loss-reloads-page.md) | low | Memory and lifecycle | A createSingle() canvas reloads the whole page on webglcontextlost, although monitorWebGL already handles loss and restore; past the context cap this becomes a reload loop | `esm/Charting/Visuals/sciChartInitCommon.js:195` | S | yes | small |
 | [082](issues/082-wasm-streaming-fallback-silent-refetch.md) | low | Network | When streaming compile fails (for example a wrong MIME type), the compiled-module cache silently fetches again and compiles from an ArrayBuffer, losing the overlap and the wasm code cache with no console message | `esm/Charting/Visuals/wasmModuleCache.js:28` | S | yes | small |
@@ -145,7 +145,7 @@ Each issue file and the index below show its own verification status; all high-s
 | `s12-pie-3d-surface` | 7 | 7 verified, 0 refuted, 0 not verified |
 | `s13-3d-series-modifiers` | 6 | 5 verified, 0 refuted, 0 not verified |
 | `x1-frame-path` | 6 | 3 verified, 0 refuted, 1 not verified |
-| `x2-data-and-lifecycle` | 7 | 2 verified, 0 refuted, 1 not verified |
+| `x2-data-and-lifecycle` | 7 | 3 verified, 0 refuted, 0 not verified |
 
 Per-slice notes on what was checked and found fine, and what static review could not decide: [`data/coverage.json`](data/coverage.json).
 
