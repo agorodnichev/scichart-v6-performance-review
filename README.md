@@ -22,11 +22,11 @@ Nothing here is measured. Every issue names the recipe that would measure it.
 
 | Status | Issues |
 |---|---|
-| Verified by an adversarial reviewer (confirmed or corrected) | 40 |
+| Verified by an adversarial reviewer (confirmed or corrected) | 41 |
 | Refuted by an adversarial reviewer (file kept, marked) | 0 |
-| **Not yet verified** (reviewer only) | 54 |
+| **Not yet verified** (reviewer only) | 53 |
 
-Verified so far: all issues of `s01-surface-render` and `s02-init-loading`, plus the high-severity issues of the slices listed in the coverage table. Unverified issues are strong candidates: re-check the quoted line and the caller chain before acting. Raw data for resuming: [`data/findings.json`](data/findings.json) (`verified: false`).
+Each issue file and the index below show its own verification status; all high-severity issues are verified. Unverified issues are strong candidates: re-check the quoted line and the caller chain before acting. Raw data for resuming: [`data/findings.json`](data/findings.json) (`verified: false`).
 
 ## Index
 
@@ -63,7 +63,7 @@ Verified so far: all issues of `s01-surface-render` and `s02-init-loading`, plus
 | [029](issues/029-wasm-fetch-waits-for-webgpu-device-and-glue.md) | medium | Network | The core wasm download and compile start only after the WebGPU adapter and device requests (auto mode on every Mac) and, with wasm64, after the glue chunk import | `esm/Charting/Visuals/createMaster.js:294` | S | yes | small |
 | [030](issues/030-datavalue-subchart-wrapper-forced-layout-per-frame.md) | medium | Layout | A DataValue-positioned sub-chart with a subChartContainer writes 4 inline styles and then reads clientWidth/clientHeight of its sections on every frame, forcing a synchronous layout per sub-chart | `esm/Charting/Visuals/SciChartSubSurface.js:207` | S | yes | medium |
 | [031](issues/031-charting3d-module-serial-nonstreaming-per-context.md) | medium | Script load | The 3D side module (scichart-charting3d.wasm) is fetched only after the core is up, read into an ArrayBuffer, copied twice through MEMFS and compiled from bytes in every wasm context: no streaming compile, no code cache, no shared compiled module | `esm/Charting/Visuals/moduleLoader.js:333` | S | yes | medium |
-| [032](issues/032-ohlc-yrange-per-point-embind-get-loop.md) | medium | JS execution | OHLC/candlestick Y autorange reads high and low with two embind get(i) calls per point on every frame | `esm/Charting/Visuals/RenderableSeries/BaseOhlcRenderableSeries.js:228` | S | no | small |
+| [032](issues/032-ohlc-yrange-per-point-embind-get-loop.md) | medium | JS execution | OHLC/candlestick Y autorange reads high and low with two embind get(i) calls per point on every frame | `esm/Charting/Visuals/RenderableSeries/BaseOhlcRenderableSeries.js:228` | S | yes | small |
 | [033](issues/033-style-animation-pointmarker-replaced-not-deleted.md) | medium | Memory and lifecycle | Style animations with a pointMarker style replace series.pointMarker without deleting the old one, leaking 3 sprite textures per run | `esm/Charting/Visuals/RenderableSeries/BaseRenderableSeries.js:1313` | S | no | small |
 | [034](issues/034-stacked-mountain-per-frame-palette-invalidation.md) | medium | Tasks and scheduling | StackedXyCollection.draw sets strokeY1DashArray on every child each frame, forcing a full palette recompute on paletted stacked mountains | `esm/Charting/Visuals/RenderableSeries/StackedXyCollection.js:200` | S | no | small |
 | [035](issues/035-palette-loop-wasm-call-per-point-in-getmetadataat.md) | medium | JS execution | Per-point palette loops call dataSeries.getMetadataAt for every point, which crosses into wasm (xValues.size(), plus getStartIndex() for FIFO) even when the series has no metadata | `esm/Charting/Visuals/RenderableSeries/DrawingProviders/BaseSeriesDrawingProvider.js:262` | S | no | small |
@@ -133,7 +133,7 @@ Verified so far: all issues of `s01-surface-render` and `s02-init-loading`, plus
 |---|---|---|
 | `s01-surface-render` | 7 | 7 verified, 0 refuted, 0 not verified |
 | `s02-init-loading` | 7 | 7 verified, 0 refuted, 0 not verified |
-| `s03-renderable-series` | 8 | 1 verified, 0 refuted, 7 not verified |
+| `s03-renderable-series` | 8 | 2 verified, 0 refuted, 6 not verified |
 | `s04-drawing-providers` | 10 | 5 verified, 0 refuted, 5 not verified |
 | `s05-labels-hittest-anim` | 5 | 3 verified, 0 refuted, 2 not verified |
 | `s06-axis-text` | 7 | 3 verified, 0 refuted, 4 not verified |

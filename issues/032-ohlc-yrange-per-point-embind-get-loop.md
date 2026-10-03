@@ -8,7 +8,7 @@
 | Pipeline stage | JS execution (`js`) |
 | Metric | frame time (pan, zoom, stream with yAxis autoRange Always) |
 | Evidence | S — static, mechanism certain (not measured) |
-| Verification | **not yet verified**: reviewer-only candidate, see README "Verification status" |
+| Verification | verified by an independent adversarial reviewer (corrected) |
 | Rule | SC-06, V8-01 (web-performance skill) |
 | Effort to fix | small |
 
@@ -28,9 +28,9 @@ SciChartRenderer.render step 4 (esm/Charting/Services/SciChartRenderer.js:137) -
 
 ## Why it costs
 
-Every get(i) goes through the embind invoker (_glue-pretty/scichart.js:4648, craftInvokerFunction -> invokerFn: rest-args array, onDone closure, `this` validation, wasm call). The skill's SC-06 rule says get(i) loops cross into wasm once per point. The XY, band and rectangle range paths in the same library use one native NumberUtil.MinMaxWithIndex call per vector, and that function is in the typings (types/TSciChart.d.ts:248).
+Every get(i) goes through the embind invoker (_glue-pretty/scichart.js:4648, craftInvokerFunction -> invokerFn: rest-args array, onDone closure, `this` validation, wasm call). The skill's SC-06 rule says get(i) loops cross into wasm once per point. The XY, band and rectangle range paths in the same library use one native NumberUtil.MinMaxWithIndex call per vector, and that function is in the typings (types/types/TSciChart.d.ts:248).
 
-**Scale where it matters:** A candlestick or OHLC chart with the price axis on EAutoRange.Always. With resampling, the point count is on the order of the plot width in pixels, so thousands of embind calls per frame. Without resampling (fewer candles than the resampling threshold, or resampling off), 5k-50k visible candles give 10k-100k calls per frame.
+**Scale where it matters:** A candlestick or OHLC chart with the price axis on EAutoRange.Always (the default is Once, which runs the scan only on the first range). With default resampling, the scanned count is on the order of the plot width in pixels on both paths, because RequiresReduction (esm/Charting/Numerics/Resamplers/ExtremeResamplerHelper.js:111) switches to resampled vectors once the visible candles exceed the width-based threshold: a few thousand embind get() calls per frame per OHLC series. Only with resamplingMode = EResamplingMode.None do 5k-50k visible candles give 10k-100k calls per frame.
 
 ## Fix (library side)
 
@@ -75,7 +75,7 @@ Every get(i) goes through the embind invoker (_glue-pretty/scichart.js:4648, cra
 +            return getOHLCYRange(indicesRange, openValues, highValues, lowValues, closeValues, this.webAssemblyContext);
 ```
 
-**Trade-off:** MinMaxWithIndex with containsNaN = true must skip NaN gaps the way today's JS comparisons silently do; test a series with NaN candles. A window that is all NaN now returns undefined instead of NumberRange(MAX_VALUE, -Infinity), which the axis already handles for other series. The new parameter is optional, so app code that calls the exported getOHLCYRange keeps working. Memoizing OhlcDataSeries.getWindowedYRange on changeCount and xRange, as BaseDataSeries does, would also remove repeated scans on frames with no change.
+**Trade-off:** MinMaxWithIndex with containsNaN = true must skip NaN gaps the way today's JS comparisons silently do; test a series with NaN candles. A window that is all NaN now returns undefined instead of NumberRange(MAX_VALUE, -Infinity), which the axis already handles for other series. The new parameter is optional, so app code that calls the exported getOHLCYRange keeps working. Memoizing OhlcDataSeries.getWindowedYRange on changeCount and xRange, as BaseDataSeries does, would also remove repeated scans on frames with no change. On a category X axis the old loop called get() with the fractional visible-range bounds (embind truncates to the integer index), so it read floor(min)..floor(max); the native call with Math.floor/Math.ceil reads floor(min)..ceil(max), at most one extra candle at the right edge, the same rounding BaseDataSeries uses for category axes. Passing this.dataSeries.dataDistributionCalculator.containsNaN instead of true skips the NaN checks for series without gaps.
 
 ## App-side workaround
 
@@ -98,5 +98,5 @@ measure.md#fps, `pan` scenario on a FastCandlestickRenderableSeries with 100k ca
 ## Review notes
 
 - Found by reviewer slice `s03-renderable-series`.
-- Not yet adversarially verified. The code quote and line numbers come from the slice reviewer; re-check them before acting.
+- Adversarial verification (corrected): Re-read BaseOhlcRenderableSeries.js:213-230 (quote matches 225-229, return at :228) and OhlcDataSeries.js:184-195 and :267-286 (highValues.get(i)/lowValues.get(i) at :276-277). Caller chain confirmed: SciChartRenderer.js:137 (step 4, every render) -> tryPerformAutoRangeOn :724-726 (runs only for EAutoRange.Always, or Once on first range) -> AxisBase2D.getMaximumRange :823 -> getWindowedYRange :846-860 -> seriesYRangeForThisAxis :837 -> rs.getYRange. No memo or dirty flag on either OHLC path: OhlcDataSeries.getWindowedYRange overrides the memoized BaseDataSeries.getWindowedYRange (:703-704 memoize) and getResampledPointSeries (BaseRenderableSeries.js:705-729) caches only the resampled vectors, not the range. XY (BaseDataSeries.js:1456), band/Xyy (XyyDataSeries.js:228-232) and Hlc (HlcDataSeries.js:276,293) use NumberUtil.MinMaxWithIndex (types/types/TSciChart.d.ts:248), so the fix pattern exists; imports in the diff resolve (esm/Core/Deleter, esm/utils/isRealNumber, as BaseDataSeries.js:3,15). Corrected: scale overstated the non-resampled case. RequiresReduction (ExtremeResamplerHelper.js:108-116) resamples whenever visible points exceed the viewport-width-based threshold, so with default resampling both paths scan on the order of the plot width; 5k-50k scanned candles per frame happen only with resamplingMode None. Added to trade_off the floor/ceil difference on category axes (old loop indexes get() with fractional i, which truncates). Severity medium kept: per-frame only under EAutoRange.Always and bounded by plot width under default resampling; SC-06 impact is medium. Typings path corrected to types/types/TSciChart.d.ts.
 - Duplicate merged from slice `s08-data-series`: OHLC (and box-plot) Y autorange calls two embind get(i) per visible candle on every autorange call, with no memo
