@@ -22,9 +22,9 @@ Nothing here is measured. Every issue names the recipe that would measure it.
 
 | Status | Issues |
 |---|---|
-| Verified by an adversarial reviewer (confirmed or corrected) | 43 |
+| Verified by an adversarial reviewer (confirmed or corrected) | 44 |
 | Refuted by an adversarial reviewer (file kept, marked) | 0 |
-| **Not yet verified** (reviewer only) | 51 |
+| **Not yet verified** (reviewer only) | 50 |
 
 Each issue file and the index below show its own verification status; all high-severity issues are verified. Unverified issues are strong candidates: re-check the quoted line and the caller chain before acting. Raw data for resuming: [`data/findings.json`](data/findings.json) (`verified: false`).
 
@@ -106,7 +106,7 @@ Each issue file and the index below show its own verification status; all high-s
 | [072](issues/072-textannotation-text-change-reparses-and-measures-twice.md) | medium | JS execution | TextAnnotation rebuilds its whole SVG through the HTML parser and calls getBBox one to two times on every text change | `esm/Charting/Visuals/Annotations/TextAnnotation.js:198` | H | no | small |
 | [073](issues/073-nativetext-wraps-and-remeasures-every-frame.md) | medium | JS execution | NativeTextAnnotation with wrapTo re-wraps and re-measures its text on every frame, allocating one wasm LineBounds per word | `esm/Charting/Visuals/Annotations/NativeTextAnnotation.js:359` | H | no | small |
 | [074](issues/074-hittest-selection-pass-left-enabled-after-detach.md) | medium | GPU draw | Tooltip/selection modifiers turn on the per-frame selection pass on attach and never turn it off on detach | `esm/Charting3D/ChartModifiers/TooltipModifier3D.js:210` | H | no | small |
-| [075](issues/075-rectangle-series-no-visible-range-culling.md) | medium | GPU draw | FastRectangleRenderableSeries always reports the full index range, so every frame processes every rectangle regardless of zoom | `esm/Charting/Visuals/RenderableSeries/FastRectangleRenderableSeries.js:331` | H | no | medium |
+| [075](issues/075-rectangle-series-no-visible-range-culling.md) | medium | GPU draw | FastRectangleRenderableSeries always reports the full index range, so every frame processes every rectangle regardless of zoom | `esm/Charting/Visuals/RenderableSeries/FastRectangleRenderableSeries.js:331` | H | yes | medium |
 | [076](issues/076-pointer-offsetx-forced-layout-per-event.md) | medium | Layout | Every pointer and wheel event reads MouseEvent.offsetX/offsetY, which forces style and layout whenever anything on the page dirtied layout since the last frame | `esm/Charting/ChartModifiers/ModifierMouseArgs.js:57` | H | no | medium |
 | [077](issues/077-nonpassive-wheel-listener-on-every-chart.md) | medium | Composite | MouseManager attaches a non-passive wheel listener to every chart canvas, even when no attached modifier uses the wheel, so a page scroll that starts over any chart waits for the main thread | `esm/Core/Mouse/MouseManager.js:74` | H | no | medium |
 | [078](issues/078-3d-point-metadata-loop-runs-without-metadata.md) | medium | JS execution | Every 3D XYZ series rebuild walks all N metadata entries in JS, even when the series has no metadata and the result is 'all defaults' | `esm/Charting3D/Visuals/Primitives/RenderableSeriesSceneEntity.js:91` | H | no | medium |
@@ -133,7 +133,7 @@ Each issue file and the index below show its own verification status; all high-s
 |---|---|---|
 | `s01-surface-render` | 7 | 7 verified, 0 refuted, 0 not verified |
 | `s02-init-loading` | 7 | 7 verified, 0 refuted, 0 not verified |
-| `s03-renderable-series` | 8 | 4 verified, 0 refuted, 4 not verified |
+| `s03-renderable-series` | 8 | 5 verified, 0 refuted, 3 not verified |
 | `s04-drawing-providers` | 10 | 5 verified, 0 refuted, 5 not verified |
 | `s05-labels-hittest-anim` | 5 | 3 verified, 0 refuted, 2 not verified |
 | `s06-axis-text` | 7 | 3 verified, 0 refuted, 4 not verified |
