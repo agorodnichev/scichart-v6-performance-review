@@ -2,13 +2,13 @@
 
 Static performance review of the published npm package [`scichart@6.0.6`](https://www.npmjs.com/package/scichart/v/6.0.6) (ESM build: 822 JS files, ~97k lines of compiled, unminified TypeScript, plus the emscripten glue). The C++ engine ships only as `.wasm` and is out of scope.
 
-**One issue, one file:** [`issues/`](issues/) · 94 issues: **28 high**, 51 medium, 15 low.
+**One issue, one file:** [`issues/`](issues/) · 94 open issues: **28 high**, 51 medium, 15 low.
 
 ## Method
 
 - Playbook: the `web-performance` skill (review mode, `references/review.md`), applied to library code: rule IDs where a rule fits, else `Rule: none` plus the mechanism.
 - 13 source slices (≈4.5–10k lines each) + 2 cross-cutting traces (one frame end to end; one data update plus the create/delete lifecycle). Slice map: [`data/slices.json`](data/slices.json).
-- Per slice: one reviewer (≤10 findings, each with an exact code quote, caller chain and call rate, a fix diff, an app-side workaround and a verify recipe), then one fresh **adversarial verifier** that re-reads the code and callers and refutes or corrects.
+- Per slice: one reviewer (≤10 findings, each with an exact code quote, caller chain and call rate, a fix diff, an app-side workaround and a verify recipe), then a fresh **adversarial verifier** that re-reads the code and callers and refutes or corrects.
 - Cross-slice duplicates (same root cause, one fix) were merged: 105 candidates → 94 issues.
 
 ```text
@@ -20,12 +20,13 @@ Nothing here is measured. Every issue names the recipe that would measure it.
 
 ## Verification status
 
-| Status | Issues | Slices |
-|---|---|---|
-| Verified by an adversarial reviewer | 14 | `s01-surface-render`, `s02-init-loading` (0 refuted, most corrected: line numbers, severity, S→H) |
-| **Not yet verified** (reviewer only) | 80 | all other slices |
+| Status | Issues |
+|---|---|
+| Verified by an adversarial reviewer (confirmed or corrected) | 14 |
+| Refuted by an adversarial reviewer (file kept, marked) | 0 |
+| **Not yet verified** (reviewer only) | 80 |
 
-Verification was paused to save budget. Treat unverified issues as strong candidates: re-check the quoted line and the caller chain before acting. To resume, feed each slice's entries from [`data/findings.json`](data/findings.json) (`verified: false`) to a verifier.
+Verified so far: all issues of `s01-surface-render` and `s02-init-loading`, plus the high-severity issues of the slices listed in the coverage table. Unverified issues are strong candidates: re-check the quoted line and the caller chain before acting. Raw data for resuming: [`data/findings.json`](data/findings.json) (`verified: false`).
 
 ## Index
 
@@ -128,10 +129,10 @@ Verification was paused to save budget. Treat unverified issues as strong candid
 
 ## Coverage
 
-| Slice | Candidates | Kept after verify |
+| Slice | Candidates | Verification |
 |---|---|---|
-| `s01-surface-render` | 7 | 7 |
-| `s02-init-loading` | 7 | 7 |
+| `s01-surface-render` | 7 | 7 verified, 0 refuted, 0 not verified |
+| `s02-init-loading` | 7 | 7 verified, 0 refuted, 0 not verified |
 | `s03-renderable-series` | 8 | not verified yet |
 | `s04-drawing-providers` | 10 | not verified yet |
 | `s05-labels-hittest-anim` | 5 | not verified yet |

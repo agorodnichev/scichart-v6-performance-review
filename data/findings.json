@@ -68,7 +68,9 @@
     "slice": "x1-frame-path",
     "title": "At devicePixelRatio != 1 the 'layout unchanged' guard never matches, so every rendered frame rewrites the clip paths of 3 SVG layers per surface"
    }
-  ]
+  ],
+  "file": "001-svg-clip-path-defs-rewritten-every-frame-on-hidpi.md",
+  "refuted": false
  },
  {
   "id": "002",
@@ -146,7 +148,9 @@
   "verification_notes": "Re-read drawLabel.js:15-61 (quote matches verbatim at :33-43, primary moved from :34 to :33). Confirmed callers with rg: drawLineAnnotation only from HorizontalLineAnnotation.js:114 and VerticalLineAnnotation.js:116; drawAxisMarkerAnnotation only from AxisMarkerAnnotation.js:262; both inside drawWithContext. SciChartRenderer.getRenderContextAnnotationDrawFunction (:405-440) queues drawWithContext for every visible annotation on every render with no dirty flag or texture cache; onRenderSurfaceDraw (:1331-1357) runs doDrawingLoop -> render for each rendered frame. AxisRenderer.createAnnotationLabelTexture (:552) and createAxisMarker (:539) create a fresh texture per call; NativeAxisRenderer does not override them (its drawModifierAxisLabelSpecific still calls createFilledRectTexture at :78 and deletes at :80). Corrected the canvas size: TextureManager uses DEFAULT_WIDTH=1920, DEFAULT_HEIGHT=1080 (:11-13, :24-26), not 900x600, so each full clearRect covers about 8.3 MB on a willReadFrequently canvas. Checked deleteSafe (Core/Deleter.js) handles undefined. Added detach, font-load invalidation and the empty AxisMarkerAnnotation.delete() to the fix and trade-off. GPU-24's Do (skip all work when the string did not change) matches; its Avoid (per-glyph atlas, DPR change) does not exempt this case.",
   "slice": "s01-surface-render",
   "verified": true,
-  "merged_from": []
+  "merged_from": [],
+  "file": "002-annotation-label-texture-rasterized-every-frame.md",
+  "refuted": false
  },
  {
   "id": "003",
@@ -190,7 +194,9 @@
   ],
   "slice": "s04-drawing-providers",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "003-native-objects-created-per-redraw-never-deleted.md",
+  "refuted": false
  },
  {
   "id": "004",
@@ -234,7 +240,9 @@
   ],
   "slice": "s04-drawing-providers",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "004-heatmap-texture-reuploaded-every-redraw.md",
+  "refuted": false
  },
  {
   "id": "005",
@@ -278,7 +286,9 @@
   ],
   "slice": "s04-drawing-providers",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "005-mountain-palette-cache-forced-dirty-every-frame.md",
+  "refuted": false
  },
  {
   "id": "006",
@@ -317,7 +327,9 @@
   ],
   "slice": "s04-drawing-providers",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "006-spline-index-fill-one-wasm-call-per-vertex.md",
+  "refuted": false
  },
  {
   "id": "007",
@@ -361,7 +373,9 @@
   ],
   "slice": "s05-labels-hittest-anim",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "007-polar-column-label-leaks-native-linebounds.md",
+  "refuted": false
  },
  {
   "id": "008",
@@ -415,7 +429,9 @@
   ],
   "slice": "s05-labels-hittest-anim",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "008-line-segment-hittest-full-scan-embind-get.md",
+  "refuted": false
  },
  {
   "id": "009",
@@ -464,7 +480,9 @@
   ],
   "slice": "s05-labels-hittest-anim",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "009-rectangle-hittest-unsorted-scan-y-before-x.md",
+  "refuted": false
  },
  {
   "id": "010",
@@ -523,7 +541,9 @@
   ],
   "slice": "s06-axis-text",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "010-date-format-new-icu-formatter-per-call.md",
+  "refuted": false
  },
  {
   "id": "011",
@@ -572,7 +592,9 @@
   ],
   "slice": "s06-axis-text",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "011-texture-manager-clears-full-1920x1080-per-label.md",
+  "refuted": false
  },
  {
   "id": "012",
@@ -599,7 +621,9 @@
   "app_workaround": "Patch the exported class once at startup: `const c = RolloverMarkerSvgAnnotation.prototype.create; RolloverMarkerSvgAnnotation.prototype.create = function (...a) { c.apply(this, a); const p = this.tooltipProps; this.currentColor = p.markerColor ?? p.tooltipColor; };`",
   "slice": "s07-annotations-legend",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "012-rollover-marker-typo-rebuilds-svg-and-forces-layout.md",
+  "refuted": false
  },
  {
   "id": "013",
@@ -648,7 +672,9 @@
   "app_workaround": "`new CursorModifier({ showAxisLabels: false })`, or add the modifier only while the user hovers. `isSvgOnly: false` moves the labels to WebGL, but every pointer move then triggers a full chart redraw.",
   "slice": "s07-annotations-legend",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "013-svgline-axis-label-getbbox-every-render-even-hidden.md",
+  "refuted": false
  },
  {
   "id": "014",
@@ -697,7 +723,9 @@
   "app_workaround": "Pass a subclass through `new LegendModifier({ legend })` that overrides removeEventListeners to call `item.delete()` for every entry of `this.eventListenersCollection` and then clears the map. Or keep showCheckboxes false.",
   "slice": "s07-annotations-legend",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "014-legend-rebuild-leaks-isvisiblechanged-handlers-and-dom.md",
+  "refuted": false
  },
  {
   "id": "015",
@@ -736,7 +764,9 @@
   "app_workaround": "Partial. Pass `customRangeSelectionModifier` with createAnnotation overridden to return a subclass whose updateAdornerInner skips when the borders are unchanged. The forced layout needs the library fix or an overridden update().",
   "slice": "s07-annotations-legend",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "015-overview-annotation-forced-layout-and-adorner-reparse-per-re.md",
+  "refuted": false
  },
  {
   "id": "016",
@@ -780,7 +810,9 @@
   "app_workaround": "Avoid X autoRange Always on charts with horizontal error bars: use autoRange Once or Never and set xAxis.visibleRange from your own data. Or use vertical error bars.",
   "slice": "s08-data-series",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "016-hlc-getxrange-leaks-minmax-result.md",
+  "refuted": false
  },
  {
   "id": "017",
@@ -879,7 +911,9 @@
     "slice": "s08-data-series",
     "title": "MetadataPaletteProvider parses the same CSS color string for every point on every frame"
    }
-  ]
+  ],
+  "file": "017-parsecolor-uncached-per-point-palette.md",
+  "refuted": false
  },
  {
   "id": "018",
@@ -954,7 +988,9 @@
   ],
   "slice": "s09-filters-numerics-utils",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "018-filters-on-fifo-source-grow-unbounded.md",
+  "refuted": false
  },
  {
   "id": "019",
@@ -1033,7 +1069,9 @@
     "slice": "s13-3d-series-modifiers",
     "title": "XyzDataSeries3D x/y/zRange are uncached full MinMax scans, re-run for every axis on every frame when autoRange is Always"
    }
-  ]
+  ],
+  "file": "019-3d-autorange-always-scans-full-data-every-frame.md",
+  "refuted": false
  },
  {
   "id": "020",
@@ -1082,7 +1120,9 @@
   "app_workaround": "HitTestInfo3D is exported from 'scichart'; patch the static once at startup to compare selectionIjIndices by value, e.g. `const eq = HitTestInfo3D.isEqual; HitTestInfo3D.isEqual = (a, b) => eq(a, b) || (!!a && !!b && a.selectionIjIndices?.x === b.selectionIjIndices?.x && a.selectionIjIndices?.y === b.selectionIjIndices?.y && eq({ ...a, selectionIjIndices: undefined }, { ...b, selectionIjIndices: undefined }));`",
   "slice": "s13-3d-series-modifiers",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "020-mesh-tooltip-hittest-equality-render-loop.md",
+  "refuted": false
  },
  {
   "id": "021",
@@ -1176,7 +1216,9 @@
     "slice": "x2-data-and-lifecycle",
     "title": "Stacked collections rebuild every accumulated vector with one embind push_back per point per series on each data change"
    }
-  ]
+  ],
+  "file": "021-stacked-accumulation-per-point-push-back-rebuild.md",
+  "refuted": false
  },
  {
   "id": "022",
@@ -1235,7 +1277,9 @@
   ],
   "slice": "s06-axis-text",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "022-annotation-axis-label-texture-rebuilt-every-frame.md",
+  "refuted": false
  },
  {
   "id": "023",
@@ -1304,7 +1348,9 @@
   "app_workaround": "Partial. Set `rs.rolloverModifierProps.showRollover = false` on series that need no tooltip, so they are excluded instead of rebuilt hidden. Supply a light `rolloverModifierProps.tooltipTemplate` without the feGaussianBlur filter. Leave tooltipLegendTemplate unset unless needed.",
   "slice": "s07-annotations-legend",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "023-rollover-cursor-tooltip-svg-reparsed-every-render.md",
+  "refuted": false
  },
  {
   "id": "024",
@@ -1359,7 +1405,9 @@
   ],
   "slice": "s09-filters-numerics-utils",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "024-linear-trend-filter-full-recompute-per-append.md",
+  "refuted": false
  },
  {
   "id": "025",
@@ -1423,7 +1471,9 @@
   ],
   "slice": "s10-modifiers-input",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "025-datapointselection-per-point-metadata-objects.md",
+  "refuted": false
  },
  {
   "id": "026",
@@ -1487,7 +1537,9 @@
   "app_workaround": "Restrict hit-tested series with includedSeriesIds/excludedSeriesIds, construct SeriesSelectionModifier3D with hitTestRadius: 0 (1 sample point instead of 17) and leave prioritizeClosestToCamera false.",
   "slice": "s13-3d-series-modifiers",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "026-3d-hittest-reads-selection-buffer-per-series.md",
+  "refuted": false
  },
  {
   "id": "027",
@@ -1536,7 +1588,9 @@
   ],
   "slice": "x1-frame-path",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "027-engine-raf-loop-never-stops.md",
+  "refuted": false
  },
  {
   "id": "028",
@@ -1580,7 +1634,9 @@
   ],
   "slice": "s04-drawing-providers",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "028-nonuniform-heatmap-cpu-texture-rebuild-per-pan.md",
+  "refuted": false
  },
  {
   "id": "029",
@@ -1631,7 +1687,9 @@
   "verification_notes": "Re-read createMultichart (createMaster.js:91-161), initializeChartEngine (:166-197) and createMaster (:269-330): the code quote is lines 294-299 (reviewer cited 296, the middle line), so primary corrected to 294. Confirmed WebGpuHelper.initializeWebGPUDevice is memoised (WebGpuHelper.js:9-23), so the first await at createMaster.js:96-98 is the one that pays requestAdapter+requestDevice, and the wasm fetch only starts at :314. Confirmed preloadWasm (preloadWasm.js:37-45) and getLocateFile (SciChartSurfaceBase.js:884-925) depend on sciChartConfig/shouldUseWasm64/shouldUseSimd only, not on the renderer. IS_WEB_GPU = auto mode && /Mac/ UA (constants/app.js:31-37). createSingle.js chain confirmed. Corrected the trade-off: on a failing URL the fix can add one extra attempt, which the original text described as unchanged.",
   "slice": "s02-init-loading",
   "verified": true,
-  "merged_from": []
+  "merged_from": [],
+  "file": "029-wasm-fetch-waits-for-webgpu-device-and-glue.md",
+  "refuted": false
  },
  {
   "id": "030",
@@ -1677,7 +1735,9 @@
   "verification_notes": "Quote matches verbatim at SciChartSubSurface.js:207-219 (primary moved from :214 to :207; :214-215 noted). Confirmed SciChartRenderer.render calls updateSubLayout for every sub-surface render (:148-149) and onRenderSurfaceDraw renders each visible sub-chart per frame (:1347-1352). In DataValue mode the condition is true on every call regardless of this.offset. updateWrapper (sciChartSubSurfaceCommon.js:180-189) writes 4 inline styles unconditionally; getOffsets (:190-205) reads clientWidth/clientHeight immediately after. Scope narrowed: subChartContainer exists only when subChartContainerId is set (SciChartSubSurface.js:80-85); without it updateWrapper returns early and getOffsets returns Thickness 0, and without section elements there are no reads. Refined the mechanism: same-value inline-style writes do not invalidate in Chromium, so the layout is forced on pan/zoom frames or after other same-frame DOM writes. Listed the offset-reset lines for wrapperOffset and stated the behaviour change in DataValue mode. EVT-07's Avoid does not exempt this case.",
   "slice": "s01-surface-render",
   "verified": true,
-  "merged_from": []
+  "merged_from": [],
+  "file": "030-datavalue-subchart-wrapper-forced-layout-per-frame.md",
+  "refuted": false
  },
  {
   "id": "031",
@@ -1738,7 +1798,9 @@
   "verification_notes": "Re-read ensureModule (moduleLoader.js:258-348): the quote is lines 333-335 (reviewer cited 334), primary corrected to 333. Confirmed requiresModule \"charting3d\" on both 3D families (SciChart3DSurface.js:73 and :161), the await order in createMultichart (:103 then :121-122) and createSingle (:116-117), and that module state is per wasmContext (getState, :100-106), so createSingle contexts each fetch and compile. In the glue: FS.writeFile passes opts.canOwn to FS.write, and MEMFS uses buffer.slice when canOwn is false (copy kept); loadLibData -> findLibraryFS -> FS.readFile allocates a new Uint8Array; loadWebAssemblyModule with loadAsync calls WebAssembly.instantiate(binary) (:737-748). Checked that sciChartConfig.js is a leaf module exporting the same singleton SciChartSurface re-exports, so the fix's static import is valid, and that validateModuleBytes only reads the bytes, so sharing them is safe. Dropped the reviewer's speculative esbuild facade-chunk claim.",
   "slice": "s02-init-loading",
   "verified": true,
-  "merged_from": []
+  "merged_from": [],
+  "file": "031-charting3d-module-serial-nonstreaming-per-context.md",
+  "refuted": false
  },
  {
   "id": "032",
@@ -1807,7 +1869,9 @@
     "slice": "s08-data-series",
     "title": "OHLC (and box-plot) Y autorange calls two embind get(i) per visible candle on every autorange call, with no memo"
    }
-  ]
+  ],
+  "file": "032-ohlc-yrange-per-point-embind-get-loop.md",
+  "refuted": false
  },
  {
   "id": "033",
@@ -1841,7 +1905,9 @@
   ],
   "slice": "s03-renderable-series",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "033-style-animation-pointmarker-replaced-not-deleted.md",
+  "refuted": false
  },
  {
   "id": "034",
@@ -1885,7 +1951,9 @@
   ],
   "slice": "s03-renderable-series",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "034-stacked-mountain-per-frame-palette-invalidation.md",
+  "refuted": false
  },
  {
   "id": "035",
@@ -1959,7 +2027,9 @@
     "slice": "s08-data-series",
     "title": "getMetadataAt calls wasm size() (plus getStartIndex() on FIFO) before checking for metadata, once per point in every palette loop"
    }
-  ]
+  ],
+  "file": "035-palette-loop-wasm-call-per-point-in-getmetadataat.md",
+  "refuted": false
  },
  {
   "id": "036",
@@ -1998,7 +2068,9 @@
   ],
   "slice": "s04-drawing-providers",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "036-unused-native-palette-rebuilt-per-palette-update.md",
+  "refuted": false
  },
  {
   "id": "037",
@@ -2042,7 +2114,9 @@
   ],
   "slice": "s06-axis-text",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "037-canvastexture-per-pixel-embind-copy.md",
+  "refuted": false
  },
  {
   "id": "038",
@@ -2086,7 +2160,9 @@
   "app_workaround": "`showLegend: false` with an app-rendered legend that updates only on change. No API batches segment updates on the pie surface (suspendUpdates does not gate SciChartPieSurface.invalidateElement).",
   "slice": "s07-annotations-legend",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "038-pie-legend-rebuilt-on-every-pie-invalidate.md",
+  "refuted": false
  },
  {
   "id": "039",
@@ -2140,7 +2216,9 @@
   "app_workaround": "Write your own gradient palette provider that clamps with Math.min/Math.max and caches the count in shouldUpdatePalette(). Or precompute the colors once into metadata.",
   "slice": "s08-data-series",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "039-gradient-palette-wasm-clamp-per-point.md",
+  "refuted": false
  },
  {
   "id": "040",
@@ -2189,7 +2267,9 @@
   "app_workaround": "Remove in batches: one removeRows(0, k) per frame instead of removeRow per message, so the renumber runs once per frame.",
   "slice": "s08-data-series",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "040-table-renumber-rows-embind-set-per-row.md",
+  "refuted": false
  },
  {
   "id": "041",
@@ -2233,7 +2313,9 @@
   ],
   "slice": "s09-filters-numerics-utils",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "041-moving-average-insert-remove-recompute-tail.md",
+  "refuted": false
  },
  {
   "id": "042",
@@ -2277,7 +2359,9 @@
   ],
   "slice": "s09-filters-numerics-utils",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "042-ratio-filter-divisor-subscription-never-removed.md",
+  "refuted": false
  },
  {
   "id": "043",
@@ -2346,7 +2430,9 @@
     "slice": "x2-data-and-lifecycle",
     "title": "Resampling cache key is rebuilt per resampled series per frame with JSON.stringify and String.split(\"\")"
    }
-  ]
+  ],
+  "file": "043-resampling-hash-json-split-per-frame.md",
+  "refuted": false
  },
  {
   "id": "044",
@@ -2395,7 +2481,9 @@
   ],
   "slice": "s10-modifiers-input",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "044-subchart-event-copies-rebroadcast-to-all-surfaces.md",
+  "refuted": false
  },
  {
   "id": "045",
@@ -2449,7 +2537,9 @@
   ],
   "slice": "s10-modifiers-input",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "045-rollover-update-hit-tests-every-series-twice.md",
+  "refuted": false
  },
  {
   "id": "046",
@@ -2498,7 +2588,9 @@
   ],
   "slice": "s10-modifiers-input",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "046-polar-cursor-post-render-update-extra-frame.md",
+  "refuted": false
  },
  {
   "id": "047",
@@ -2562,7 +2654,9 @@
     "slice": "x1-frame-path",
     "title": "SynchronizedLayoutManager measures left and right outer axes twice per frame when a surface is in a horizontal group without a vertical group"
    }
-  ]
+  ],
+  "file": "047-sync-layout-double-measures-left-right-axes.md",
+  "refuted": false
  },
  {
   "id": "048",
@@ -2621,7 +2715,9 @@
   ],
   "slice": "s12-pie-3d-surface",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "048-3d-axis-descriptors-remarshalled-to-wasm-every-frame.md",
+  "refuted": false
  },
  {
   "id": "049",
@@ -2665,7 +2761,9 @@
   ],
   "slice": "s12-pie-3d-surface",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "049-pie-label-forced-layout-per-segment.md",
+  "refuted": false
  },
  {
   "id": "050",
@@ -2734,7 +2832,9 @@
   "app_workaround": "Exclude large clouds from hover (excludedSeriesIds or enableHover: false), or subclass the series and override notifyPropertyChanged to skip forwarding HOVERED/IS_SELECTED to sceneEntity.",
   "slice": "s13-3d-series-modifiers",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "050-hover-select-triggers-full-3d-geometry-rebuild.md",
+  "refuted": false
  },
  {
   "id": "051",
@@ -2773,7 +2873,9 @@
   "app_workaround": "Subclass TooltipModifier3D and add the modifierMouseLeave override above.",
   "slice": "s13-3d-series-modifiers",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "051-tooltip3d-keeps-hittesting-after-pointer-leave.md",
+  "refuted": false
  },
  {
   "id": "052",
@@ -2817,7 +2919,9 @@
   ],
   "slice": "x1-frame-path",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "052-subchart-wrapper-write-then-read-per-frame.md",
+  "refuted": false
  },
  {
   "id": "053",
@@ -2861,7 +2965,9 @@
   ],
   "slice": "x1-frame-path",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "053-offscreen-charts-render-by-default-freeze-drops-redraw.md",
+  "refuted": false
  },
  {
   "id": "054",
@@ -2910,7 +3016,9 @@
   "app_workaround": "Use create() for charts that come and go (SC-16), or keep createSingle surfaces alive and reuse them instead of deleting them.",
   "slice": "x2-data-and-lifecycle",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "054-createsingle-delete-wipes-global-label-cache.md",
+  "refuted": false
  },
  {
   "id": "055",
@@ -2954,7 +3062,9 @@
   "app_workaround": "Reuse stable root div ids so the key is overwritten, or stay on the WebGL2 backend (SC-40).",
   "slice": "x2-data-and-lifecycle",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "055-webgpu-specialhtmltargets-retains-deleted-canvases.md",
+  "refuted": false
  },
  {
   "id": "056",
@@ -2993,7 +3103,9 @@
   ],
   "slice": "s04-drawing-providers",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "056-error-bars-process-full-dataset-every-frame.md",
+  "refuted": false
  },
  {
   "id": "057",
@@ -3037,7 +3149,9 @@
   ],
   "slice": "s04-drawing-providers",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "057-point-marker-rebuilds-three-textures-eagerly.md",
+  "refuted": false
  },
  {
   "id": "058",
@@ -3106,7 +3220,9 @@
   ],
   "slice": "s05-labels-hittest-anim",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "058-data-labels-repeat-native-linebounds-per-label.md",
+  "refuted": false
  },
  {
   "id": "059",
@@ -3160,7 +3276,9 @@
   ],
   "slice": "s05-labels-hittest-anim",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "059-style-animation-rebuilds-marker-textures-per-frame.md",
+  "refuted": false
  },
  {
   "id": "060",
@@ -3229,7 +3347,9 @@
   "app_workaround": "Set `annotation.isSelected = false` when editing ends (for example on dragEnded or a click outside), so live charts do not keep a selected annotation.",
   "slice": "s07-annotations-legend",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "060-selected-annotation-adorner-reparsed-every-render.md",
+  "refuted": false
  },
  {
   "id": "061",
@@ -3283,7 +3403,9 @@
   "app_workaround": "Nothing inside the API. For high-rate labels, keep the strings in a JS array keyed by row and render them with a numeric XyDataSeries and a custom data label provider.",
   "slice": "s08-data-series",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "061-string-column-range-append-per-cell-crossings.md",
+  "refuted": false
  },
  {
   "id": "062",
@@ -3332,7 +3454,9 @@
   "app_workaround": "Scroll with the X axis visibleRange instead of xStart, and keep colorMap minimum/maximum fixed while streaming. There is no workaround for sparse cell updates: any change triggers the full pass.",
   "slice": "s08-data-series",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "062-heatmap-full-renormalize-on-any-change.md",
+  "refuted": false
  },
  {
   "id": "063",
@@ -3381,7 +3505,9 @@
   ],
   "slice": "s12-pie-3d-surface",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "063-3d-series-property-set-rebuilds-mesh-twice.md",
+  "refuted": false
  },
  {
   "id": "064",
@@ -3430,7 +3556,9 @@
   ],
   "slice": "s12-pie-3d-surface",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "064-3d-tooltip-svg-reparsed-every-pointer-move.md",
+  "refuted": false
  },
  {
   "id": "065",
@@ -3489,7 +3617,9 @@
   ],
   "slice": "s12-pie-3d-surface",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "065-pie-sync-redraw-per-setter-and-timer-animations.md",
+  "refuted": false
  },
  {
   "id": "066",
@@ -3540,7 +3670,9 @@
   "verification_notes": "Quote matches verbatim at NativeObject.js:295-303 (primary moved from :303 to :295). Confirmed getFont -> getFontKey on every call (WebGlRenderContext2D.js:530-531) and per-frame callers NativeTextAnnotation.js:326, NativeAxisRenderer.js:12, BaseDataLabelProvider.js:165, TitleRenderer.js:91. Read LabelCache.js fully: getStyleId is a for-in scan with uses++; freeStyle never deletes the styleCache entry; resetCache is the only removal and is called on context loss and wasm-context cleanup. Corrected: checkTextStyleEqual short-circuits, so it is not an 11-field compare per entry; with the default useSharedCache:true (SciChartDefaults.js:10) S grows with distinct styles, not with axes; with false, each provider GUID adds an entry. Checked the fix's equivalence (providerId always defined for label-provider styles, LabelProviderBase2D.js:535) and that keyCache lifetimes follow deleteCache. Kept medium/H: per-frame path with cost proportional to calls x S, magnitude depends on S.",
   "slice": "s01-surface-render",
   "verified": true,
-  "merged_from": []
+  "merged_from": [],
+  "file": "066-getfontkey-linear-style-registry-scan-per-getfont.md",
+  "refuted": false
  },
  {
   "id": "067",
@@ -3611,7 +3743,9 @@
   "verification_notes": "Re-read craftInvokerFunction (_glue-pretty/scichart.js:4627-4683): quote matches at 4648. Confirmed __embind_register_class_function (:4819) installs craftInvokerFunction's result as proto[methodName], so every class method uses invokerFn. Found a second layer the reviewer missed: embind__requireFunction (:4408-4424) returns getDynCaller (:4404) for any signature containing 'p', and dynCall (:560) adds another spread and closure; same pattern in the minified esm/_glue/scichart.js and scichart-64.js. Confirmed per-frame callers: NativeAxisRenderer.js:61, NativeObject.js:248 (Assign) and :139 (SetPosition), BaseDataLabelProvider.js:169/179, WebGlRenderContext2D.js:290. Evidence lowered S -> H: the allocations are in source but TurboFan escape analysis may remove some, so the per-call cost depends on the JIT. Fix kept (EMBIND_AOT) but noted that it removes only the craftInvokerFunction layer.",
   "slice": "s02-init-loading",
   "verified": true,
-  "merged_from": []
+  "merged_from": [],
+  "file": "067-embind-generic-invoker-per-call-alloc.md",
+  "refuted": false
  },
  {
   "id": "068",
@@ -3657,7 +3791,9 @@
   "verification_notes": "Quote matches chartReviver.js:6-20. rg found exactly 18 JSON.parse(..., chartReviver) sites in esm/Builder (chartBuilder 2, build2DChart, build2DPolarChart, build3DChart, buildPieChart, annotations, axes 1 each, modifiers 2, series 4, dataSeries 4); each parses only when given a string, once per build call. Checked V8-10's Do ('Parse without a reviver, then convert the few fields you need in a loop'); its Avoid does not exempt this. Checked the fix against the JSON.parse reviver algorithm (InternalizeJSONProperty): same bottom-up order, reviver never returns undefined so no deletions, root key \"\" handled, own \"__proto__\" data property is written rather than the prototype setter. Evidence lowered S -> H because the cost depends entirely on how much inline data a definition carries.",
   "slice": "s02-init-loading",
   "verified": true,
-  "merged_from": []
+  "merged_from": [],
+  "file": "068-builder-json-reviver-runs-per-data-point.md",
+  "refuted": false
  },
  {
   "id": "069",
@@ -3701,7 +3837,9 @@
   ],
   "slice": "s06-axis-text",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "069-label-cache-prune-evicts-visible-labels.md",
+  "refuted": false
  },
  {
   "id": "070",
@@ -3750,7 +3888,9 @@
   ],
   "slice": "s06-axis-text",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "070-label-provider-setters-flush-cache-without-change.md",
+  "refuted": false
  },
  {
   "id": "071",
@@ -3794,7 +3934,9 @@
   ],
   "slice": "s06-axis-text",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "071-two-1920x1080-scratch-canvases-per-axis.md",
+  "refuted": false
  },
  {
   "id": "072",
@@ -3838,7 +3980,9 @@
   "app_workaround": "Use NativeTextAnnotation for labels whose text changes often (SC-21), or update only when the formatted string actually changes.",
   "slice": "s07-annotations-legend",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "072-textannotation-text-change-reparses-and-measures-twice.md",
+  "refuted": false
  },
  {
   "id": "073",
@@ -3872,7 +4016,9 @@
   "app_workaround": "Insert the line breaks ('\\n') once in app code and leave wrapTo unset.",
   "slice": "s07-annotations-legend",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "073-nativetext-wraps-and-remeasures-every-frame.md",
+  "refuted": false
  },
  {
   "id": "074",
@@ -3911,7 +4057,9 @@
   "app_workaround": "After removing the 3D tooltip/selection modifiers, set sciChart3DSurface.isHitTestEnabled = false.",
   "slice": "s13-3d-series-modifiers",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "074-hittest-selection-pass-left-enabled-after-detach.md",
+  "refuted": false
  },
  {
   "id": "075",
@@ -3950,7 +4098,9 @@
   ],
   "slice": "s03-renderable-series",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "075-rectangle-series-no-visible-range-culling.md",
+  "refuted": false
  },
  {
   "id": "076",
@@ -3994,7 +4144,9 @@
   ],
   "slice": "s10-modifiers-input",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "076-pointer-offsetx-forced-layout-per-event.md",
+  "refuted": false
  },
  {
   "id": "077",
@@ -4038,7 +4190,9 @@
   ],
   "slice": "s10-modifiers-input",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "077-nonpassive-wheel-listener-on-every-chart.md",
+  "refuted": false
  },
  {
   "id": "078",
@@ -4087,7 +4241,9 @@
   ],
   "slice": "s12-pie-3d-surface",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "078-3d-point-metadata-loop-runs-without-metadata.md",
+  "refuted": false
  },
  {
   "id": "079",
@@ -4141,7 +4297,9 @@
   "app_workaround": "Put dense multi-chart views on one parent surface with sub-charts (SC-17), which use one destination. There is no app-side workaround for the teardown cost itself.",
   "slice": "x2-data-and-lifecycle",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "079-delete-rebuilds-native-destinations-for-all-charts.md",
+  "refuted": false
  },
  {
   "id": "080",
@@ -4197,7 +4355,9 @@
     "slice": "x2-data-and-lifecycle",
     "title": "Every data change builds a debug template string and copies the handler list before invalidateElement's already-invalidated exit"
    }
-  ]
+  ],
+  "file": "080-invalidateelement-builds-debug-string-every-call.md",
+  "refuted": false
  },
  {
   "id": "081",
@@ -4243,7 +4403,9 @@
   "verification_notes": "Quote is sciChartInitCommon.js:195-201 (reviewer cited 196), primary corrected. Confirmed createSingleInternal calls initCanvas with activeCanvas undefined (createSingle.js:28), so the default canvasWebGLorWebGPU path adds the listener; createMultichart passes canvas2D (createMaster.js:99). Confirmed wasmContext.canvas = canvases.domCanvasWebGL (createSingle.js:44 and initDrawEngineSingleChart) and the destination's canvasElementId is that canvas id (createSingle.js:170-175), so the filter works. Found that the reviewer's fix was unsafe as written: monitorWebGL(…, false) uses getDestinations(\"2dSingle\") for every single context (createMaster.js:225) and isWebGLContextActive=false gates invalidateElement (SciChartSurface.js:575), so removing the reload alone would freeze all createSingle charts after one eviction; the corrected diff scopes the handlers to the context's own canvas and drops the master-3D invalidation for single contexts. Severity lowered medium -> low: context loss is a rare path per review.md §B.",
   "slice": "s02-init-loading",
   "verified": true,
-  "merged_from": []
+  "merged_from": [],
+  "file": "081-createsingle-context-loss-reloads-page.md",
+  "refuted": false
  },
  {
   "id": "082",
@@ -4279,7 +4441,9 @@
   "verification_notes": "Quote is wasmModuleCache.js:28-30 (reviewer cited 29), primary corrected. Confirmed the catch discards the error and fetchAndCompile re-fetches and compiles from an ArrayBuffer (:39-48). Confirmed both createMaster.js:314 and createSingle.js:57 go through preloadWasm -> getCompiledWasmModule and pass the result through buildInstantiateWasmHook, so Emscripten's instantiateAsync (_glue-pretty/scichart.js:137-151, which logs) is never used. Checked TASK-14/SC-36: the Avoid of TASK-14 names exactly this silent fallback risk. Low severity kept: once per page load, only on misconfigured servers.",
   "slice": "s02-init-loading",
   "verified": true,
-  "merged_from": []
+  "merged_from": [],
+  "file": "082-wasm-streaming-fallback-silent-refetch.md",
+  "refuted": false
  },
  {
   "id": "083",
@@ -4325,7 +4489,9 @@
   "verification_notes": "Quote matches licenseManager2D.js:847-851. Re-traced applyLicense (:638-853): with no runtime key and no cookie, checkStatus stays NoLicense and the wizard probe starts regardless of hostname; :842's localhost test only controls the console message. UseCommunityLicense (SciChartSurfaceBase.js:167-169) sets runtime key 'community', which takes the licenseKey path and skips probing. Confirmed retry loop (retryTime 5, maxretries 10 at :180-181; catch branch :225-239) and the per-surface redraw on status change (:240-244 -> updateLicenseDisplayInternal -> invalidateElement at :1170). Corrected the reviewer's line references (:186 -> :190, :181-182 -> :180-181, :226-232 -> :225-239, :232-235 -> :240-244) and noted the fix is a behaviour change for non-localhost dev hosts. Low severity kept (once per page load, small per-call cost).",
   "slice": "s02-init-loading",
   "verified": true,
-  "merged_from": []
+  "merged_from": [],
+  "file": "083-license-wizard-localhost-polling-on-any-host.md",
+  "refuted": false
  },
  {
   "id": "084",
@@ -4359,7 +4525,9 @@
   ],
   "slice": "s03-renderable-series",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "084-stacked-column-collection-unused-native-provider-leak.md",
+  "refuted": false
  },
  {
   "id": "085",
@@ -4398,7 +4566,9 @@
   "app_workaround": "Avoid metadata on series that get insertRange, or rebuild them with clear() plus appendRange of the merged data when inserts are rare.",
   "slice": "s08-data-series",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "085-insert-metadata-range-copies-whole-array.md",
+  "refuted": false
  },
  {
   "id": "086",
@@ -4462,7 +4632,9 @@
     "slice": "x2-data-and-lifecycle",
     "title": "Per-frame Draw and Copy callbacks find each chart by copying and scanning the global destination list (O(N^2) per frame for N charts)"
    }
-  ]
+  ],
+  "file": "086-draw-copy-destination-lookup-allocates-per-frame.md",
+  "refuted": false
  },
  {
   "id": "087",
@@ -4523,7 +4695,9 @@
     "slice": "s09-filters-numerics-utils",
     "title": "runAfterFramePaint creates a new, never-closed MessageChannel on every call (per frame per surface while a painted handler exists)"
    }
-  ]
+  ],
+  "file": "087-painted-event-new-messagechannel-per-frame.md",
+  "refuted": false
  },
  {
   "id": "088",
@@ -4589,7 +4763,9 @@
   "verification_notes": "Quote matches verbatim at WebGlRenderContext2D.js:357-362 (primary moved from :346 to :357; :346 brush noted). Listed every per-call embind construction in the file with rg (:84, :107, :118, :153, :267, :298, :327, :346, :357, :407, :429). Read the glue: makeClassHandle (:4256-4268) uses Object.create with a descriptor; attachFinalizer registers only smart pointers, but delete() always calls detachFinalizer -> FinalizationRegistry.unregister once a registry exists (:3723-3757, :3982-3994). Corrected the scale example: a stroked, undashed BoxAnnotation goes through drawWithProvider (BoxAnnotation.js:146-148, :351) with its own per-draw SCRTColumnDrawingParams, not drawRect; drawRect is used for fill-only or dashed boxes. Narrowed the fix to the params objects only: the reviewer's cached SCRTTextureBrush (SetTexture exists in types/types/TSciChart.d.ts:1241) would outlive the texture that drawLabel.js/NativeAxisRenderer delete right after the draw, an ordering the engine is not exercised with today; drawEllipses stays separate because it sets m_bIsEllipses and the pen. Downgraded medium to low: the removable work is 2 of about 10 crossings per draw call, and the default configuration issues only tens of such calls per frame.",
   "slice": "s01-surface-render",
   "verified": true,
-  "merged_from": []
+  "merged_from": [],
+  "file": "088-wasm-draw-params-allocated-per-draw-call.md",
+  "refuted": false
  },
  {
   "id": "089",
@@ -4628,7 +4804,9 @@
   ],
   "slice": "s03-renderable-series",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "089-datapointwidth-unsorted-minmax-every-frame.md",
+  "refuted": false
  },
  {
   "id": "090",
@@ -4677,7 +4855,9 @@
   ],
   "slice": "s03-renderable-series",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "090-stacked-setters-rebuild-on-unchanged-value.md",
+  "refuted": false
  },
  {
   "id": "091",
@@ -4716,7 +4896,9 @@
   ],
   "slice": "s04-drawing-providers",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "091-bezier-transform-grows-js-arrays-per-run.md",
+  "refuted": false
  },
  {
   "id": "092",
@@ -4755,7 +4937,9 @@
   "app_workaround": "For many static labels use render-context annotations (NativeTextAnnotation, BoxAnnotation, etc.) per SC-21.",
   "slice": "s07-annotations-legend",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "092-svg-annotations-rewrite-unchanged-attributes-every-frame.md",
+  "refuted": false
  },
  {
   "id": "093",
@@ -4794,7 +4978,9 @@
   ],
   "slice": "s10-modifiers-input",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "093-annotation-hover-rebuilds-target-list-twice.md",
+  "refuted": false
  },
  {
   "id": "094",
@@ -4843,6 +5029,8 @@
   "app_workaround": "None safe. delete() calls removeSurface internally, and clearing verticalGroup or horizontalGroup by hand leaves a dead manager in the group's layoutManagers array, which later per-frame group code dereferences.",
   "slice": "s11-layout-core-themes",
   "verified": false,
-  "merged_from": []
+  "merged_from": [],
+  "file": "094-group-removesurface-relayouts-deleted-chart.md",
+  "refuted": false
  }
 ]
