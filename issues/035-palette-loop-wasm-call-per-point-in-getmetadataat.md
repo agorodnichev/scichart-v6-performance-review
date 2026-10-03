@@ -8,7 +8,7 @@
 | Pipeline stage | JS execution (`js`) |
 | Metric | frame time |
 | Evidence | S — static, mechanism certain (not measured) |
-| Verification | **not yet verified**: reviewer-only candidate, see README "Verification status" |
+| Verification | verified by an independent adversarial reviewer (corrected) |
 | Rule | TASK-13, SC-06 (web-performance skill) |
 | Effort to fix | small |
 
@@ -66,17 +66,15 @@ measure.md#fps, `pan` on a FastColumnRenderableSeries with 100k points and a fil
 
 ## Other locations
 
-- `esm/Charting/Visuals/RenderableSeries/DrawingProviders/BaseSeriesDrawingProvider.js:156` — stroke-only palette loop
+- `esm/Charting/Visuals/RenderableSeries/DrawingProviders/BaseSeriesDrawingProvider.js:156` — per-point caller in the stroke-only palette loop (line and line-segment series)
 - `esm/Charting/Visuals/RenderableSeries/Polar/DrawingProviders/PolarBandSeriesDrawingProvider.js:180` — polar band fill palette loop
-- `esm/Charting/Model/BaseDataSeries.js:1230` — validateIndex calls this.count(), which is xValues.size()
-- `esm/Charting/Model/BaseDataSeries.js:801` — same root cause, also reported by slice s08-data-series: getMetadataAt calls wasm size() (plus getStartIndex() on FIFO) before checking for metadata, once per point in every palette loop
-- `esm/Charting/Model/BaseDataSeries.js:1230` — validateIndex calls this.count() (:549), which calls xValues.size(), an embind call
-- `esm/Charting/Visuals/RenderableSeries/DrawingProviders/BaseSeriesDrawingProvider.js:156` — Per-point caller in the stroke palette loop
-- `esm/Charting/Visuals/RenderableSeries/DrawingProviders/BaseSeriesDrawingProvider.js:262` — Per-point caller in the stroke+fill palette loop (column, OHLC, band, box-plot series)
-- `esm/Charting/ChartModifiers/DataPointSelectionModifier.js:174` — Calls it for every point when the modifier attaches
+- `esm/Charting/Model/BaseDataSeries.js:801` — getMetadataAt calls validateIndex, and so the wasm size() call (plus getStartIndex() on FIFO), before it checks for metadata. Also reported by slice s08-data-series.
+- `esm/Charting/Model/BaseDataSeries.js:1230` — validateIndex calls this.count() (:549-551), which calls xValues.size(), an embind call
+- `esm/Charting/Visuals/RenderableSeries/DrawingProviders/MountainSeriesDrawingProvider.js:154` — createBrush(), called from every draw (:60), sets requiresUpdate = true, so mountain series run the loop every redraw
+- `esm/Charting/ChartModifiers/DataPointSelectionModifier.js:174` — calls it for every point when the modifier attaches (once, not per frame)
 
 ## Review notes
 
 - Found by reviewer slice `s04-drawing-providers`.
-- Not yet adversarially verified. The code quote and line numbers come from the slice reviewer; re-check them before acting.
+- Adversarial verification (corrected): Re-read DrawingProviders/BaseSeriesDrawingProvider.js:98-300 and :355-410. The code_quote matches :254-262 verbatim, with the getMetadataAt call at :262; dsCount is read once at :253 and the index is clamped at :256-259. BaseDataSeries.js:800-811: getMetadataAt calls validateIndex (:801 -> :1225-1231), whose range check calls this.count() (:1230 -> :549-551, this.xValues.size()); xValues is a native SCRTDoubleVector or SCRTFifoVector (DoubleVectorProvider.js:4-10, :24-26), so size() is an embind call. The metadataProperty check comes only after that (:802), and FIFO adds xValues.getStartIndex() (:806). The only overrides of getMetadataAt are in heatmap and 3D grid series, which these providers do not draw. Call chain: SciChartRenderer.js:354 rs.draw -> BaseRenderableSeries.js:628 dp.draw -> for example ColumnSeriesDrawingProvider.js:93, PointMarkerDrawingProvider.js:97, MountainSeriesDrawingProvider.js:70, BandSeriesDrawingProvider.js:123, OhlcSeriesDrawingProvider.js:101 (applyStrokeFillPaletting), and LineSeriesDrawingProvider.js:143 / LineSegmentSeriesDrawingProvider.js:120 (applyStrokePaletting, loop :148-159). The only guard is requiresUpdate (:137, :235). shouldUpdatePalette (:360-397) forces it true whenever the provider has no shouldUpdatePalette or it returns true; DefaultPaletteProvider returns true (IPaletteProvider.js:56-58). MountainSeriesDrawingProvider.draw calls createBrush() (:60), which sets requiresUpdate = true (:154), so mountain series always rerun the loop. PolarBandSeriesDrawingProvider.js:158/:180 does the same. Fix check: dataSeries.hasMetadata (BaseDataSeries.js:825-827) tests the same metadataProperty !== undefined condition that getMetadataAt tests, so results are unchanged. The only difference is that validateIndex no longer throws for an empty series (dsCount 0 clamps to -1) when it has no metadata, which is benign. The {stroke, fill} objects are at :398-409, PointMarkerDrawingProvider.js:133 and BubbleSeriesDrawingProvider.js:84, as stated. Severity: this is per visible point per frame, but only for a series with a non-cacheable palette provider, and it removes a constant per-point overhead from a loop that already calls the user callback per point. The rule's impact is medium, so medium stays. Evidence S. Corrected: removed the duplicated other_locations entries (BaseDataSeries.js:1230 and BaseSeriesDrawingProvider.js:156 were listed twice, and :262 duplicated the primary).
 - Duplicate merged from slice `s08-data-series`: getMetadataAt calls wasm size() (plus getStartIndex() on FIFO) before checking for metadata, once per point in every palette loop
