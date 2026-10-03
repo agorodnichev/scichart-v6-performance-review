@@ -3,12 +3,12 @@
 | | |
 |---|---|
 | Package | `scichart@6.0.6` (npm, ESM build) |
-| Location | `esm/Charting/Visuals/RenderableSeries/StackedXyCollection.js:79` |
+| Location | `esm/Charting/Visuals/RenderableSeries/StackedXyCollection.js:71` |
 | Severity | **high** |
 | Pipeline stage | JS execution (`js`) |
 | Metric | frame time (stream; also INP when data changes come from input) |
 | Evidence | S — static, mechanism certain (not measured) |
-| Verification | **not yet verified**: reviewer-only candidate, see README "Verification status" |
+| Verification | verified by an independent adversarial reviewer (corrected) |
 | Rule | SC-01, SC-06, V8-01 (web-performance skill) |
 | Effort to fix | medium |
 
@@ -37,7 +37,7 @@ App appendRange/update on any child data series -> dataChanged -> BaseStackedRen
 
 Each push_back is an embind method call. The generated invoker (_glue-pretty/scichart.js:4648, craftInvokerFunction -> invokerFn) allocates a rest-args array and an onDone closure, converts and validates `this`, then crosses into wasm, for every single value. The loop also recomputes every stacked sum from scratch, but stacking at index i reads only index i, so an append changes only the new indices: the cost follows the history length, not the new data. The library already has the bulk pattern (resizeFast + HEAPF64 writes in utils/ccall/appendDoubleVectorFromJsArray.js:25-47).
 
-**Scale where it matters:** A streaming stacked mountain or column chart: S = 5 layers x N = 100k points (fifoCapacity) gives about 1.1M embind push_back calls and 500k closure calls per data change, i.e. per frame while data streams. It starts to matter from about N x S >= 10^5 at one update per frame.
+**Scale where it matters:** A streaming stacked mountain or column chart: S = 5 layers x N = 100k points (fifoCapacity) gives about 1.2M embind push_back calls per data change (N x (2S+1) = 1.1M for the stacks, plus N = 100k to unwind the FIFO X values) and about 1M JS closure calls (one forEach callback and one rawIndexers closure per point per series), i.e. per frame while data streams. It starts to matter from about N x S >= 10^5 at one update per frame.
 
 ## Fix (library side)
 
@@ -62,7 +62,8 @@ Each push_back is an embind method call. The generated invoker (_glue-pretty/sci
 +            rs.accumulatedValues.resizeFast(dataValuesCount);
 +            if (separate) rs.bottomAccumulatedValues.resizeFast(dataValuesCount);
 +        }
-+        this.buildUnwoundXValues(dataValuesCount);               // same change inside: resizeFast(n) + HEAPF64.set of the two wrapped halves
++        this.buildUnwoundXValues(dataValuesCount);               // same change inside: resizeFast(n) first, then copy the two wrapped halves of the raw X ring
++        // with SCRTMemCopy from xFifo.dataPtrZero() (as copyDoubleVector does), so no view is held across new SCRTDoubleVector()/reserve()
 +        // 2) then the views, and plain indexed writes (no wasm call per value)
 +        const yViews = visibleSeries.map(rs => vectorToArrayViewF64(rs.dataSeries.getNativeYValues(), wasm));
 +        const tops = visibleSeries.map(rs => vectorToArrayViewF64(rs.accumulatedValues, wasm));
@@ -141,5 +142,5 @@ measure.md#fps, `stream` scenario: a StackedMountainCollection with 5 series, fi
 ## Review notes
 
 - Found by reviewer slice `s03-renderable-series`.
-- Not yet adversarially verified. The code quote and line numbers come from the slice reviewer; re-check them before acting.
+- Adversarial verification (corrected): Re-read StackedXyCollection.js:33-115 (quote at :71-82 matches verbatim apart from CRLF line endings; primary moved from :79 to :71 where the quote starts), :129-144 buildUnwoundXValues, :254-261, :308-317, and StackedColumnCollection.js:104-186. Caller chain re-established: XyDataSeries appendRange raises dataChanged -> BaseRenderableSeries.js:436 subscribes dataSeriesDataChanged -> BaseStackedRenderableSeries.js:49-51 overrides it with notifyPropertyChanged(DATA_SERIES) -> :97-101 notifyParentPropertyChangedFn (bound at BaseStackedCollection.js:60, passed in StackedXyCollection.js:290) -> StackedXyCollection.notifyPropertyChanged sets isAccumulatedVectorDirty (:260) and BaseStackedCollection.js:455-456 invalidateParent -> next render SciChartRenderer.js:127 -> SciChartSurface.js:760-762 -> updateAccumulatedVectors. Only guard is the dirty flag plus !dataValuesCount (:35); it coalesces several appends into one rebuild per frame but does not narrow the work: clearAccumulatedVectors (:308-317) clears every vector and the loop rebuilds all N indices with N x (2S+1) push_back (:54, :79/:81 or :86/:87, :107) plus N more in buildUnwoundXValues (:142) for FIFO sources. Later calls (draw :167, BaseStackedCollection.js:518 computeYRange, :779) are no-ops once the flag is cleared. push_back goes through the generic embind invoker (_glue-pretty/scichart.js:4648 invokerFn, used for class methods at :4876): rest args, toWireType(this), spread call, nested onDone closure, per value. Stacked series are not resampled (BaseRenderableSeries.js:1181 !this.isStacked). SC-01/V8-01 Avoid fields do not exempt this (not a rare single-point call; data size grows). Severity high kept: per frame while any child streams, cost proportional to history length. Evidence S kept: the full rebuild with per-point wasm calls on every data-changed frame is certain from the code. Fix checked: resizeFast exists on SCRTDoubleVector (types/types/TSciChart.d.ts:468, returns achieved size), allocations-before-views ordering is right, starts[] reproduces rawIndexers exactly (modulo is identity when start is 0), non-separate mode leaves bottomAccumulatedValues at size 0 as today, hidden series still cleared by clearAccumulatedVectors, requiresTransform is a plain field (BaseRenderDataTransform.js:19) so hoisting it is equivalent. Corrected: primary line; scale counts (the 5 x 100k FIFO example is 1.2M push_back with the X unwind, and about 1M closure calls since each point/series runs a forEach callback and a rawIndexers closure); fix_diff comment for buildUnwoundXValues, whose current code takes xView (:134) before new SCRTDoubleVector/reserve (:137-140), so the fixed version must copy after resizeFast (SCRTMemCopy from SCRTFifoVector.dataPtrZero) rather than reuse an earlier view.
 - Duplicate merged from slice `x2-data-and-lifecycle`: Stacked collections rebuild every accumulated vector with one embind push_back per point per series on each data change
