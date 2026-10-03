@@ -1,14 +1,14 @@
-# 044 · Every sub-chart copy of a pointer event keeps isMaster: true, so each sub-chart, active or not, re-broadcasts the event to every other top-level 2D surface for each modifier group
+# 044 · Every sub-chart copy of a pointermove keeps isMaster: true, so each sub-chart, active or not, re-broadcasts the move to every other top-level 2D surface for each modifier group
 
 | | |
 |---|---|
 | Package | `scichart@6.0.6` (npm, ESM build) |
-| Location | `esm/Core/Mouse/MouseManager.js:658` |
+| Location | `esm/Core/Mouse/MouseManager.js:654` |
 | Severity | **medium** |
 | Pipeline stage | JS execution (`js`) |
 | Metric | frame time (pointer move, pan/zoom), also INP for down/up |
 | Evidence | S — static, mechanism certain (not measured) |
-| Verification | **not yet verified**: reviewer-only candidate, see README "Verification status" |
+| Verification | verified by an independent adversarial reviewer (corrected) |
 | Rule | SC-42 (web-performance skill) |
 | Effort to fix | small |
 
@@ -25,21 +25,23 @@
 
 ## Call path and frequency
 
-pointermove on the parent canvas -> MouseManager.onPointerMove (MouseManager.js:107-114) -> modifierMouseMove (:308) -> updateSubCharts (:334, :599). For each of S sub-charts, Move is forwarded even when the pointer is not over that sub-chart (:648) -> processSubChartEvent (:663) -> callEvent -> scs.mouseManager.modifierMouseMove(copy) (:702). The copy still has isMaster === true, so the sub-chart's own fan-out block runs (:326-333): chartModifierGroups (:592-595) -> sciChartSurface.otherSurfaces, which is recomputed per group from the global registry (SciChartSurfaceCore.js:75-87 -> Globals.js:87) and returns every top-level 2D surface, the parent included -> ModifierMouseArgs.copy + other.mouseManager.modifierMouseMove for each one. This runs on every pointer event (move/down/up/wheel/leave/enter), and the same block is repeated in all 9 modifierX methods.
+pointermove on the parent canvas -> MouseManager.onPointerMove (MouseManager.js:107-114) -> modifierMouseMove (:308) -> updateSubCharts (:334, :599). Every sub-chart with an offset that the pointer is not over still gets Move, with isActiveSubChartEvent=false (:647-651); the active one gets it with true -> processSubChartEvent (:658, :663) -> callEvent -> scs.mouseManager.modifierMouseMove(copy) (:702). The copy is `{ ...args, isActiveSubChartEvent }`, so isMaster stays true (set at ModifierMouseArgs.js:63) and the sub-chart's own fan-out block runs (:326-333): chartModifierGroups (:592-595) x sciChartSurface.otherSurfaces, recomputed per group from the global registry (SciChartSurfaceCore.js:75-88 -> Globals.js:87). Sub-surfaces are not registered but report a 2D surface type (SciChartSurface.js:395), so the list is every registered top-level 2D surface, the parent included -> ModifierMouseArgs.copy + other.mouseManager.modifierMouseMove for each. The receiving top-level surface is not a sub-surface, so the RolloverModifier/CursorModifier guard on isActiveSubChartEvent (RolloverModifier.js:254, CursorModifier.js:258) does not stop it. Inactive sub-charts receive only Move, Up and Cancel (:647-651), so Up and Cancel are duplicated the same way once per interaction; Move is the per-input-event case.
 
 ## Why it costs
 
-Per pointermove, the work is O(S x groups x surfaces): S spread copies, S global-registry scans, and S dispatches into each other surface's modifier list. A RolloverModifier or CursorModifier on another chart in the same group runs its full update (hit test of every series, tooltip templates, SVG invalidation) S times. Only the last update is kept, and that point was mapped through the last sub-chart's rect, which is the wrong one. Inactive sub-charts' own rollover modifiers return early, so this work buys nothing.
+Per pointermove, the work is O(S x groups x surfaces): S spread copies, S global-registry scans, and S dispatches into each other surface's modifier list. A RolloverModifier or CursorModifier on another chart in the same group runs its full update (hit test of every series, tooltip templates, SVG invalidation) S times. Only the last update is kept, and its point was mapped through the rect of the last sub-chart in iteration order, which is usually not the one under the pointer. Inactive sub-charts' own rollover and cursor modifiers return early (RolloverModifier.js:254), so this work buys nothing.
 
 **Scale where it matters:** Multi-pane layouts built as sub-charts (SC-17 recommends them; 8-100 panes) whose cursor or rollover modifiers share a modifierGroup. The cost multiplies when another top-level chart shares that group. A Node mock that drives the real cjs MouseManager (counts dispatches only, no timing) gave the other chart's grouped modifier 8 full updates per pointermove with 8 sub-charts and 32 with 32. It should get 1.
 
 ## Fix (library side)
 
 ```diff
---- esm/Core/Mouse/MouseManager.js (same change in modifierMouseMove/Down/Up/Wheel/DoubleClick/Leave/Enter/Drop/PointerCancel)
+--- esm/Core/Mouse/MouseManager.js  modifierMouseMove (:326) only
 -        if (args.isMaster) {
-+        // A sub-chart's copy of the parent's event (isActiveSubChartEvent === false) must not re-broadcast
-+        // to every other top-level surface: only real master events and the active sub-chart fan out.
++        // A move copied from the parent into an inactive sub-chart (isActiveSubChartEvent === false) must not
++        // re-broadcast to every other top-level surface: only real master events and the active sub-chart fan out.
++        // Leave modifierMouseUp/modifierPointerCancel unchanged: a release outside every sub-chart has no active
++        // sub-chart, and grouped modifiers on other surfaces still need that Up/Cancel to end a drag.
 +        if (args.isMaster && args.isActiveSubChartEvent !== false) {
              const masterData = this.getMasterData(this.sciChartSurface, args);
 -            this.chartModifierGroups.forEach(modifierGroup => {
@@ -50,7 +52,7 @@ Per pointermove, the work is O(S x groups x surfaces): S spread copies, S global
 +                others.forEach(scs => {
 ```
 
-**Trade-off:** Grouped modifiers on other surfaces get one copy per event, from the active sub-chart, in place of one per sub-chart. Code that depended on inactive sub-charts re-broadcasting would change behavior, but that re-broadcast only left wrong positions. updateSubCharts inside the same block does nothing for sub-charts, which have no nested sub-charts.
+**Trade-off:** Grouped modifiers on other surfaces get one move per pointermove, from the active sub-chart, in place of one per sub-chart. While the pointer is over the parent but over no sub-chart they get no move at all; the Leave that the sub-chart sends when the pointer leaves it is built from the parent's master args (isActiveSubChartEvent=true, MouseManager.js:624) and still fans out, so their tooltips are hidden as before. Up and Cancel keep the per-sub-chart duplicates, which run once per interaction. updateSubCharts inside the same block does nothing for sub-charts, which have no nested sub-charts.
 
 ## App-side workaround
 
@@ -70,5 +72,5 @@ measure.md#fps hover scenario: parent with 16 sub-charts, each with RolloverModi
 ## Review notes
 
 - Found by reviewer slice `s10-modifiers-input`.
-- Not yet adversarially verified. The code quote and line numbers come from the slice reviewer; re-check them before acting.
+- Adversarial verification (corrected): Re-read MouseManager.js:599-662 (updateSubCharts), :663-682 (processSubChartEvent), :683-718 (callEvent), :308-335 (modifierMouseMove), ModifierMouseArgs.js:55-111, SciChartSurfaceCore.js:60-89, Globals.js:58-90, createMaster.js:292, SciChartSurface.js:395, RolloverModifier.js:252-255. Confirmed: the spread `{ ...args, isActiveSubChartEvent }` at MouseManager.js:658 keeps isMaster === true (fromPointerEvent sets it at ModifierMouseArgs.js:63; only copy/copyForSubChart at :89/:105 clear it). callEvent(Move) -> sub-chart mouseManager.modifierMouseMove(copy) -> the isMaster block at :326 runs on the sub-chart: chartModifierGroups (:592) x otherSurfaces. Sub-surfaces are never registered (addDestination only in createMaster.js:292 / createSingle.js:170) but report SciChartSurfaceType (SciChartSurface.js:395, 2D), so getOtherSurfaces (SciChartSurfaceCore.js:75-88 -> Globals.getOtherDestinations :87) returns every registered top-level 2D surface, the parent included, recomputed per group. Inactive sub-charts still get Move (:647-651, isActiveSubChartEvent=false) and their copies to another surface keep isActiveSubChartEvent=false, but the receiving top-level surface is not a sub-surface, so its RolloverModifier/CursorModifier guard (RolloverModifier.js:254, CursorModifier.js:258) does not stop the update. So a grouped modifier on another top-level chart runs S updates per pointermove. Corrections: (1) primary line 658 -> 654 so the quote starts at the cited line; (2) inactive sub-charts receive only Move, Up and Cancel (:647-651), so duplicates come from those three handlers, not 'every pointer event', and only Move is per-input-event; (3) the fix must not be applied to Up/PointerCancel: when the pointer is released outside every sub-chart there is no active sub-chart, all copies have isActiveSubChartEvent=false, and the proposed guard would drop the only Up/Cancel that grouped modifiers on other surfaces receive (stuck drag). Fix limited to modifierMouseMove; Leave is sent with isActiveSubChartEvent=true (leaveArgs built from the parent's master args, :624) so other surfaces still hide their tooltips when the pointer leaves a sub-chart. Severity stays medium: per pointermove, but the heavy part (S full rollover/cursor updates) needs sub-charts with grouped modifiers that share a group with another top-level surface; without that the extra work is S registry scans + copies + modifier-list loops. Evidence S: the dispatch count follows directly from the code.
 

@@ -22,9 +22,9 @@ Nothing here is measured. Every issue names the recipe that would measure it.
 
 | Status | Issues |
 |---|---|
-| Verified by an adversarial reviewer (confirmed or corrected) | 63 |
+| Verified by an adversarial reviewer (confirmed or corrected) | 64 |
 | Refuted by an adversarial reviewer (file kept, marked) | 0 |
-| **Not yet verified** (reviewer only) | 31 |
+| **Not yet verified** (reviewer only) | 30 |
 
 Each issue file and the index below show its own verification status; all high-severity issues are verified. Unverified issues are strong candidates: re-check the quoted line and the caller chain before acting. Raw data for resuming: [`data/findings.json`](data/findings.json) (`verified: false`).
 
@@ -75,7 +75,7 @@ Each issue file and the index below show its own verification status; all high-s
 | [041](issues/041-moving-average-insert-remove-recompute-tail.md) | medium | JS execution | XyMovingAverageFilter recomputes every output after an insert/remove index, a full pass for prepend or front-trim | `esm/Charting/Model/Filters/XyMovingAverageFilter.js:67` | S | yes | small |
 | [042](issues/042-ratio-filter-divisor-subscription-never-removed.md) | medium | Memory and lifecycle | XyRatioFilter never unsubscribes from divisorSeries.dataChanged; a deleted filter keeps running (and throwing) on every divisor update | `esm/Charting/Model/Filters/XyRatioFilter.js:21` | S | yes | small |
 | [043](issues/043-resampling-hash-json-split-per-frame.md) | medium | JS execution | Resampling hash per frame per series: JSON.stringify of the params, then a one-string-per-character array and a reduce callback per character | `esm/utils/hash.js:2` | S | yes | small |
-| [044](issues/044-subchart-event-copies-rebroadcast-to-all-surfaces.md) | medium | JS execution | Every sub-chart copy of a pointer event keeps isMaster: true, so each sub-chart, active or not, re-broadcasts the event to every other top-level 2D surface for each modifier group | `esm/Core/Mouse/MouseManager.js:658` | S | no | small |
+| [044](issues/044-subchart-event-copies-rebroadcast-to-all-surfaces.md) | medium | JS execution | Every sub-chart copy of a pointermove keeps isMaster: true, so each sub-chart, active or not, re-broadcasts the move to every other top-level 2D surface for each modifier group | `esm/Core/Mouse/MouseManager.js:654` | S | yes | small |
 | [045](issues/045-rollover-update-hit-tests-every-series-twice.md) | medium | JS execution | RolloverModifier.update() hit-tests every series a second time to fill the legend, and runs on every pointer event and every full render | `esm/Charting/ChartModifiers/RolloverModifier.js:468` | S | no | small |
 | [046](issues/046-polar-cursor-post-render-update-extra-frame.md) | medium | Tasks and scheduling | PolarCursorModifier updates after the render has re-armed invalidation, and the default cursor tooltip template stamps Date.now() into its SVG, so each full render with the pointer over the series area schedules one more frame | `esm/Charting/ChartModifiers/Polar/PolarCursorModifier.js:277` | S | no | small |
 | [047](issues/047-sync-layout-double-measures-left-right-axes.md) | medium | JS execution | SynchronizedLayoutManager measures left and right outer axes twice per frame when the chart has no vertical group, which is the case for every SciChartHorizontalGroup chart | `esm/Charting/LayoutManager/SynchronizedLayoutManager.js:64` | S | no | small |
@@ -140,7 +140,7 @@ Each issue file and the index below show its own verification status; all high-s
 | `s07-annotations-legend` | 10 | 9 verified, 0 refuted, 1 not verified |
 | `s08-data-series` | 9 | 5 verified, 0 refuted, 1 not verified |
 | `s09-filters-numerics-utils` | 7 | 6 verified, 0 refuted, 0 not verified |
-| `s10-modifiers-input` | 7 | 1 verified, 0 refuted, 6 not verified |
+| `s10-modifiers-input` | 7 | 2 verified, 0 refuted, 5 not verified |
 | `s11-layout-core-themes` | 2 | not verified yet |
 | `s12-pie-3d-surface` | 7 | 1 verified, 0 refuted, 6 not verified |
 | `s13-3d-series-modifiers` | 6 | 2 verified, 0 refuted, 3 not verified |
