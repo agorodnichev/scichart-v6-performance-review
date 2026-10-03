@@ -7,8 +7,8 @@
 | Severity | **low** |
 | Pipeline stage | Tasks and scheduling (`tasks`) |
 | Metric | INP (processing time of the interaction that unmounts the view) |
-| Evidence | H — hypothesis, depends on data size/hardware (not measured) |
-| Verification | **not yet verified**: reviewer-only candidate, see README "Verification status" |
+| Evidence | S — static, mechanism certain (not measured) |
+| Verification | verified by an independent adversarial reviewer (corrected) |
 | Rule | none (web-performance skill) |
 | Effort to fix | small |
 
@@ -20,7 +20,7 @@
 
 ## Call path and frequency
 
-app unmount -> SciChartSurface.delete (esm/Charting/Visuals/SciChartSurface.js:671; sets isDeletedProperty = true) -> verticalGroup.removeSurface (SciChartSurface.js:695) -> SciChartVerticalGroup.removeSurface -> layoutChart (SciChartVerticalGroup.js:64). If the chart is also in a horizontal group, that layout runs on a horizontal-only SynchronizedLayoutManager, which also hits the double measure in F1. -> horizontalGroup.removeSurface (SciChartSurface.js:698) -> new LayoutManager (SciChartHorizontalGroup.js:49) -> layoutChart again (SciChartHorizontalGroup.js:64) -> every axis AxisBase2D.measure (AxisBase2D.js:578), getTicks(true) at :582. After that, delete() drops the layout manager and deletes the axes. This runs once per grouped chart deletion, synchronously in the teardown task.
+app unmount -> SciChartSurface.delete (esm/Charting/Visuals/SciChartSurface.js:671; isDeletedProperty = true at :684) -> verticalGroup.removeSurface (SciChartSurface.js:695) -> SciChartVerticalGroup.removeSurface: new LayoutManager (SciChartVerticalGroup.js:49) when not in a horizontal group, else keep the sync manager with verticalGroup = undefined (:62) -> layoutChart (SciChartVerticalGroup.js:64). If the chart is also in a horizontal group, that layout runs on the horizontal-only path of SynchronizedLayoutManager.layoutChart (SynchronizedLayoutManager.js:37-42), where measureLeftOuterAxes and measureRightOuterAxes call super twice (:61-65, :80-84; finding 047). -> horizontalGroup.removeSurface (SciChartSurface.js:698) -> new LayoutManager (SciChartHorizontalGroup.js:49) -> layoutChart again (SciChartHorizontalGroup.js:64). Each layout calls AxisBase2D.measure on every axis (AxisBase2D.js:578), which runs getTicks(true) at :582 (ticks and labels regenerated) and the label size measurement in axisRenderer.measure. Then delete() drops the layout manager (SciChartSurface.js:701-702) and deletes the axes (:705-706). This runs once per grouped chart deletion, synchronously in the teardown task.
 
 ## Why it costs
 
@@ -33,18 +33,30 @@ The relayout exists so that a surface that stays alive after leaving a group get
 ```diff
 --- a/esm/Charting/LayoutManager/SciChartVerticalGroup.js
 +++ b/esm/Charting/LayoutManager/SciChartVerticalGroup.js
-@@ removeSurface(sciChartSurface) {
+@@ -61,7 +61,9 @@ export class SciChartVerticalGroup {
+             // Remove only the horizontal part of the layout manager
+             syncLayoutManager.verticalGroup = undefined;
+         }
 -        sciChartSurface.layoutManager.layoutChart(sciChartSurface.renderSurface.viewportSize, sciChartSurface.chartTitleRenderer.titleOffset);
 +        if (!sciChartSurface.isDeleted) {
 +            sciChartSurface.layoutManager.layoutChart(sciChartSurface.renderSurface.viewportSize, sciChartSurface.chartTitleRenderer.titleOffset);
 +        }
+         this.onLeftSizeChanged(syncLayoutManager.id, 0);
+         this.onRightSizeChanged(syncLayoutManager.id, 0);
+         delete this.leftOuterLayoutSizes[syncLayoutManager.id];
 --- a/esm/Charting/LayoutManager/SciChartHorizontalGroup.js
 +++ b/esm/Charting/LayoutManager/SciChartHorizontalGroup.js
-@@ removeSurface(sciChartSurface) {
+@@ -61,7 +61,9 @@ export class SciChartHorizontalGroup {
+             // Remove only the horizontal part of the layout manager
+             syncLayoutManager.horizontalGroup = undefined;
+         }
 -        sciChartSurface.layoutManager.layoutChart(sciChartSurface.renderSurface.viewportSize, sciChartSurface.chartTitleRenderer.titleOffset);
 +        if (!sciChartSurface.isDeleted) {
 +            sciChartSurface.layoutManager.layoutChart(sciChartSurface.renderSurface.viewportSize, sciChartSurface.chartTitleRenderer.titleOffset);
 +        }
+         this.onTopSizeChanged(syncLayoutManager.id, 0);
+         this.onBottomSizeChanged(syncLayoutManager.id, 0);
+         delete this.topOuterLayoutSizes[syncLayoutManager.id];
 ```
 
 **Trade-off:** None for deleted surfaces. An explicit group.removeSurface() on a live surface still relays it out as before. The group bookkeeping (onXSizeChanged(id, 0), key deletion, synchronizeAxisSizes) still runs, so the remaining charts re-align.
@@ -67,5 +79,5 @@ measure.md#inp: a click that unmounts a view with 12 charts in a SciChartVertica
 ## Review notes
 
 - Found by reviewer slice `s11-layout-core-themes`.
-- Not yet adversarially verified. The code quote and line numbers come from the slice reviewer; re-check them before acting.
+- Adversarial verification (corrected): Re-read esm/Charting/LayoutManager/SciChartVerticalGroup.js:41-70 and SciChartHorizontalGroup.js:41-71: line 64 in both files matches the code_quote verbatim and runs unconditionally (no isDeleted or other guard). Caller chain: SciChartSurface.delete (SciChartSurface.js:671) returns early only if already deleted (:672), sets isDeletedProperty = true (:684), then, for a Synchronised layout manager, calls verticalGroup.removeSurface(this) (:695) and horizontalGroup.removeSurface(this) (:698). These are the only callers of removeSurface in esm/ besides an explicit app call. In both group classes, removeSurface either sets layoutManager to a fresh LayoutManager (:49-58; the constructor at LayoutManager.js:29-58 allocates 8 strategy objects plus ChartLayoutState and LayoutStrategyAxes; the setter at SciChartSurface.js:404-410 calls invalidateElement, which bails at :575 on isDeleted) or keeps the sync manager with only the other group. It then calls layoutChart (:64). LayoutManager.layoutChart (LayoutManager.js:149) has no early-out: groupAxesByLayoutStrategy over xAxes and yAxes, all 8 measure*Axes, then AxisBase2D.measure (AxisBase2D.js:578), which calls getTicks(true) (:582; regenerate=true, so tick generation and getLabels run again at :1343-1370) and axisRenderer.measure, which calls labelProvider.getMaxLabel*. For a chart in both groups, the vertical removeSurface clears verticalGroup and runs SynchronizedLayoutManager.layoutChart on the horizontal-only path (SynchronizedLayoutManager.js:37-42). There, measureLeftOuterAxes and measureRightOuterAxes call super twice (:61-65, :80-84; finding 047). horizontalGroup.removeSurface then allocates a LayoutManager and lays the chart out again, so it gets 2 layouts. At that point renderSurface, chartTitleRenderer and the axes are all still alive (they are torn down at SciChartSurface.js:701-712), so the layouts really run and are thrown away at :701-706. The mechanism is certain on this path, so I raised evidence to S. Severity stays low: it is a one-time teardown cost per grouped chart, not per frame or per input. Corrections: evidence H->S; call_path now names :684 as the isDeleted set point and replaces the dangling 'F1' with finding 047 and its lines; fix_diff gets real hunk line numbers (the guard logic is unchanged and correct: sciChartSurface.isDeleted exists at SciChartSurfaceCore.js:54; group bookkeeping and synchronizeAxisSizes still run, so the surviving charts re-align as before).
 

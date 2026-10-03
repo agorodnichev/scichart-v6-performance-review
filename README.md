@@ -22,9 +22,9 @@ Nothing here is measured. Every issue names the recipe that would measure it.
 
 | Status | Issues |
 |---|---|
-| Verified by an adversarial reviewer (confirmed or corrected) | 93 |
+| Verified by an adversarial reviewer (confirmed or corrected) | 94 |
 | Refuted by an adversarial reviewer (file kept, marked) | 0 |
-| **Not yet verified** (reviewer only) | 1 |
+| **Not yet verified** (reviewer only) | 0 |
 
 Each issue file and the index below show its own verification status; all high-severity issues are verified. Unverified issues are strong candidates: re-check the quoted line and the caller chain before acting. Raw data for resuming: [`data/findings.json`](data/findings.json) (`verified: false`).
 
@@ -125,7 +125,7 @@ Each issue file and the index below show its own verification status; all high-s
 | [091](issues/091-bezier-transform-grows-js-arrays-per-run.md) | medium | Memory and lifecycle | BezierRenderDataTransform (also inside SmoothStackedMountainRenderableSeries) builds each run's output in growable JS arrays, about 3 x visible points x interpolationPoints values, and drops them after the copy into wasm on every pan, zoom or data run | `esm/Charting/Visuals/RenderableSeries/RenderDataTransforms/BezierRenderDataTransform.js:11` | H | yes | small |
 | [092](issues/092-svg-annotations-rewrite-unchanged-attributes-every-frame.md) | low | Style | Every SVG annotation rewrites its x/y (line: x1/y1/x2/y2) attributes on every render, even when the values are unchanged | `esm/Charting/Visuals/Annotations/SvgAnnotationBase.js:59` | H | yes | small |
 | [093](issues/093-annotation-hover-rebuilds-target-list-twice.md) | low | JS execution | AnnotationHoverModifier rebuilds the z-ordered annotation list (14 filter passes + 9 spreads) twice per pointermove, then does a linear find on the hovered annotation | `esm/Charting/ChartModifiers/AnnotationHoverModifier.js:87` | H | yes | small |
-| [094](issues/094-group-removesurface-relayouts-deleted-chart.md) | low | Tasks and scheduling | surface.delete() on a grouped chart runs one or two full layouts (every axis re-measured) on the chart being destroyed, through SciChartVerticalGroup/HorizontalGroup.removeSurface | `esm/Charting/LayoutManager/SciChartVerticalGroup.js:64` | H | no | small |
+| [094](issues/094-group-removesurface-relayouts-deleted-chart.md) | low | Tasks and scheduling | surface.delete() on a grouped chart runs one or two full layouts (every axis re-measured) on the chart being destroyed, through SciChartVerticalGroup/HorizontalGroup.removeSurface | `esm/Charting/LayoutManager/SciChartVerticalGroup.js:64` | S | yes | small |
 
 ## Coverage
 
@@ -141,7 +141,7 @@ Each issue file and the index below show its own verification status; all high-s
 | `s08-data-series` | 9 | 6 verified, 0 refuted, 0 not verified |
 | `s09-filters-numerics-utils` | 7 | 6 verified, 0 refuted, 0 not verified |
 | `s10-modifiers-input` | 7 | 7 verified, 0 refuted, 0 not verified |
-| `s11-layout-core-themes` | 2 | 1 verified, 0 refuted, 1 not verified |
+| `s11-layout-core-themes` | 2 | 2 verified, 0 refuted, 0 not verified |
 | `s12-pie-3d-surface` | 7 | 7 verified, 0 refuted, 0 not verified |
 | `s13-3d-series-modifiers` | 6 | 5 verified, 0 refuted, 0 not verified |
 | `x1-frame-path` | 6 | 4 verified, 0 refuted, 0 not verified |
