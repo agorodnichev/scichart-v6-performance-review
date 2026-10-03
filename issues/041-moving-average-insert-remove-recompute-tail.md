@@ -8,7 +8,7 @@
 | Pipeline stage | JS execution (`js`) |
 | Metric | INP (history prepend), frame time (per-message trimming) |
 | Evidence | S — static, mechanism certain (not measured) |
-| Verification | **not yet verified**: reviewer-only candidate, see README "Verification status" |
+| Verification | verified by an independent adversarial reviewer (corrected) |
 | Rule | SC-24, V8-01 (web-performance skill) |
 | Effort to fix | small |
 
@@ -38,15 +38,17 @@ After an insert or remove at startIndex, outputs before startIndex are unchanged
 ```diff
 --- a/esm/Charting/Model/Filters/XyMovingAverageFilter.js
 +++ b/esm/Charting/Model/Filters/XyMovingAverageFilter.js
-@@ -67,8 +67,30 @@
+@@ -67,8 +67,36 @@
      filterOnInsert(startIndex, count) {
 -        this.calculate(startIndex);
++        if (this.fifoCapacity) return this.calculate(startIndex); // a FIFO filter cannot removeRange/insertRange
 +        // only the inserted outputs and the next length-1 (whose window straddles the insert) change
 +        const affected = Math.min(this.length - 1, this.count() - startIndex);
 +        this.replaceWindow(startIndex, affected, count + affected);
      }
      filterOnRemove(startIndex, count) {
 -        this.calculate(startIndex);
++        if (this.fifoCapacity) return this.calculate(startIndex);
 +        // outputs whose window lies wholly after the gap keep their value
 +        const affected = Math.min(this.length - 1, this.getOriginalCount() - startIndex);
 +        this.replaceWindow(startIndex, count + affected, affected);
@@ -68,12 +70,15 @@ After an insert or remove at startIndex, outputs before startIndex are unchanged
 +            if (i - L + 1 >= 0) sum -= yv[i - L + 1] || 0;
 +        }
 +        if (oldCount > 0) this.removeRange(start, oldCount); // native memmove of the tail, no JS per point
-+        if (newCount > 0) this.insertRange(start, xs, ys);
++        if (newCount === 0) return;
++        // insertRange validates start < count() (BaseDataSeries.validateIndex), so a window that reaches the end is appended
++        if (start < this.count()) this.insertRange(start, xs, ys);
++        else this.appendRange(xs, ys);
      }
- (calculateUpdate for index < count-1 can use replaceWindow(index, w, w) with w = Math.min(this.length, this.count() - index))
+ (calculateUpdate for index < count-1, when neither the source nor the filter is FIFO, can use replaceWindow(index, w, w) with w = Math.min(this.length, this.count() - index))
 ```
 
-**Trade-off:** Two notifications (Remove, Insert) instead of Clear/Remove plus Append, and a native memmove of the output tail. NaN is treated as 0, as the existing containsNaN branch does. Insert/remove remain impossible on FIFO filters (already true of calculate(start > 0)). A scratch simulation against a full recompute matched on 2000 random inserts/removes (a correctness check, not a measurement).
+**Trade-off:** Two notifications (Remove, Insert or Append) instead of Clear/Remove plus Append, and a native memmove of the output tail. NaN is treated as 0, as the existing containsNaN branch does; sums restart at the edit point, so values can differ from a full recompute by floating-point rounding only (calculate(start > 0) already does the same). A FIFO filter keeps the old full path, because removeRange/insertRange throw in FIFO mode while calculate(0) clears it. A scratch simulation with SciChart's index validation matched a full recompute on 2000 random series x 20 inserts/removes (a correctness check, not a measurement); without the append branch it threw in most trials.
 
 ## App-side workaround
 
@@ -92,5 +97,5 @@ measure.md#inp: a 'load older data' click that calls insertRange(0, 10k points) 
 ## Review notes
 
 - Found by reviewer slice `s09-filters-numerics-utils`.
-- Not yet adversarially verified. The code quote and line numbers come from the slice reviewer; re-check them before acting.
+- Adversarial verification (corrected): Re-read esm/Charting/Model/Filters/XyMovingAverageFilter.js:67-72 (quote verbatim), calculate at :135-201 (clear() for start 0 at :144, removeRange of the tail at :147, push loops :155-199, appendRange :200) and calculateUpdate :76-79. Caller chain confirmed: BaseDataSeries.insertRangeN notifies Insert at esm/Charting/Model/BaseDataSeries.js:411, removeRange notifies Remove at :462 -> notifyDataChanged :645-647 raiseEvent -> XyFilterBase.onBaseDataChanged (esm/Charting/Model/Filters/XyFilterBase.js:145, switch :157-162) -> filterOnInsert/filterOnRemove -> calculate(startIndex). No dirty flag, batching or size threshold in between; insertRange/removeRange on the source throw for FIFO (throwIfFifo :396/:454), so this path is non-FIFO sources only, as the finding says. Mechanism and O(n - startIndex) cost per call are certain (S). Severity kept medium: a prepend is a discrete interaction; per-message removeRange(0,k) trimming is app-dependent and fifoCapacity exists for it. CORRECTED the fix: the diff as written throws whenever the recomputed window reaches the end of the filter, because insertRange -> validateIndex (BaseDataSeries.js:1225-1232) rejects startIndex >= count(); e.g. insert at 80 into 100 points with length 50 removes 20 outputs and then calls insertRange(80) on an 80-point filter. A scratch simulation with SciChart's index validation threw in 1866 of 2000 random trials for the original diff and gave 0 errors and 0 mismatches against a full recompute (2000 trials x 20 inserts/removes, NaNs included) after switching to appendRange when start >= count(). Also added a FIFO-filter fallback: today calculate(0) works on a FIFO filter via clear(), while removeRange/insertRange on the filter would throw (throwIfFifo :1364). Corrected trade_off accordingly (the earlier 'matched on 2000 random inserts/removes' claim did not hold for the diff as written).
 
