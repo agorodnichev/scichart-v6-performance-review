@@ -8,7 +8,7 @@
 | Pipeline stage | JS execution (`js`) |
 | Metric | frame time (GC pressure) |
 | Evidence | S — static, mechanism certain (not measured) |
-| Verification | **not yet verified**: reviewer-only candidate, see README "Verification status" |
+| Verification | verified by an independent adversarial reviewer (corrected) |
 | Rule | V8-10, V8-06 (web-performance skill) |
 | Effort to fix | small |
 
@@ -68,16 +68,12 @@ measure.md#fps, stream scenario with 50 FIFO series on one surface (each resampl
 
 ## Other locations
 
-- `esm/Charting/Numerics/Resamplers/ExtremeResamplerHelper.js:73` — calculateResamplingHash, per frame per resampled series
-- `esm/Charting/Visuals/RenderableSeries/BaseRenderableSeries.js:716` — Y auto-range path computes the same hash
-- `esm/Charting/Model/TableDataSeries.js:519` — generateObjectHash(rp) per toPointSeries
-- `esm/Charting/Numerics/Resamplers/ExtremeResamplerHelper.js:86` — same root cause, also reported by slice x2-data-and-lifecycle: Resampling cache key is rebuilt per resampled series per frame with JSON.stringify and String.split("")
-- `esm/utils/hash.js:2` — generateHash = s.split("").reduce(...); generateObjectHash = generateHash(JSON.stringify(obj)); generateNumberHash = toString + split
-- `esm/Charting/Visuals/RenderableSeries/BaseRenderableSeries.js:716` — same hash on the getYRange path when resamplingParams is unset
-- `esm/Charting/Model/TableDataSeries.js:519` — generateObjectHash(rp) again for the shared point-series cache
+- `esm/Charting/Numerics/Resamplers/ExtremeResamplerHelper.js:73` — calculateResamplingHash, per frame per resampled series (generateObjectHash(rp) at :86); same root cause also reported by slice x2-data-and-lifecycle
+- `esm/Charting/Visuals/RenderableSeries/BaseRenderableSeries.js:716` — Y auto-range path computes the same hash when resamplingParams is unset; resampleSeries then reuses rp.hash
+- `esm/Charting/Model/TableDataSeries.js:519` — generateObjectHash(rp) again for the shared point-series cache, per toPointSeries
 
 ## Review notes
 
 - Found by reviewer slice `s09-filters-numerics-utils`.
-- Not yet adversarially verified. The code quote and line numbers come from the slice reviewer; re-check them before acting.
+- Adversarial verification (corrected): Re-read esm/utils/hash.js:2-9 (quote verbatim). Call path confirmed: SciChartRenderer.prepareSeriesRenderData (esm/Charting/Services/SciChartRenderer.js:610, called per render at :135) -> ExtremeResamplerHelper.resampleSeries (:639) -> when rs.getResamplingParams() is unset (:31-33) builds a new ResamplingParams and, if needsResampling, calls calculateResamplingHash (:43, :73-90) -> generateHash(dataSeries.id), 2x generateNumberHash, generateBooleanHash and generateObjectHash(rp) (:86). resamplingParams is cleared at the end of every draw (esm/Charting/Visuals/RenderableSeries/BaseRenderableSeries.js:662), so no cross-frame cache defeats it. The Y auto-range path getResampledPointSeries (BaseRenderableSeries.js:710-716) computes the hash first when resamplingParams is unset, and needsResampling then stores rp (:1195), so resampleSeries takes the 'rp.resampleRequired' branch (:56-62) and reuses rp.hash: one hash per series per render, not two. needsResampling returns true for every FIFO non-sweeping series (ExtremeResamplerHelper.js:112, dataIsFifo from ResamplingParams.js:28). ResamplingParams (ResamplingParams.js:3-31) is a class instance with two NumberRange instances (min/max only); a representative object serializes to 363 characters in a scratch check. Fix diff checked: a scratch script compared the old split/reduce and the new loop on 20,000 random strings (ASCII and full BMP, including the empty string): 0 mismatches, both ToInt32 each step. Severity medium kept: per-render per resampled series, but a small constant cost (one ~360-char string, one ~450-entry array). Corrected only other_locations, which repeated three locations after the merge and listed the primary location as another location.
 - Duplicate merged from slice `x2-data-and-lifecycle`: Resampling cache key is rebuilt per resampled series per frame with JSON.stringify and String.split("")
