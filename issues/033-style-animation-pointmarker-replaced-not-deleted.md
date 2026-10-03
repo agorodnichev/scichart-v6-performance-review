@@ -4,11 +4,11 @@
 |---|---|
 | Package | `scichart@6.0.6` (npm, ESM build) |
 | Location | `esm/Charting/Visuals/RenderableSeries/BaseRenderableSeries.js:1313` |
-| Severity | **medium** |
+| Severity | **high** |
 | Pipeline stage | Memory and lifecycle (`memory`) |
 | Metric | memory (wasm heap, GPU textures) |
 | Evidence | S — static, mechanism certain (not measured) |
-| Verification | **not yet verified**: reviewer-only candidate, see README "Verification status" |
+| Verification | verified by an independent adversarial reviewer (corrected) |
 | Rule | SC-29, GPU-30 (web-performance skill) |
 | Effort to fix | small |
 
@@ -32,9 +32,9 @@ App series.runAnimation(...) / enqueueAnimation(...) with styles.pointMarker (Ba
 
 ## Why it costs
 
-BasePointMarker owns native textures that only delete() frees (BasePointMarker.js:213-215, :231). When the marker is replaced without delete(), the JS wrapper is garbage-collected but the wasm allocations, which never return to the OS, and the GPU textures stay.
+BasePointMarker owns native textures that only delete() frees (invalidateCache, BasePointMarker.js:211-218, called from delete() at :231). The JS wrapper is not collected either: the constructor adds every marker to the global WebGlRenderContext2D.webGlResourcesRefs Set (BasePointMarker.js:49; Set at esm/Charting/Drawing/WebGlRenderContext2D.js:622), and only delete() removes it (:233). So each replaced marker, its canvases, its wasm vectors (wasm memory never returns to the OS) and its GPU textures stay reachable for the life of the page. The context-lost handler (esm/Charting/Visuals/createMaster.js:249-251) only invalidates the caches of these markers and never removes them from the Set.
 
-**Scale where it matters:** Each orphaned marker keeps three CanvasTexture objects (sprite, stroke mask, fill mask; esm/Charting/Visuals/PointMarkers/BasePointMarker.js:253-267), each a wasm texture plus intermediate vectors of width x height and a canvas. Growth is one marker per animation run, without bound over a session.
+**Scale where it matters:** Each orphaned marker keeps three CanvasTexture objects (sprite, stroke mask, fill mask; created lazily in createCanvasTexture, esm/Charting/Visuals/PointMarkers/BasePointMarker.js:253-270, and already built because the old marker was drawn). Each CanvasTexture owns a canvas element (esm/Charting/Visuals/TextureManager/CanvasTexture.js:47), two wasm UIntVectors of width x height (:55, :58) and a TextureCache with its GPU texture (:62). Growth is one marker per style animation run that carries styles.pointMarker, for example two per hover if hover-in and hover-out each animate the marker, without bound over a session.
 
 ## Fix (library side)
 
@@ -76,5 +76,5 @@ measure.md#mem: run a style animation with a pointMarker style 10 times (for exa
 ## Review notes
 
 - Found by reviewer slice `s03-renderable-series`.
-- Not yet adversarially verified. The code quote and line numbers come from the slice reviewer; re-check them before acting.
+- Adversarial verification (corrected): Re-read BaseRenderableSeries.js:1307-1315 (quote verbatim; assignment at :1313) and the pointMarker setter :337-346, which only clears invalidateParentCallback on the old marker. Call chain confirmed: runAnimation/enqueueAnimation (:1022-1032) push to animationQueue -> SciChartRenderer.js:55/:116 -> SciChartSurface.onAnimate (:952-953) -> BaseRenderableSeries.onAnimate (:1056-1073) -> animationHelpers.animationUpdate (Animations/animationHelpers.js:37-46) calls beforeAnimationStart once per animation (InitialState_Running, or Delayed_Running for non-start animations) -> createPointMarker (:63-86) builds a new marker from styles.pointMarker. Nothing frees the replaced marker: series delete() (:671-681) deletes only the current pointMarker, BaseStackedRenderableSeries.beforeAnimationStart (:214-221) just delegates, and the only global sweep, the WebGL context-lost handler (createMaster.js:249-251), calls invalidateCache, not delete. Corrected why_it_costs: the JS wrapper is NOT garbage-collected, because the BasePointMarker constructor adds every marker to the global WebGlRenderContext2D.webGlResourcesRefs Set (BasePointMarker.js:49, Set created at WebGlRenderContext2D.js:622) and only delete() removes it (:233), so the orphan, its 3 CanvasTextures and their canvases stay reachable for the life of the page. Corrected scale with CanvasTexture contents (CanvasTexture.js:47 canvas element, :55/:58 two UIntVectors, :62 TextureCache). Severity raised to high: review.md section B rates a leak that grows with each repeated action as high, SC-29 impact is high, and a hover in/out style animation leaks one marker per run. Fix diff checked: deletes only markers the animation created, runs inside onAnimate before the frame draw, no double delete with series delete(); kept.
 
