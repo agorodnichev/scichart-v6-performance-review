@@ -8,7 +8,7 @@
 | Pipeline stage | Tasks and scheduling (`tasks`) |
 | Metric | frame time on live/animated 3D charts |
 | Evidence | S — static, mechanism certain (not measured) |
-| Verification | **not yet verified**: reviewer-only candidate, see README "Verification status" |
+| Verification | verified by an independent adversarial reviewer (corrected) |
 | Rule | CNV-02, SC-27 (web-performance skill) |
 | Effort to fix | small |
 
@@ -33,7 +33,7 @@ Per rendered frame after the pointer left the canvas: data append (XyzDataSeries
 
 ## Why it costs
 
-Hit testing (selection-buffer reads, allocations) continues on every frame for a pointer that is no longer over the chart, and the tooltip stays visible at a stale spot. If that spot is over a surface mesh, the F1 render loop continues with no pointer on the chart at all.
+Every render after the pointer left still runs N hit tests at the last in-chart position: per included series an SCRTGetSelectionInfo wasm call plus HitTestInfo3D/SeriesInfo3D allocations, and the tooltip and crosshair stay drawn at that stale spot and keep updating there. If that spot is over a surface mesh, the self-sustaining re-render of finding 020 continues with no pointer on the chart at all.
 
 **Scale where it matters:** 3D charts with streaming data or camera animation (ResetCamera3DModifier, app-driven orbit) and TooltipModifier3D; N series per render while the pointer is elsewhere on the page.
 
@@ -81,5 +81,5 @@ measure.md#fps: 3D scatter appending 1k points per frame with TooltipModifier3D;
 ## Review notes
 
 - Found by reviewer slice `s13-3d-series-modifiers`.
-- Not yet adversarially verified. The code quote and line numbers come from the slice reviewer; re-check them before acting.
+- Adversarial verification (corrected): Quote matches TooltipModifier3D.js:242-251 (CRLF file; primary :249 is onParentSurfaceRendered). rg over esm/Charting3D: only SeriesSelectionModifier3D overrides modifierMouseLeave (:141-159, clears mousePoint at :144) and modifierPointerCancel (:161-163); TooltipModifier3D has neither, and its base chain ChartModifierBase3D (no handlers) -> ChartModifierBase.js:148-150/:157-159 only deletes the pointer id; mousePoint is only written by updatePointerInfo :237-251. MouseManager.js:76/:236-243 dispatches mouseleave to every modifier (:504-508), so the leave reaches TooltipModifier3D and is ignored. Per-render chain confirmed: BaseRenderableSeries3D.js:275-278 dataSeriesDataChanged -> invalidateParentCallback -> SciChart3DRenderer.render :144 scs.onSciChartRendered() -> SciChart3DSurface.js:621-624 cm.onParentSurfaceRendered() -> TooltipModifier3D.js:249-250 update() -> :254 only guard is !this.mousePoint -> :257-259 hitTest per included visible series (BaseRenderableSeries3D.js:262-273: prepareSelectionBuffer + sceneEntity.hitTest -> RenderableSeriesSceneEntity.hitTestXyz SCRTGetSelectionInfo + HitTestInfo3D/SeriesInfo3D allocations) -> :276-298 tooltip/crosshair writes. No rAF coalescing or visibility guard stops it; it runs on every render for as long as the surface renders after the pointer left. The mesh case links to finding 020 (HitTestInfo3D.isEqual by reference -> TooltipSvgAnnotation3D.js:49-53 notify -> re-render), which this stale point keeps alive. Fix checked: base leave first, then clear mousePoint and hide via the equality-guarded setters (AnnotationBase isHidden :105-110, seriesInfo :49-53), which invalidate once so the hidden state is drawn; pointercancel delegates like the sibling modifier. Severity medium kept (per rendered frame but a fixed N hit tests per frame, the same work as while hovering; the data-sized mesh loop is finding 020), evidence S kept. Corrected why_it_costs: the internal label F1 is replaced with finding 020, and selection-buffer reads are stated as the SCRTGetSelectionInfo wasm call whose internal cost is not visible.
 
