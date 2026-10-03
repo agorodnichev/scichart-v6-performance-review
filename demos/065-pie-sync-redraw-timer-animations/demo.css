@@ -1,0 +1,5 @@
+.pies { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.pies figure { margin: 0; }
+.pies figcaption { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.pies .probe-chart { height: 240px; }
+@media (max-width: 720px) { .pies { grid-template-columns: 1fr; } }

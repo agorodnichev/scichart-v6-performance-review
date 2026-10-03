@@ -1,0 +1,8 @@
+{
+  "name": "scichart-demo-tools",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "puppeteer-core": "^25.12.0"
+  }
+}
