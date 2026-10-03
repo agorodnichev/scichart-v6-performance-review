@@ -8,7 +8,7 @@
 | Pipeline stage | JS execution (`js`) |
 | Metric | frame time (pan, zoom, stream) |
 | Evidence | H — hypothesis, depends on data size/hardware (not measured) |
-| Verification | **not yet verified**: reviewer-only candidate, see README "Verification status" |
+| Verification | verified by an independent adversarial reviewer (corrected) |
 | Rule | V8-01 (web-performance skill) |
 | Effort to fix | small |
 
@@ -30,11 +30,11 @@
 
 ## Call path and frequency
 
-ColumnSeriesDrawingProvider.draw (esm/Charting/Visuals/RenderableSeries/DrawingProviders/ColumnSeriesDrawingProvider.js:73), OhlcSeriesDrawingProvider.js:105 and :110 (twice per frame), RectangleSeriesDrawingProvider.js:72, BoxPlotSeriesDrawingProvider.js:94/:191/:225 -> BaseRenderableSeries.getDataPointWidth (BaseRenderableSeries.js:741-764, Relative mode, :755) -> getDataPointWidth helper (:1386-1430) -> isSorted false -> NumberUtil.MinMax over all N (:1410). Also StackedColumnCollection.getColumnWidth (StackedColumnCollection.js:351) and FastErrorBarsRenderableSeries.getDataPointWidth (:226), which passes isSorted = false for every horizontal error-bar series and so scans all Y values. Rate: 1-3 times per frame per series.
+Per draw: ColumnSeriesDrawingProvider.draw (DrawingProviders/ColumnSeriesDrawingProvider.js:73), OhlcSeriesDrawingProvider.js:105 (and :110 when drawAsOhlc && autoSimplify), RectangleSeriesDrawingProvider.js:72, BoxPlotSeriesDrawingProvider.js:94/:191/:225, ErrorSeriesDrawingProvider.js:92, RectangleDataLabelState.js:15 -> BaseRenderableSeries.getDataPointWidth (BaseRenderableSeries.js:741-764; Relative is the default mode, call at :755) -> getDataPointWidth helper (:1386-1430) -> isSorted false -> NumberUtil.MinMax over all N (:1410). Same helper from StackedColumnCollection.getColumnWidth (StackedColumnCollection.js:351), PolarColumnRenderableSeries.getDataPointWidth (Polar/PolarColumnRenderableSeries.js:100) and FastErrorBarsRenderableSeries.getDataPointWidth (:226), which passes isSorted = false for every horizontal error-bar series and so scans all Y values. Per hit test as well: ColumnSeriesHitTestProvider.js:25 (and the BoxPlot, Rectangle and Error hit-test providers) call getDataPointWidth, so RolloverModifier/CursorModifier pointer moves pay it too. Rate: 1-3 times per frame per series, plus once per hit test.
 
 ## Why it costs
 
-It is an O(N) native scan of the whole series on every frame, although the result changes only when the data changes; BaseDataSeries already memoizes the same min/max per changeCount for getXRange (esm/Charting/Model/BaseDataSeries.js:657-700).
+It is an O(N) native scan of the whole series on every frame, although the result changes only when the data changes; BaseDataSeries already memoizes the same min/max per changeCount for getXRange (esm/Charting/Model/BaseDataSeries.js:657-700). Unsorted data is already drawn in full every frame (getIndicesRange returns 0..N-1 for unsorted X, BaseDataSeries.js:1407-1409), so this is an extra O(N) pass on top of an O(N) draw: the saving is a fraction of frame time, not a change in complexity.
 
 **Scale where it matters:** Unsorted X (out-of-order histograms, scatter-like columns, candles inserted out of order) with 10^5-10^6 points, and horizontal error bars of any size.
 
@@ -67,10 +67,16 @@ It is an O(N) native scan of the whole series on every frame, although the resul
 +                }
 +            }
 +            let candleWidth = Math.floor(getDataPointWidth(xValues, xCoordCalc, seriesViewRectWidth, widthFraction, isCategoryAxis, isSorted, this.webAssemblyContext, cache));
- (same cache in FastErrorBarsRenderableSeries.getDataPointWidth, keyed also by errorDirection, and in StackedColumnCollection.getColumnWidth)
+@@ beforeAnimationStart()  (:1307)
+     beforeAnimationStart() {
+         var _a;
++        // a data-series animation rewrites the native X values without bumping changeCount
++        this.xMinMaxCache = undefined;
+         const { animation } = this.animationFSM;
+ (same cache in FastErrorBarsRenderableSeries.getDataPointWidth, keyed also by errorDirection, in PolarColumnRenderableSeries.getDataPointWidth (:100), and in StackedColumnCollection.getColumnWidth)
 ```
 
-**Trade-off:** One small cached object per series. The cache must be keyed on the data-series identity and changeCount and skipped during data animations, because animations change the values without a data change.
+**Trade-off:** One small cached object per series. The cache must be keyed on the data-series identity and changeCount, skipped while a data animation runs, and cleared in beforeAnimationStart, because a data-series animation rewrites the native X values without bumping changeCount (BaseDataSeries.js:1114-1123), so the values after the animation do not match a cache keyed on the old changeCount.
 
 ## App-side workaround
 
@@ -88,5 +94,5 @@ measure.md#fps, `pan` scenario on a 1M-point FastColumnRenderableSeries with shu
 ## Review notes
 
 - Found by reviewer slice `s03-renderable-series`.
-- Not yet adversarially verified. The code quote and line numbers come from the slice reviewer; re-check them before acting.
+- Adversarial verification (corrected): Re-read BaseRenderableSeries.js:1386-1430 (quote verbatim; MinMax at :1410) and the Relative branch of getDataPointWidth (:741-764, call at :755). Relative is the default mode (FastColumnRenderableSeries.js:56, BaseOhlcRenderableSeries.js:21, FastBoxPlotRenderableSeries.js:55, FastErrorBarsRenderableSeries.js:56). Callers confirmed with rg: ColumnSeriesDrawingProvider.js:73, OhlcSeriesDrawingProvider.js:105 and :110 (second only with drawAsOhlc && autoSimplify), RectangleSeriesDrawingProvider.js:72, BoxPlotSeriesDrawingProvider.js:94/:191/:225, ErrorSeriesDrawingProvider.js:92, data labels (RectangleDataLabelState.js:15), the hit-test providers (ColumnSeriesHitTestProvider.js:25, BoxPlot/Rectangle/Error), PolarColumnRenderableSeries.js:100, StackedColumnCollection.js:351 and FastErrorBarsRenderableSeries.js:226 (isSorted = isVerticalDirection && ..., so horizontal error bars always scan Y). No guard: the helper has no cache, and isSortedAscending turns false once unsorted data is appended (DataDistributionCalculator.js:30-37). Claim stands, but two corrections. (1) Scale caveat: for unsorted data getIndicesRange returns the full range (BaseDataSeries.js:1407-1409, 'For unsorted data, we need to draw everything'), so the frame already does O(N) drawing; the MinMax is an extra O(N) pass on top, so the saving is a fraction of frame time. Low/H kept. (2) The proposed cache was wrong after data-series animations: updateAnimationProperties (BaseDataSeries.js:1114-1123) writes interpolated values into the native X vector, and neither setAnimationVectors (BaseRenderableSeries.js:1291-1301) nor afterAnimationComplete (:1320-1326) bumps changeCount. So a cache filled before the animation, with the same changeCount, would return the old min/max after the animation ends, which gives wrong column widths. Skipping the cache during the animation is not enough. Fix now also clears the cache in beforeAnimationStart (:1307). call_path, why_it_costs, fix_diff and trade_off updated.
 
