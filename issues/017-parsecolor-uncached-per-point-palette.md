@@ -8,7 +8,7 @@
 | Pipeline stage | JS execution (`js`) |
 | Metric | frame time (also INP when an interaction triggers the redraw) |
 | Evidence | S — static, mechanism certain (not measured) |
-| Verification | **not yet verified**: reviewer-only candidate, see README "Verification status" |
+| Verification | verified by an independent adversarial reviewer (corrected) |
 | Rule | V8-01, SC-23 (web-performance skill) |
 | Effort to fix | small |
 
@@ -35,24 +35,39 @@ Nothing is cached. Each call runs parseColorToTArgb (a regex match array, 3-4 su
 ```diff
 --- a/esm/utils/parseColor.js
 +++ b/esm/utils/parseColor.js
-@@ -28,6 +28,17 @@
-  * @returns
-  */
-+// Palette providers convert the same few color strings once per point per render: parse each string once.
+@@ -22,15 +22,32 @@ export function parseColorToHexStringAbgr(input, opacityOverride) {
+         toHex(res.red));
+ }
++// Palette providers convert the same few color strings once per point per render: parse each (input, opacity) pair once.
++// Cache numbers only: parseColorToTArgb returns an object that callers mutate (colorUtil.js:116 applyOpacityToHtmlColor).
++const UINT_COLOR_CACHE_MAX = 512;
 +const uintArgbCache = new Map();
-+const UINT_ARGB_CACHE_MAX = 512;
- export function parseColorToUIntArgb(input, opacity) {
--    return parseInt(parseColorToHexStringArgb(input, opacity), 16);
-+    const key = opacity === undefined ? input : input + "|" + opacity;
-+    let value = uintArgbCache.get(key);
++const uintAbgrCache = new Map(); // separate map: the ABGR number for the same key differs
++function cachedUIntColor(cache, toHexString, input, opacity) {
++    const key = opacity === undefined || opacity === null ? input : input + "|" + opacity;
++    let value = cache.get(key);
 +    if (value === undefined) {
-+        value = parseInt(parseColorToHexStringArgb(input, opacity), 16); // invalid input still throws; nothing cached
-+        if (uintArgbCache.size >= UINT_ARGB_CACHE_MAX) uintArgbCache.clear();
-+        uintArgbCache.set(key, value);
++        value = parseInt(toHexString(input, opacity), 16); // invalid input still throws, and nothing is cached
++        if (cache.size >= UINT_COLOR_CACHE_MAX)
++            cache.clear();
++        cache.set(key, value);
 +    }
 +    return value;
++}
+ /**
+  * Converts HTML color to ARGB color
+  * @param input HTML color string
+  * @param opacity Opacity 0 to 255, where 0 fully transparent and 255 fully opaque
+  * @returns
+  */
+ export function parseColorToUIntArgb(input, opacity) {
+-    return parseInt(parseColorToHexStringArgb(input, opacity), 16);
++    return cachedUIntColor(uintArgbCache, parseColorToHexStringArgb, input, opacity);
  }
- (same pattern for parseColorToUIntAbgr at :34)
+ export function parseColorToUIntAbgr(input, opacity) {
+-    return parseInt(parseColorToHexStringAbgr(input, opacity), 16);
++    return cachedUIntColor(uintAbgrCache, parseColorToHexStringAbgr, input, opacity);
+ }
 ```
 
 **Trade-off:** A module-level Map of at most 512 entries (string keys and numbers). Apps that build a unique color string per point gain nothing and pay a Map insert per miss plus a periodic clear. Cache only at the number level: parseColorToTArgb returns an object that applyOpacityToHtmlColor (colorUtil.js:116) mutates, so caching that object would corrupt colors. The per-point palette loop itself still runs every render because MetadataPaletteProvider lacks shouldUpdatePalette (palette-provider code, outside this slice).
@@ -67,22 +82,20 @@ measure.md#fps, scenarios pan then zoom with no new data, on a scatter series of
 
 ## Other locations
 
-- `esm/Charting/Model/MetadataPaletteProvider.js:25` — overrideFillArgb parses metadata.fill per point
+- `esm/Charting/Model/MetadataPaletteProvider.js:25` — overrideFillArgb parses metadata.fill per point (same root cause also reported by slice s08-data-series)
 - `esm/Charting/Model/MetadataPaletteProvider.js:38` — overrideStrokeArgb parses metadata.stroke per point
+- `esm/Charting/Model/MetadataPaletteProvider.js:64` — overridePointMarkerArgb parses stroke and fill (:53, :59), then allocates a {stroke, fill} object per marker per render
+- `esm/Charting/Visuals/RenderableSeries/DrawingProviders/BaseSeriesDrawingProvider.js:394` — the provider defines no shouldUpdatePalette, so requiresUpdate is set on every render
 - `esm/Charting/Model/IPaletteProvider.js:19` — documented example calls parseColorToUIntArgb("white") inside the per-point callback
 - `esm/utils/parseColor.js:34` — parseColorToUIntAbgr, same uncached path
+- `esm/utils/parseColor.js:54` — each call runs a RegExp match, 4x substr+parseInt, a validation array, a '0x..' string concat and another parseInt
 - `esm/utils/colorUtil.js:73` — linearColorMapLerp parses two gradient-stop strings on every call
-- `esm/Charting/Visuals/RenderableSeries/DrawingProviders/BaseSeriesDrawingProvider.js:108` — series stroke parsed per series per render
+- `esm/Charting/Visuals/RenderableSeries/DrawingProviders/BaseSeriesDrawingProvider.js:108` — series stroke parsed per series per render (also :201, :205)
 - `esm/Charting/Drawing/WebGlRenderContext2D.js:480` — drawNativeText parses textColor per text draw
 - `esm/Charting/Visuals/Axis/AxisRenderer.js:243` — label color parsed per axis per frame
-- `esm/Charting/Model/MetadataPaletteProvider.js:25` — same root cause, also reported by slice s08-data-series: MetadataPaletteProvider parses the same CSS color string for every point on every frame
-- `esm/Charting/Model/MetadataPaletteProvider.js:38` — overrideStrokeArgb: same parse
-- `esm/Charting/Model/MetadataPaletteProvider.js:64` — overridePointMarkerArgb parses stroke and fill, then allocates a {stroke, fill} object per marker per frame
-- `esm/utils/parseColor.js:54` — Each call runs a RegExp match, 4x substr+parseInt, a validation array, a '0x..' string concat and another parseInt
-- `esm/Charting/Visuals/RenderableSeries/DrawingProviders/BaseSeriesDrawingProvider.js:394` — The provider defines no shouldUpdatePalette, so requiresUpdate is set on every frame
 
 ## Review notes
 
 - Found by reviewer slice `s09-filters-numerics-utils`.
-- Not yet adversarially verified. The code quote and line numbers come from the slice reviewer; re-check them before acting.
+- Adversarial verification (corrected): Re-read esm/utils/parseColor.js:31-33 (quote verbatim) and :49-87 (regex match, substr+parseInt x4, validateColorValues arrays+forEach closure, result object; named colors fall through two regexes, toLowerCase and recurse). Caller chain re-established: PointMarkerDrawingProvider.draw :97 -> BaseSeriesDrawingProvider.applyStrokeFillPaletting :176 -> shouldUpdatePalette :234 -> :394 sets requiresUpdate=true because MetadataPaletteProvider (esm/Charting/Model/MetadataPaletteProvider.js:3-66) defines neither shouldUpdatePalette nor isRangeIndependant (rg finds shouldUpdatePalette only on DefaultPaletteProvider IPaletteProvider.js:56) -> per-point loop :254-276 -> PointMarkerDrawingProvider.overridePaletteProviderColors :126-129 -> MetadataPaletteProvider.overridePointMarkerArgb :53/:59 -> parseColorToUIntArgb. Line/segment series: LineSeriesDrawingProvider.js:143 / LineSegmentSeriesDrawingProvider.js:120,158 -> applyStrokePaletting :98 -> :136/:394 -> loop :148-159 -> overrideStrokeArgb :156 -> MetadataPaletteProvider.js:38. No cache, dirty flag or early return defeats it; the loop count is the visible (possibly resampled) point count, every render including pan/zoom. Rule V8-01/SC-23 Avoid fields do not exempt this. Severity high (per point per frame) and evidence S kept. Corrected: (1) fix_diff did not apply (its hunk dropped the closing ' */' of the JSDoc at :30 and had wrong line counts) and left parseColorToUIntAbgr as prose; rewrote it as one helper with separate ARGB/ABGR maps. Tested in scratch (agent-scratch/s09v/t017.mjs): cached vs original identical for 10 inputs x 5 opacities (incl. null, invalid strings that throw), 0 mismatches. (2) other_locations had duplicate MetadataPaletteProvider.js:25/:38 entries from the s08 merge; deduplicated, all lines re-checked (colorUtil.js:73, WebGlRenderContext2D.js:480, AxisRenderer.js:243, BaseSeriesDrawingProvider.js:108).
 - Duplicate merged from slice `s08-data-series`: MetadataPaletteProvider parses the same CSS color string for every point on every frame
