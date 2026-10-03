@@ -3,12 +3,12 @@
 | | |
 |---|---|
 | Package | `scichart@6.0.6` (npm, ESM build) |
-| Location | `esm/Charting/Model/Filters/XyFilterBase.js:32` |
+| Location | `esm/Charting/Model/Filters/XyFilterBase.js:30` |
 | Severity | **high** |
 | Pipeline stage | Memory and lifecycle (`memory`) |
 | Metric | memory (wasm heap), later frame time |
 | Evidence | S — static, mechanism certain (not measured) |
-| Verification | **not yet verified**: reviewer-only candidate, see README "Verification status" |
+| Verification | verified by an independent adversarial reviewer (corrected) |
 | Rule | SC-02, SC-33 (web-performance skill) |
 | Effort to fix | small |
 
@@ -35,7 +35,7 @@ A FIFO source overwrites its oldest points, but each filterOnAppend appends the 
 ```diff
 --- a/esm/Charting/Model/Filters/XyFilterBase.js
 +++ b/esm/Charting/Model/Filters/XyFilterBase.js
-@@ -30,3 +30,7 @@
+@@ -30,3 +30,6 @@ export class XyFilterBase extends XyDataSeries {
      constructor(originalSeries, options) {
          var _a, _b;
 -        super(originalSeries.webAssemblyContext, options);
@@ -44,9 +44,17 @@ A FIFO source overwrites its oldest points, but each filterOnAppend appends the 
 +            ? Object.assign({}, options, { fifoCapacity: originalSeries.fifoCapacity })
 +            : options);
  (same change in XyyFilterBase.js:8, XyzFilterBase.js:8, OhlcFilterBase.js:6, HlcFilterBase.js:8)
+--- a/esm/Charting/Model/Filters/XyMovingAverageFilter.js
++++ b/esm/Charting/Model/Filters/XyMovingAverageFilter.js
+@@ -135,2 +135,5 @@ export class XyMovingAverageFilter extends XyFilterBase {
+     calculate(start) {
++        // A FIFO filter cannot removeRange (BaseDataSeries.throwIfFifo): recompute it whole; it holds at most fifoCapacity points
++        if (this.fifoCapacity && start > 0 && start < this.count())
++            start = 0;
+         const xValuesView = vectorToArrayViewF64(this.getOriginalXValues(), this.webAssemblyContext);
 ```
 
-**Trade-off:** Behavior change: a filter on a FIFO source no longer keeps more history than its source unless the app passes a larger fifoCapacity explicitly (an explicit value still wins). Filter indices then match the source's logical indices, which filterOnUpdate(index) already assumes. XyMovingAverageFilter's non-last-point update path (calculate(index) -> removeRange) throws on a FIFO filter and needs an update()-based path for that case.
+**Trade-off:** Behavior change: a filter on a FIFO source no longer keeps more history than its source unless the app passes a larger fifoCapacity explicitly (an explicit value still wins). Filter indices then match the source's logical indices, which filterOnUpdate(index) in XyCustomFilter/XyRatioFilter and the *CustomFilter siblings already assumes (today, on a growing filter, update(index) writes to the wrong, historical point). Without the second hunk, XyMovingAverageFilter.filterOnUpdate on a non-last point (calculateUpdate :77 -> calculate(index) -> removeRange :147) would start throwing 'removeRange is not supported in fifo mode'; the hunk recomputes the whole (at most fifoCapacity) filter instead, O(capacity) per such update, as an app-set fifoCapacity already needs today. Remaining edge: an XyRatioFilter whose original series is FIFO but whose divisorSeries is not, and receives insert/remove, would now throw in filterOnInsert/filterOnRemove (XyRatioFilter.js:69, :75); that pairing cannot stay in sync anyway.
 
 ## App-side workaround
 
@@ -73,5 +81,5 @@ measure.md#mem: stream 1k points/s into a fifoCapacity 100k XyDataSeries with an
 ## Review notes
 
 - Found by reviewer slice `s09-filters-numerics-utils`.
-- Not yet adversarially verified. The code quote and line numbers come from the slice reviewer; re-check them before acting.
+- Adversarial verification (corrected): Re-read esm/Charting/Model/Filters/XyFilterBase.js:30-32 (quote verbatim, but it starts at :30, not :32) and the whole class: options pass straight to XyDataSeries, nothing reads originalSeries.fifoCapacity. Call path re-established: XyDataSeries.appendRange (XyDataSeries.js:96) -> BaseDataSeries.appendRangeN :195 -> notifyDataChanged(Append, xValues.length) :223 -> EventHandler.raiseEvent (Core/EventHandler.js:56) -> XyFilterBase.onBaseDataChanged :145, :151-152 -> XyCustomFilter.filterOnAppend :36-43 (appendRange of the newest count points; XyScaleOffsetFilter extends it) / XyMovingAverageFilter.filterOnAppend :53-57 -> appendLatestMA :101-133 -> appendRange; same for XyRatioFilter.js:59, XyyCustomFilter.js:40, XyzCustomFilter.js:40, OhlcCustomFilter.js:70, HlcCustomFilter.js:56. FIFO sources cannot raise Insert/Remove (throwIfFifo at BaseDataSeries.js:355, :396, :428, :454 runs before notify), and BaseDataSeries.js:91-93 makes a series FIFO only from options.fifoCapacity, so a filter built with default options grows by every source append forever. The comment at XyMovingAverageFilter.js:56 ('The filter (FIFO or not) is append-only here') confirms the non-FIFO case grows. Runs per source data update: a leak that grows per repeated action, so high stays; mechanism certain given a FIFO source and a filter without fifoCapacity, S stays. SC-02 Avoid does not exempt it (it only notes FIFO forbids insert/remove, which matters for the fix). Corrected: primary.line 32 -> 30 to match the quote; fix_diff hunk header counts (-30,3 +30,6); and the fix was not semantics-safe: inheriting fifoCapacity makes XyMovingAverageFilter.calculate(start>0) call removeRange (:147) on a FIFO filter, which throws on any non-last-index update of the source (BaseDataSeries.update is allowed on FIFO, :1240); added a hunk that falls back to a full recompute for FIFO filters. trade_off updated accordingly (also the XyRatioFilter mixed FIFO/non-FIFO divisor edge). Other locations' lines re-checked.
 
