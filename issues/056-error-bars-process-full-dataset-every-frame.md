@@ -9,6 +9,7 @@
 | Metric | frame time (pan/zoom) |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/caa67b597d5608519fc7fec5c7b9eb69/): reproduced on WebGL and WebGPU ([source](../demos/056-error-bars-full-dataset-per-frame/)) |
 | Rule | CNV-21, TASK-13 (web-performance skill) |
 | Effort to fix | medium |
 

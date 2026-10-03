@@ -9,8 +9,13 @@
 | Metric | frame time (pan, zoom) |
 | Evidence | H — hypothesis, depends on data size/hardware (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/a033d8429f93f75587566d51acbecf9a/): reproduced on WebGL and WebGPU ([source](../demos/075-rectangle-series-no-visible-range-culling/)) |
 | Rule | CNV-21, V8-01 (web-performance skill) |
 | Effort to fix | medium |
+
+## Demo findings
+
+Answers the open question (evidence H): off-screen rectangles do reach the GPU, 4.55 MB uploaded per frame for 200,000 rectangles with 2,000 visible. See the [demo](https://jsfiddle.net/gh/gist/library/pure/a033d8429f93f75587566d51acbecf9a/).
 
 ## Code
 

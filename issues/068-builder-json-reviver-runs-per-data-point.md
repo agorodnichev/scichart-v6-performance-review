@@ -9,6 +9,7 @@
 | Metric | INP (also startup) |
 | Evidence | H — hypothesis, depends on data size/hardware (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/71126198c5d1a455cadbf67b18fa17a9/): reproduced on WebGL and WebGPU ([source](../demos/068-builder-json-reviver-per-point/)) |
 | Rule | V8-10 (web-performance skill) |
 | Effort to fix | small |
 

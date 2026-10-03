@@ -1,0 +1,2 @@
+.grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px; }
+.grid .cell { height: 80px; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }

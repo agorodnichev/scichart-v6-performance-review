@@ -9,6 +9,7 @@
 | Metric | memory (wasm heap), later frame time |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/0556b0ee913da2c40a32ee2bb9152673/): reproduced on WebGL and WebGPU ([source](../demos/018-filters-on-fifo-source-grow-unbounded/)) |
 | Rule | SC-02, SC-33 (web-performance skill) |
 | Effort to fix | small |
 

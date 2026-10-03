@@ -9,6 +9,7 @@
 | Metric | frame time / scroll start latency (dropped frames while scrolling the page) |
 | Evidence | H — hypothesis, depends on data size/hardware (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/fd478605c56b0a0c4983f7527c2f5b51/): reproduced on WebGL and WebGPU ([source](../demos/077-nonpassive-wheel-listener/)) |
 | Rule | EVT-09 (web-performance skill) |
 | Effort to fix | medium |
 

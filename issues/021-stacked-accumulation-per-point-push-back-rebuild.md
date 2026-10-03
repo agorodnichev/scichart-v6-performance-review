@@ -9,6 +9,7 @@
 | Metric | frame time (stream; also INP when data changes come from input) |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/eb260d17a53d0c6e3dfeedaf5ce73d65/): reproduced on WebGL and WebGPU ([source](../demos/021-stacked-accumulation-push-back-rebuild/)) |
 | Rule | SC-01, SC-06, V8-01 (web-performance skill) |
 | Effort to fix | medium |
 

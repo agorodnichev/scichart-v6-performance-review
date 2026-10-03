@@ -9,6 +9,7 @@
 | Metric | memory (wasm heap, GPU textures) |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/a26100968d9eac6cb77506b82d30534e/): reproduced on WebGL and WebGPU ([source](../demos/033-style-animation-pointmarker-leak/)) |
 | Rule | SC-29, GPU-30 (web-performance skill) |
 | Effort to fix | small |
 

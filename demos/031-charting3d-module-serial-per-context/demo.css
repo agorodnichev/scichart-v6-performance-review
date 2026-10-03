@@ -1,0 +1,4 @@
+.row3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.caption { font-size: 12px; color: var(--muted); }
+.probe-chart.small { height: 150px; }
+@media (max-width: 600px) { .row3 { grid-template-columns: 1fr; } }

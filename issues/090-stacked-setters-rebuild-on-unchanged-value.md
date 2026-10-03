@@ -9,6 +9,7 @@
 | Metric | frame time (also INP when props are re-applied on UI renders) |
 | Evidence | H — hypothesis, depends on data size/hardware (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/bb2a26675884a1666cf4c9cd18357bd5/): reproduced on WebGL and WebGPU ([source](../demos/090-stacked-setters-rebuild-on-unchanged-value/)) |
 | Rule | none (web-performance skill) |
 | Effort to fix | small |
 

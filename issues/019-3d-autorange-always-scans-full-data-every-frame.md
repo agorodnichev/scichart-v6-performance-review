@@ -9,6 +9,7 @@
 | Metric | frame time (also INP during orbit drag) |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/d40376bd6a35d425a0cbd127f0cc8777/): reproduced on WebGL and WebGPU ([source](../demos/019-3d-autorange-full-scan/)) |
 | Rule | V8-01, SC-43 (web-performance skill) |
 | Effort to fix | small |
 

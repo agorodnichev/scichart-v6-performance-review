@@ -9,6 +9,7 @@
 | Metric | memory (also frame time) |
 | Evidence | H — hypothesis, depends on data size/hardware (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/494964da455df534fb6ea4710de3f143/): reproduced on WebGL and WebGPU ([source](../demos/087-painted-event-messagechannel/)) |
 | Rule | LIFE-15 (web-performance skill) |
 | Effort to fix | small |
 

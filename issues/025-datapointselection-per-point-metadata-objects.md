@@ -9,6 +9,7 @@
 | Metric | memory (also frame time via GC on streaming series, and attach time) |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/8dae0fb7ec373bb600d80e41e4bce814/): reproduced on WebGL and WebGPU ([source](../demos/025-datapointselection-metadata-objects/)) |
 | Rule | V8-04, V8-07 (web-performance skill) |
 | Effort to fix | medium |
 

@@ -9,6 +9,7 @@
 | Metric | frame time |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/b12b7b62ea39b4131b117f8705e32adb/): reproduced on WebGL and WebGPU ([source](../demos/039-gradient-palette-wasm-clamp-per-point/)) |
 | Rule | TASK-13 (web-performance skill) |
 | Effort to fix | small |
 

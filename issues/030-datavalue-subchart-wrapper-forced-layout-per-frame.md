@@ -9,6 +9,7 @@
 | Metric | frame time (also INP on pan/zoom) |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/91e8b2da94216d1669badb28679555d4/): reproduced on WebGL and WebGPU ([source](../demos/030-datavalue-subchart-forced-layout/)) |
 | Rule | EVT-07 (web-performance skill) |
 | Effort to fix | medium |
 

@@ -9,6 +9,7 @@
 | Metric | frame time (extra rAF + SVG rebuild), also per-move script time |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/2fa2c2508b9f34e156875a97955daf1d/): reproduced on WebGL and WebGPU ([source](../demos/046-polar-cursor-extra-frame/)) |
 | Rule | SC-14 (web-performance skill) |
 | Effort to fix | small |
 

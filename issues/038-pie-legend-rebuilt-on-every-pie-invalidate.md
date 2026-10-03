@@ -9,6 +9,7 @@
 | Metric | INP (also frame time on data updates) |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/1af150e9aa62bcd73d07235128bc0ae2/): reproduced on WebGL and WebGPU ([source](../demos/038-pie-legend-rebuilt-per-invalidate/)) |
 | Rule | DOM-07, DOM-04 (web-performance skill) |
 | Effort to fix | small |
 

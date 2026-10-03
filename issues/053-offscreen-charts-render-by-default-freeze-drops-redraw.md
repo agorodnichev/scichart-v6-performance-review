@@ -9,6 +9,7 @@
 | Metric | frame time (also GPU time) |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/79c6448e37a530d67422688efa0fedcd/): reproduced on WebGL and WebGPU ([source](../demos/053-offscreen-charts-render-freeze-stale/)) |
 | Rule | CNV-20 (also SC-18, CNV-02) (web-performance skill) |
 | Effort to fix | small |
 

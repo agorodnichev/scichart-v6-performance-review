@@ -9,6 +9,7 @@
 | Metric | startup |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/db03a15b3837d32ef5aa9ad61d4eb861/): reproduced on WebGL and WebGPU ([source](../demos/082-wasm-streaming-fallback-silent-refetch/)) |
 | Rule | TASK-14 (also SC-36) (web-performance skill) |
 | Effort to fix | small |
 

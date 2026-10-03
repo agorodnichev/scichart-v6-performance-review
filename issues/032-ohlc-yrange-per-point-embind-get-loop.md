@@ -9,6 +9,7 @@
 | Metric | frame time (pan, zoom, stream with yAxis autoRange Always) |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/f0c5ea18c20f6f9dbe98d81e970a5645/): reproduced on WebGL and WebGPU ([source](../demos/032-ohlc-yrange-embind-get-loop/)) |
 | Rule | SC-06, V8-01 (web-performance skill) |
 | Effort to fix | small |
 

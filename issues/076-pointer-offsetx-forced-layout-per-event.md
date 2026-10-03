@@ -9,6 +9,7 @@
 | Metric | frame time during hover/pan (also INP for pointerdown/up) |
 | Evidence | H — hypothesis, depends on data size/hardware (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/e710bb00eec11306e308ac47e9fb8afc/): reproduced on WebGL and WebGPU ([source](../demos/076-pointer-offsetx-forced-layout/)) |
 | Rule | EVT-08 (web-performance skill) |
 | Effort to fix | medium |
 

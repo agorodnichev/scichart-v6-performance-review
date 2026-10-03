@@ -9,8 +9,13 @@
 | Metric | frame time |
 | Evidence | H — hypothesis, depends on data size/hardware (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/cd954221b1913153bd11f0a1ba661e4a/): reproduced on WebGL and WebGPU ([source](../demos/066-getfontkey-style-registry-scan/)) |
 | Rule | V8-01 (web-performance skill) |
 | Effort to fix | small |
+
+## Demo findings
+
+The registry walk stops at the first match, so fonts registered early cost about 3 entries per call; the O(S)-per-call cost holds for fonts registered after the registry has grown. See the [demo](https://jsfiddle.net/gh/gist/library/pure/cd954221b1913153bd11f0a1ba661e4a/).
 
 ## Code
 

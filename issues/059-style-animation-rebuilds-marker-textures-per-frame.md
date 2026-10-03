@@ -9,6 +9,7 @@
 | Metric | frame time during style animations (also GPU and wasm allocation churn) |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/88741873b41ba402ce827cd778624ccd/): reproduced on WebGL and WebGPU ([source](../demos/059-style-animation-marker-texture-rebuild/)) |
 | Rule | GPU-05, SC-46 (web-performance skill) |
 | Effort to fix | medium |
 

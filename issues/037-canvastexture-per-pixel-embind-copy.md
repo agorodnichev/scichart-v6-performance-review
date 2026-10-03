@@ -9,6 +9,7 @@
 | Metric | frame time during series fade animations and resizes (also brush creation time) |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/f7540ebca682608b070bcb3facd23253/): reproduced on WebGL and WebGPU ([source](../demos/037-canvastexture-per-pixel-embind-copy/)) |
 | Rule | SC-06, TASK-13 (web-performance skill) |
 | Effort to fix | small |
 

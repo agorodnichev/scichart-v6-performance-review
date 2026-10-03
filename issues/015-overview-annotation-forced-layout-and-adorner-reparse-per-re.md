@@ -9,6 +9,7 @@
 | Metric | frame time |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/10d3fa1deed16487db613392cdd65235/): reproduced on WebGL and WebGPU ([source](../demos/015-overview-annotation-forced-layout/)) |
 | Rule | EVT-07, DOM-07 (web-performance skill) |
 | Effort to fix | small |
 

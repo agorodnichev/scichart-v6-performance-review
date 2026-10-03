@@ -9,6 +9,7 @@
 | Metric | frame time (also memory churn: ImageData and wasm heap allocations per frame) |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/07293834b91a3a1a9aed495bbb318790/): reproduced on WebGL and WebGPU ([source](../demos/022-axis-marker-modifier-label-texture-per-frame/)) |
 | Rule | GPU-24, GPU-05, SC-21 (web-performance skill) |
 | Effort to fix | medium |
 

@@ -9,8 +9,13 @@
 | Metric | frame time during hover/rollover (pointer-move handler script time) |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/f9e4fbe6d6c2cc17cd001a8d18f04ace/): reproduced on WebGL and WebGPU ([source](../demos/010-date-format-icu-formatter-per-call/)) |
 | Rule | V8-09 (web-performance skill) |
 | Effort to fix | small |
+
+## Demo findings
+
+The call count differs from the write-up's 2N: N calls per pointer move (the default SVG rollover line does not trigger a render), and 4N per frame when the chart redraws, because the tooltip's seriesInfo setter calls SeriesInfo.equals, which formats both infos (not only with tooltipLegendTemplate). See the [demo](https://jsfiddle.net/gh/gist/library/pure/f9e4fbe6d6c2cc17cd001a8d18f04ace/).
 
 ## Code
 

@@ -9,6 +9,7 @@
 | Metric | INP (also frame time during pie animations) |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/348b5da582d41b89ce9e6265ed6eb4ef/): reproduced on WebGL and WebGPU ([source](../demos/049-pie-label-forced-layout/)) |
 | Rule | EVT-07 (web-performance skill) |
 | Effort to fix | small |
 

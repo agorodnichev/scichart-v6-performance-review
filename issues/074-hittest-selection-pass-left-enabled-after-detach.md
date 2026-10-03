@@ -9,6 +9,7 @@
 | Metric | frame time (GPU draw) for the life of the surface |
 | Evidence | H — hypothesis, depends on data size/hardware (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/db56358e4d08b2c65f788284a4f406bc/): reproduced on WebGL and WebGPU ([source](../demos/074-selection-pass-after-detach/)) |
 | Rule | LIFE-01, GPU-28 (web-performance skill) |
 | Effort to fix | small |
 

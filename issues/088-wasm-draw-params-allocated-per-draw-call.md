@@ -9,6 +9,7 @@
 | Metric | frame time |
 | Evidence | H — hypothesis, depends on data size/hardware (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/4f2995f0c5ffcec17848f04d4620befe/): reproduced on WebGL and WebGPU ([source](../demos/088-wasm-draw-params-per-draw/)) |
 | Rule | none (web-performance skill) |
 | Effort to fix | medium |
 

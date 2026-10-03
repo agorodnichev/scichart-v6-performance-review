@@ -1,0 +1,5 @@
+.stage { position: relative; }
+#chart { height: 360px; }
+.sub-wrap { position: absolute; left: 0; top: 0; pointer-events: none; }
+.sub-wrap .top-section { height: 18px; padding-left: 14px; font: 600 11px/18px system-ui, sans-serif; color: var(--muted); white-space: nowrap; overflow: hidden; }
+.sub-wrap .left-section { position: absolute; left: 0; top: 18px; bottom: 0; width: 10px; background: rgba(242, 142, 43, 0.35); }

@@ -9,6 +9,7 @@
 | Metric | INP (pointermove processing) and frame time while hovering |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/21b996729063ad953754f181309a0a9d/): reproduced on WebGL and WebGPU ([source](../demos/009-rectangle-hittest-y-before-x/)) |
 | Rule | SC-06, V8-01, GPU-28 (web-performance skill) |
 | Effort to fix | small |
 

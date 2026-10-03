@@ -9,6 +9,7 @@
 | Metric | INP (processing time of the interaction that unmounts the view) |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/bb48e400ad0609c6f67457204f08ae41/): reproduced on WebGL and WebGPU ([source](../demos/094-group-delete-relayout/)) |
 | Rule | none (web-performance skill) |
 | Effort to fix | small |
 

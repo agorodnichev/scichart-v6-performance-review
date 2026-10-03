@@ -9,6 +9,7 @@
 | Metric | INP (route change or panel close that unmounts charts), also frame time under WebGPU |
 | Evidence | H — hypothesis, depends on data size/hardware (not measured) |
 | Verification | verified by an independent adversarial reviewer (confirmed) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/ac89699b7425ba3b109da404d39a939c/): reproduced on WebGL and WebGPU ([source](../demos/079-delete-rebuilds-native-destinations/)) |
 | Rule | V8-01 (web-performance skill) |
 | Effort to fix | medium |
 

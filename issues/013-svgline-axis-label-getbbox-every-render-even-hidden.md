@@ -9,6 +9,7 @@
 | Metric | frame time (also INP on hover) |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/16e017182cb3af8bcfc5bad7dffc93fb/): reproduced on WebGL and WebGPU ([source](../demos/013-svgline-axis-label-getbbox/)) |
 | Rule | EVT-07 (web-performance skill) |
 | Effort to fix | small |
 

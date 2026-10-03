@@ -9,8 +9,13 @@
 | Metric | frame time during style animations (also INP on style changes, memory) |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/b07d2c31b62f3ceae1fad73bec4c6f49/): reproduced on WebGL and WebGPU ([source](../demos/057-point-marker-three-textures-eager/)) |
 | Rule | SC-46, GPU-24 (web-performance skill) |
 | Effort to fix | medium |
+
+## Demo findings
+
+Also seen: a point marker passed in the series constructor options never gets a redraw callback, so changing its properties later requests no redraw. See the [demo](https://jsfiddle.net/gh/gist/library/pure/b07d2c31b62f3ceae1fad73bec4c6f49/).
 
 ## Code
 

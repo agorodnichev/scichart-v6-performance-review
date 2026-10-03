@@ -9,8 +9,13 @@
 | Metric | frame time |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/52e645a15c82478c68424114fdc223b3/): reproduced on WebGL and WebGPU ([source](../demos/006-spline-index-fill-wasm-call-per-vertex/)) |
 | Rule | TASK-13, SC-06, SC-12 (web-performance skill) |
 | Effort to fix | small |
+
+## Demo findings
+
+One wasm set() per interpolated vertex, as claimed. Also seen: with default resampling and 10,000 points the spline throws on the resampled input ("X data may contain duplicates"), falls back to the plain line and logs an error every frame. The suggested second run per frame with Y autoRange Always did not show (1.00 run per frame). See the [demo](https://jsfiddle.net/gh/gist/library/pure/52e645a15c82478c68424114fdc223b3/).
 
 ## Code
 

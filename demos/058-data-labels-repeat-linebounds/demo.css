@@ -1,0 +1,4 @@
+.pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 8px; }
+.pair figure { margin: 0; }
+.pair figcaption { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.pair .probe-chart { height: 300px; }

@@ -9,6 +9,7 @@
 | Metric | frame time |
 | Evidence | H — hypothesis, depends on data size/hardware (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/29302f94ef6f5ebe82cffd4ae0fafc3a/): reproduced on WebGL and WebGPU ([source](../demos/073-nativetext-wrap-remeasure/)) |
 | Rule | none (web-performance skill) |
 | Effort to fix | medium |
 

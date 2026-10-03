@@ -9,6 +9,7 @@
 | Metric | memory (retained filters per add/remove cycle); per-update work and errors in the data path |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/36c6a8b081598a822b4bc55fdb59085d/): reproduced on WebGL and WebGPU ([source](../demos/042-ratio-filter-divisor-subscription-never-removed/)) |
 | Rule | LIFE-01, SC-29 (web-performance skill) |
 | Effort to fix | small |
 

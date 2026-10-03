@@ -9,6 +9,7 @@
 | Metric | frame time |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/4cdd9a657ddecb049c8213cee8b5485d/): reproduced on WebGL and WebGPU ([source](../demos/062-heatmap-full-renormalize-on-any-change/)) |
 | Rule | SC-09, V8-01 (web-performance skill) |
 | Effort to fix | medium |
 

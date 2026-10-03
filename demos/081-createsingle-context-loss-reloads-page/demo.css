@@ -1,0 +1,5 @@
+.trio { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.trio figure { margin: 0; }
+.trio figcaption { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+.probe-chart.small { height: 170px; }
+@media (max-width: 700px) { .trio { grid-template-columns: 1fr; } }

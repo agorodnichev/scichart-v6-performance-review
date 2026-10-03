@@ -9,6 +9,7 @@
 | Metric | frame time (also GPU-process time) |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/41b48f656c2abe156283db825db9f746/): reproduced on WebGL and WebGPU ([source](../demos/004-heatmap-texture-reupload/)) |
 | Rule | GPU-08, SC-09 (web-performance skill) |
 | Effort to fix | small |
 

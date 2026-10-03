@@ -9,6 +9,7 @@
 | Metric | frame time on live/animated 3D charts |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/8c9a9cbac6767167b811d1dbda9c7933/): reproduced on WebGL and WebGPU ([source](../demos/051-tooltip3d-stale-after-leave/)) |
 | Rule | CNV-02, SC-27 (web-performance skill) |
 | Effort to fix | small |
 

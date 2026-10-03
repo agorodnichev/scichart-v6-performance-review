@@ -9,6 +9,7 @@
 | Metric | INP (pointermove processing) and frame time while hovering |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/63294c357fc6821a97b7127d93659e6b/): reproduced on WebGL and WebGPU ([source](../demos/008-line-segment-hittest-full-scan/)) |
 | Rule | SC-06, V8-01, GPU-28 (web-performance skill) |
 | Effort to fix | small |
 

@@ -9,6 +9,7 @@
 | Metric | frame time (also idle CPU/GPU power, style/layout/paint) |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/d004b02a3d5dea3228c0badd9431fbe0/): reproduced on WebGL and WebGPU ([source](../demos/020-mesh-tooltip-render-loop/)) |
 | Rule | CNV-02 (web-performance skill) |
 | Effort to fix | small |
 

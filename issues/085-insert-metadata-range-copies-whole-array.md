@@ -9,8 +9,13 @@
 | Metric | memory (GC), frame time on insert |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/70c76d555ebdc2b8c60da74c9d250d81/): reproduced on WebGL and WebGPU ([source](../demos/085-insert-metadata-range-copies-whole-array/)) |
 | Rule | V8-06 (web-performance skill) |
 | Effort to fix | small |
+
+## Demo findings
+
+The generator branch's use of the global length is a correctness bug in practice: inserting 100 points adds 0 metadata entries, leaving the metadata 100 entries behind count(). See the [demo](https://jsfiddle.net/gh/gist/library/pure/70c76d555ebdc2b8c60da74c9d250d81/).
 
 ## Code
 

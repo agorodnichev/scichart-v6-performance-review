@@ -9,6 +9,7 @@
 | Metric | INP (history prepend), frame time (per-message trimming) |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/06c7b45a1b9e6ebdfc1cd6e28e39490b/): reproduced on WebGL and WebGPU ([source](../demos/041-moving-average-insert-remove-recompute-tail/)) |
 | Rule | SC-24, V8-01 (web-performance skill) |
 | Effort to fix | small |
 

@@ -9,6 +9,7 @@
 | Metric | frame time (also INP when an interaction triggers the redraw) |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/802f7c181e1f4c2defa83613059e7e9e/): reproduced on WebGL and WebGPU ([source](../demos/017-parsecolor-uncached-per-point-palette/)) |
 | Rule | V8-01, SC-23 (web-performance skill) |
 | Effort to fix | small |
 

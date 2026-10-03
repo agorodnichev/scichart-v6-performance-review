@@ -9,6 +9,7 @@
 | Metric | frame time (pan, zoom, stream) |
 | Evidence | H — hypothesis, depends on data size/hardware (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/a33fc135d7c8acf8bced503da505e59f/): reproduced on WebGL and WebGPU ([source](../demos/089-datapointwidth-unsorted-minmax/)) |
 | Rule | V8-01 (web-performance skill) |
 | Effort to fix | small |
 

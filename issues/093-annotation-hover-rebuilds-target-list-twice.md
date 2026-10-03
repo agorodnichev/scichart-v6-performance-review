@@ -9,6 +9,7 @@
 | Metric | frame time during hover |
 | Evidence | H — hypothesis, depends on data size/hardware (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/2d9fc23b666ce21f10069a2856ff3d10/): reproduced on WebGL and WebGPU ([source](../demos/093-annotation-hover-target-list/)) |
 | Rule | V8-01 (web-performance skill) |
 | Effort to fix | small |
 

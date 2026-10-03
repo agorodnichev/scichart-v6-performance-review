@@ -9,8 +9,13 @@
 | Metric | startup (a full reload) (also memory) |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/1033dfaea1fb839dbbc1df81cc0d0e02/): reproduced on WebGL (the code path does not exist on WebGPU: inconclusive there by design) ([source](../demos/081-createsingle-context-loss-reloads-page/)) |
 | Rule | GPU-29 (also SC-16) (web-performance skill) |
 | Effort to fix | small |
+
+## Demo findings
+
+Removing the reload alone, as the fix proposes, leaves the createSingle chart blank: with the reload cancelled it drew 0 frames after restoreContext (Chrome: "bindBufferBase: object does not belong to this context"), while a create() chart recovered. The createSingle restore path needs fixing too. See the [demo](https://jsfiddle.net/gh/gist/library/pure/1033dfaea1fb839dbbc1df81cc0d0e02/).
 
 ## Code
 

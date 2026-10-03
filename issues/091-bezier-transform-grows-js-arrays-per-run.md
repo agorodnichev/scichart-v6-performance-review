@@ -9,6 +9,7 @@
 | Metric | frame time (GC) |
 | Evidence | H — hypothesis, depends on data size/hardware (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/57a1fddafb848c9e2c7a07db85542a5e/): reproduced on WebGL and WebGPU ([source](../demos/091-bezier-transform-growable-arrays/)) |
 | Rule | V8-06 (web-performance skill) |
 | Effort to fix | small |
 

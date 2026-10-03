@@ -9,6 +9,7 @@
 | Metric | frame time (also INP) |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/5c6d05eb28040ad3bcf1d39f4d0332c8/): reproduced on WebGL and WebGPU ([source](../demos/064-3d-tooltip-svg-reparse/)) |
 | Rule | DOM-07 (web-performance skill) |
 | Effort to fix | medium |
 

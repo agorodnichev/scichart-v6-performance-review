@@ -9,6 +9,7 @@
 | Metric | memory (wasm heap growth), also frame time |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (confirmed) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/7d2d5234f08cf912a921502b2452fa96/): reproduced on WebGL and WebGPU ([source](../demos/003-polar-heatmap-native-leak/)) |
 | Rule | GPU-05, SC-29 (web-performance skill) |
 | Effort to fix | small |
 

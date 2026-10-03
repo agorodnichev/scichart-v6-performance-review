@@ -1,0 +1,26 @@
+{
+  "_comment": "Where a demo refined or contradicted an issue's write-up. index.mjs adds each note to the issue file (## Demo findings) and lists them in demos/README.md.",
+  "corrections": {
+    "006": "One wasm set() per interpolated vertex, as claimed. Also seen: with default resampling and 10,000 points the spline throws on the resampled input (\"X data may contain duplicates\"), falls back to the plain line and logs an error every frame. The suggested second run per frame with Y autoRange Always did not show (1.00 run per frame).",
+    "010": "The call count differs from the write-up's 2N: N calls per pointer move (the default SVG rollover line does not trigger a render), and 4N per frame when the chart redraws, because the tooltip's seriesInfo setter calls SeriesInfo.equals, which formats both infos (not only with tooltipLegendTemplate).",
+    "016": "Reproduces only with errorDirection = Horizontal; the default vertical branch does not leak.",
+    "044": "The re-broadcast is confirmed (15.8 moves and update() calls per pointermove with 16 sub-charts, 1.0 with the fix), but series hit tests are not multiplied (4.25 per move with or without the fix): points mapped through inactive sub-charts land outside the other chart and only hide its rollover. The re-broadcast also misplaces the other chart's rollover (correct on 0 of 120 moves, 120 of 120 with the fix).",
+    "057": "Also seen: a point marker passed in the series constructor options never gets a redraw callback, so changing its properties later requests no redraw.",
+    "063": "Also seen: a 3D pointMarker passed in the series constructor options is never subscribed, so later pointMarker.size changes are silently ignored (the demo assigns markers through the setter).",
+    "065": "The suggested workaround (pieSegments.clear() then add()) leaves the legend showing the old segments, because clear() replaces the array the legend holds; call legend.setPieSegmentArray(pie.pieSegments.asArray()) between the two. delete() also leaves the pie's DOM containers in the page.",
+    "066": "The registry walk stops at the first match, so fonts registered early cost about 3 entries per call; the O(S)-per-call cost holds for fonts registered after the registry has grown.",
+    "070": "Contrary to the note that the shared default style only re-formats: in native-text mode (the default), clearing the tick-to-text map sends every label back to native measurement, so even the shared style re-measures all labels each time (cheap per label).",
+    "075": "Answers the open question (evidence H): off-screen rectangles do reach the GPU, 4.55 MB uploaded per frame for 200,000 rectangles with 2,000 visible.",
+    "081": "Removing the reload alone, as the fix proposes, leaves the createSingle chart blank: with the reload cancelled it drew 0 frames after restoreContext (Chrome: \"bindBufferBase: object does not belong to this context\"), while a create() chart recovered. The createSingle restore path needs fixing too.",
+    "085": "The generator branch's use of the global length is a correctness bug in practice: inserting 100 points adds 0 metadata entries, leaving the metadata 100 entries behind count()."
+  },
+  "newFindings": [
+    "WebGPU: SciChart never calls GPUTexture.destroy(). Textures are released by dropping the JS object (emwgpuDelete), so their GPU memory waits for garbage collection: about 1,930 textures were created and 0 destroyed in demo 033's as-shipped run, and the per-render label textures of demo 022 (4 per frame) take the same path.",
+    "Spline series with default resampling on 10,000 points fail on every frame with \"X data may contain duplicates\" and fall back to a plain line (seen in demo 006).",
+    "animationHelpers.createPointMarker spreads the style object, so a new marker starts with the default #5555FF fill until the first animation frame (minor, seen in demo 033).",
+    "Two 3D surfaces created with create() on one page redraw each other about 30 times per second each, with no input and no draw requests from JS, on both renderers (seen while building demos 051 and 063).",
+    "WebGPU: every 3D series rebuild allocates a fresh full-size mappedAtCreation buffer (16.5 MB at 500,000 points) and no destroy() was seen (seen in demo 019).",
+    "Point markers passed in the series constructor options are never subscribed, in 2D (demo 057) and 3D (demo 063): later property changes do not redraw.",
+    "WebGL: any 3D surface logs beginQuery/getQueryParameter INVALID_OPERATION warnings in the console (seen in the 3D demos)."
+  ]
+}

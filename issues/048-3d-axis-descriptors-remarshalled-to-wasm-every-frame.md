@@ -9,6 +9,7 @@
 | Metric | frame time |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/85ee78e009e2143210cf0d4f8e8d8922/): reproduced on WebGL and WebGPU ([source](../demos/048-3d-axis-descriptor-push/)) |
 | Rule | TASK-13 (web-performance skill) |
 | Effort to fix | small |
 

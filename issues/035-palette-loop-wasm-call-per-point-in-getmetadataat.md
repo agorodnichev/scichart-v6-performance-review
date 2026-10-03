@@ -9,6 +9,7 @@
 | Metric | frame time |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/702665e3ccacd450d8c39e25ec5d1a88/): reproduced on WebGL and WebGPU ([source](../demos/035-palette-getmetadataat-wasm-call-per-point/)) |
 | Rule | TASK-13, SC-06 (web-performance skill) |
 | Effort to fix | small |
 
