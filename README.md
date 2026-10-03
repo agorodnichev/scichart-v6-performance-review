@@ -22,9 +22,9 @@ Nothing here is measured. Every issue names the recipe that would measure it.
 
 | Status | Issues |
 |---|---|
-| Verified by an adversarial reviewer (confirmed or corrected) | 84 |
+| Verified by an adversarial reviewer (confirmed or corrected) | 85 |
 | Refuted by an adversarial reviewer (file kept, marked) | 0 |
-| **Not yet verified** (reviewer only) | 10 |
+| **Not yet verified** (reviewer only) | 9 |
 
 Each issue file and the index below show its own verification status; all high-severity issues are verified. Unverified issues are strong candidates: re-check the quoted line and the caller chain before acting. Raw data for resuming: [`data/findings.json`](data/findings.json) (`verified: false`).
 
@@ -90,7 +90,7 @@ Each issue file and the index below show its own verification status; all high-s
 | [056](issues/056-error-bars-process-full-dataset-every-frame.md) | medium | JS execution | The error-bar provider draws and pre-processes every data point on each redraw, ignoring the visible index range; on log axes it makes about 20 wasm calls per point | `esm/Charting/Visuals/RenderableSeries/DrawingProviders/ErrorSeriesDrawingProvider.js:101` | S | yes | medium |
 | [057](issues/057-point-marker-rebuilds-three-textures-eagerly.md) | medium | GPU upload | Every point-marker property set, and every resumeUpdates, rebuilds three canvas textures (sprite, stroke mask, fill mask) at once, though the masks are used only with a point-marker palette provider | `esm/Charting/Visuals/PointMarkers/BasePointMarker.js:347` | S | yes | medium |
 | [058](issues/058-data-labels-repeat-native-linebounds-per-label.md) | medium | JS execution | Data-label generation makes 2-3 native GetLineBounds allocations per label per frame, and they are loop-invariant in TextDataLabelProvider | `esm/Charting/Visuals/RenderableSeries/DataLabels/DataLabelProvider.js:411` | S | yes | medium |
-| [059](issues/059-style-animation-rebuilds-marker-textures-per-frame.md) | medium | GPU upload | Point-marker style animations create 3 canvases, 3 GPU textures and run getImageData on every animation frame | `esm/Charting/Visuals/RenderableSeries/Animations/SeriesAnimation.js:149` | S | no | medium |
+| [059](issues/059-style-animation-rebuilds-marker-textures-per-frame.md) | medium | GPU upload | Point-marker style animations create 3 canvases, 3 GPU textures and run getImageData on every animation frame | `esm/Charting/Visuals/RenderableSeries/Animations/SeriesAnimation.js:149` | S | yes | medium |
 | [060](issues/060-selected-annotation-adorner-reparsed-every-render.md) | medium | JS execution | A selected annotation deletes and re-parses its adorner SVG on every render, even when it has not moved | `esm/Charting/Visuals/Annotations/DomAnnotationBase.js:236` | S | yes | medium |
 | [061](issues/061-string-column-range-append-per-cell-crossings.md) | medium | Tasks and scheduling | Range appends on string columns (XyTextDataSeries, TableDataSeries) write blanks in bulk, then rewrite every cell through setValueAt at about 5 wasm calls per cell | `esm/Charting/Model/XyTextDataSeries.js:175` | S | yes | medium |
 | [062](issues/062-heatmap-full-renormalize-on-any-change.md) | medium | JS execution | Heatmap data series re-normalizes every cell in a JS double loop after any change, including one setZValue or an xStart/xStep change that leaves z untouched | `esm/Charting/Model/BaseHeatmapDataSeries.js:355` | S | yes | medium |
@@ -135,7 +135,7 @@ Each issue file and the index below show its own verification status; all high-s
 | `s02-init-loading` | 7 | 7 verified, 0 refuted, 0 not verified |
 | `s03-renderable-series` | 8 | 5 verified, 0 refuted, 3 not verified |
 | `s04-drawing-providers` | 10 | 9 verified, 0 refuted, 1 not verified |
-| `s05-labels-hittest-anim` | 5 | 4 verified, 0 refuted, 1 not verified |
+| `s05-labels-hittest-anim` | 5 | 5 verified, 0 refuted, 0 not verified |
 | `s06-axis-text` | 7 | 7 verified, 0 refuted, 0 not verified |
 | `s07-annotations-legend` | 10 | 9 verified, 0 refuted, 1 not verified |
 | `s08-data-series` | 9 | 5 verified, 0 refuted, 1 not verified |

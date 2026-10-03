@@ -8,7 +8,7 @@
 | Pipeline stage | GPU upload (`gpu-upload`) |
 | Metric | frame time during style animations (also GPU and wasm allocation churn) |
 | Evidence | S — static, mechanism certain (not measured) |
-| Verification | **not yet verified**: reviewer-only candidate, see README "Verification status" |
+| Verification | verified by an independent adversarial reviewer (corrected) |
 | Rule | GPU-05, SC-46 (web-performance skill) |
 | Effort to fix | medium |
 
@@ -38,7 +38,34 @@ Any style animation with styles.pointMarker interpolates the marker's width, hei
 ```diff
 --- a/esm/Charting/Visuals/PointMarkers/BasePointMarker.js
 +++ b/esm/Charting/Visuals/PointMarkers/BasePointMarker.js
-@@ resumeUpdates() {
+@@ createCanvasTexture() (:253-276): construct the 3 CanvasTextures as today, then paint them through one helper
+         const spriteTexture = new CanvasTexture(this.webAssemblyContext, widthPadded, heightPadded);
+-        spriteTexture.clear();
+-        this.drawSprite(spriteTexture.getContext(), ...);
+-        spriteTexture.copyTexture();
+         const strokeMask = new CanvasTexture(this.webAssemblyContext, widthPadded, heightPadded);
+-        ... (clear, drawSprite, copyTexture for strokeMask and fillMask)
+         const fillMask = new CanvasTexture(this.webAssemblyContext, widthPadded, heightPadded);
+-        return { spriteTexture, strokeMask, fillMask };
++        const textures = { spriteTexture, strokeMask, fillMask };
++        this.paintCanvasTextures(textures);
++        return textures;
++    }
++    /** Clears and redraws the 3 sprites into existing CanvasTextures (same drawSprite calls as before) */
++    paintCanvasTextures(t) {
++        const r = DpiHelper.PIXEL_RATIO;
++        const w = this.width * r, h = this.height * r, st = this.strokeThickness * r;
++        t.spriteTexture.clear();
++        this.drawSprite(t.spriteTexture.getContext(), w, h, this.stroke, st, this.fill);
++        t.spriteTexture.copyTexture();
++        t.strokeMask.clear();
++        this.drawSprite(t.strokeMask.getContext(), w, h, "#ffffffff", st, "#00000000");
++        t.strokeMask.copyTexture();
++        t.fillMask.clear();
++        this.drawSprite(t.fillMask.getContext(), w, h, "#00000000", st, "#ffffffff");
++        t.fillMask.copyTexture();
+     }
+@@ resumeUpdates() (:328)
      this.isUpdateSuspended = false;
 -    this.recreateSpriteTextures();
 +    // Rebuild only if a texture-affecting property changed while suspended
@@ -46,7 +73,7 @@ Any style animation with styles.pointMarker interpolates the marker's width, hei
 +        this.changedWhileSuspended = false;
 +        this.recreateSpriteTextures();
 +    }
-@@ notifyPropertyChanged(propertyName, newValue, oldValue) {
+@@ notifyPropertyChanged(propertyName, newValue, oldValue) (:342)
      if (newValue === oldValue || propertyName === PROPERTY.OPACITY) {
          return;
      }
@@ -58,24 +85,33 @@ Any style animation with styles.pointMarker interpolates the marker's width, hei
 +    } else {
 +        this.recreateSpriteTextures();
 +    }
-@@ recreateSpriteTextures() {
-+    const w = Math.floor(DpiHelper.PIXEL_RATIO * (this.width + this.strokeThickness) + 1);
-+    const h = Math.floor(DpiHelper.PIXEL_RATIO * (this.height + this.strokeThickness) + 1);
+@@ recreateSpriteTextures() (:350)
++    const r = DpiHelper.PIXEL_RATIO;
++    const w = Math.floor(r * (this.width + this.strokeThickness) + 1); // same size CanvasTexture would get
++    const h = Math.floor(r * (this.height + this.strokeThickness) + 1);
 +    const t = this.spriteTextures;
-+    if (t && t.spriteTexture && t.spriteTexture.width === w && t.spriteTexture.height === h) {
-+        // Same size: clear() + drawSprite() + copyTexture() into the existing 3 CanvasTextures,
-+        // exactly as createCanvasTexture draws them; no new canvas, vectors or GPU textures
-+        this.redrawCanvasTextures(t);
++    if (t && t.spriteTexture && t.spriteTexture.width === w && t.spriteTexture.height === h &&
++        this.createCanvasTexture === BasePointMarker.prototype.createCanvasTexture) {
++        // Same size and the stock texture layout: repaint and re-upload into the existing
++        // canvases, UIntVectors and GPU textures instead of creating new ones
++        this.paintCanvasTextures(t);
 +    } else {
-         ...existing delete of the 3 textures + this.spriteTextures = this.createCanvasTexture();
+         if (this.spriteTextures) {
+             ...existing delete of the 3 textures...
+         }
+         this.spriteTextures = this.createCanvasTexture();
 +    }
+     if (this.invalidateParentCallback) {
+         this.invalidateParentCallback();
+     }
 --- a/esm/Charting/Visuals/RenderableSeries/Animations/SeriesAnimation.js
 +++ b/esm/Charting/Visuals/RenderableSeries/Animations/SeriesAnimation.js
-@@ updateSeriesProperties
++import { DpiHelper } from "../../TextureManager/DpiHelper";
+@@ updateSeriesProperties (:152-153)
 -                rs.pointMarker.width = animationHelpers.interpolateNumber(initialWidth, this.styles.pointMarker.width, animationProgress);
 -                rs.pointMarker.height = animationHelpers.interpolateNumber(initialHeight, this.styles.pointMarker.height, animationProgress);
 +                // The sprite is rasterized in whole device pixels: snap intermediate sizes so that frames
-+                // drawing the same sprite set the same value (no rebuild); the end frames stay exact
++                // that would draw the same sprite set the same value (no rebuild); the end frames stay exact
 +                const snap = (v) => animationProgress <= 0 || animationProgress >= 1
 +                    ? v
 +                    : Math.round(v * DpiHelper.PIXEL_RATIO) / DpiHelper.PIXEL_RATIO;
@@ -83,7 +119,7 @@ Any style animation with styles.pointMarker interpolates the marker's width, hei
 +                rs.pointMarker.height = snap(animationHelpers.interpolateNumber(initialHeight, this.styles.pointMarker.height, animationProgress));
 ```
 
-**Trade-off:** Intermediate marker sizes step in whole device pixels instead of sub-pixel anti-aliased sizes. Start and end frames are exact. A colour transition still re-rasterizes and re-uploads each frame while the colour changes; the fix only removes the object churn (canvas, vectors, texture creation) for those frames. The redraw path keeps 3 canvases per marker alive between frames, as the current code already does between rebuilds. SeriesAnimation is the only caller of point-marker suspendUpdates/resumeUpdates in the package, so the dirty flag changes no other behaviour.
+**Trade-off:** Intermediate marker sizes step in whole device pixels instead of sub-pixel anti-aliased sizes; start and end frames are exact. A colour or stroke-thickness transition still repaints and re-uploads the 3 textures on each frame where the value changes; the fix only removes the object churn (canvas, context, UIntVectors, GPU textures) on those frames, and frames whose snapped size changes still create new textures. The same-size path keeps 3 canvases per marker alive between frames, as the current code already does between rebuilds. resumeUpdates is public API (IPointMarker: 'Resumes recreation of the PointMarker'): with the dirty flag it no longer rebuilds when no notified property changed while suspended, so app code that mutates unnotified state and calls resumeUpdates to force a rebuild must call invalidateCache() instead. A subclass that overrides createCanvasTexture keeps today's delete-and-create path.
 
 ## App-side workaround
 
@@ -104,5 +140,5 @@ measure.md#fps from runAnimation() to completion: 10 XyScatter series with a Sca
 ## Review notes
 
 - Found by reviewer slice `s05-labels-hittest-anim`.
-- Not yet adversarially verified. The code quote and line numbers come from the slice reviewer; re-check them before acting.
+- Adversarial verification (corrected): Re-read SeriesAnimation.js:128-176 (code_quote matches :149-154 verbatim apart from the file's CRLF line endings; resumeUpdates at :166), BasePointMarker.js:60-175 (setters), :176-232 (lazy getters, invalidateCache), :253-276 createCanvasTexture, :328-370 resumeUpdates/notifyPropertyChanged/recreateSpriteTextures/applyOpacity, CanvasTexture.js:40-134, TextureCache.js:17-34 and animationHelpers.js:36-58 and :93-112. Call chain confirmed: SciChartRenderer.js:55/116 sciChartSurface.onAnimate -> SciChartSurface.js:952-953 rs.onAnimate for every series -> BaseRenderableSeries.js:1072 animationHelpers.animationUpdate -> animationHelpers.js:48 updateAnimationProperties while Running (and once on Completed) -> BaseRenderableSeries.js:1335 animation.updateSeriesProperties -> SeriesAnimation.js:149-166. Each frame sets width, height, strokeThickness, fill and stroke inside suspendUpdates; resumeUpdates (:328-330) calls recreateSpriteTextures unconditionally, which deletes the 3 CanvasTextures (:352-356) and createCanvasTexture builds 3 new ones: document.createElement('canvas') (CanvasTexture.js:47), 2 UIntVector allocations + resize (:55-59), a native texture via TextureCache.create (:62-63), a clear, a drawSprite raster, getImageData (:106) and 2 embind set() calls per non-transparent pixel (:122-123), then SCRTFillTextureAbgr (:128). No guard: no size check, no dirty flag; SeriesAnimation.js:150/166 is the only caller of point-marker suspend/resume in esm. Default duration is 3000 ms (SeriesAnimation.js:25). interpolateNumber(a, a, p) returns a exactly, so properties that do not animate do not notify. Mechanism certain per animation frame -> S. Kept medium: per frame, but only while a style animation with styles.pointMarker runs, and the cost scales with series count and marker pixels, not with data size. Corrections to the fix: (1) the same-size branch called an undefined redrawCanvasTextures; replaced it with an explicit paintCanvasTextures helper that createCanvasTexture also uses, so both paths draw identically; (2) the same-size branch now also requires that createCanvasTexture is not overridden, so a subclass with its own texture layout keeps the delete-and-create path; (3) SeriesAnimation.js does not import DpiHelper, so the snap needs the import; (4) trade_off: resumeUpdates is public API (IPointMarker.d.ts:93-96, 'Resumes recreation of the PointMarker'), so the dirty flag changes behaviour for app code that relies on it to force a rebuild after mutating unnotified state.
 
