@@ -103,7 +103,7 @@ The first-line bounds of the label just measured are a property of that measurem
 +    const lineBounds = firstLine !== null && firstLine !== void 0
 +        ? firstLine
 +        : needsLine ? textBounds.GetLineBounds(0) : undefined;
-@@ (:224)
+@@ (:223)
 -    lineBounds.delete();
 +    if (!firstLine && lineBounds) lineBounds.delete();
 --- a/esm/Charting/Visuals/RenderableSeries/DataLabels/LineSeriesDataLabelProvider.js
