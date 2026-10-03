@@ -8,7 +8,7 @@
 | Pipeline stage | JS execution (`js`) |
 | Metric | frame time |
 | Evidence | H — hypothesis, depends on data size/hardware (not measured) |
-| Verification | **not yet verified**: reviewer-only candidate, see README "Verification status" |
+| Verification | verified by an independent adversarial reviewer (corrected) |
 | Rule | V8-01 (web-performance skill) |
 | Effort to fix | medium |
 
@@ -40,22 +40,48 @@ When no metadata was ever supplied, metadata[i] is undefined for every i. The lo
 ```diff
 --- a/esm/Charting3D/Model/DataSeries/XyzDataSeries3D.js
 +++ b/esm/Charting3D/Model/DataSeries/XyzDataSeries3D.js
-+    // true once any non-undefined metadata was stored; clear() resets it
-+    //   append/update/insert:  if (metadata !== undefined) this.hasMetadata = true;
-+    //   appendRange/insertRange: if (metadatas) this.hasMetadata = true;
-+    //   clear():                this.hasMetadata = false;
+@@ constructor(webAssemblyContext, options) {
+         this.metadata = [];
++        /** @ignore true once any metadata may be non-undefined; only clear()/setMetadata(empty) reset it */
++        this.hasMetadata = false;
+@@ append(x, y, z, metadata) {
+             this.metadata.push(metadata);
++            if (metadata !== undefined) this.hasMetadata = true;
+@@ appendRange(xValues, yValues, zValues, metadatas) {
+             if (metadatas) {
++                this.hasMetadata = true;
+@@ update(index, x, y, z, metadata) {
+             this.metadata[index] = metadata;
++            if (metadata !== undefined) this.hasMetadata = true;
+@@ insert(startIndex, x, y, z, metadata) {
+             this.metadata.splice(startIndex, 0, metadata);
++            if (metadata !== undefined) this.hasMetadata = true;
+@@ insertRange(startIndex, xValues, yValues, zValues, metadatas) {
+             if (metadatas) {
++                this.hasMetadata = true;
+@@ clear() {
+             this.metadata = [];
++            this.hasMetadata = false;
+@@ setMetadataAt(index, metadata) {
+             this.metadata[index] = metadata;
++            if (metadata !== undefined) this.hasMetadata = true;
+@@ setMetadata(metadatas) {
+             this.metadata = metadatas ? [...metadatas] : [];
++            this.hasMetadata = this.metadata.length > 0;
 --- a/esm/Charting3D/Visuals/Primitives/RenderableSeriesSceneEntity.js
 +++ b/esm/Charting3D/Visuals/Primitives/RenderableSeriesSceneEntity.js
 @@ rebuildPointMetadata(pointColors, pointScales, metadata, count, defaultColor) {
+         var _a, _b, _c;
 +        const ds = this.parentSeries.dataSeries;
 +        if (ds && ds.hasMetadata === false) {
-+            // no per-point colors or scales anywhere: native uses the defaults
++            // no per-point colors or scales anywhere: the flags below make native use the defaults,
++            // so the vectors (sized by getOrCreateVector) need not be filled
 +            return { hasDefaultColors: true, hasDefaultScales: true };
 +        }
-         var _a, _b, _c;
+         // Assert vectors exist and have correct size
 ```
 
-**Trade-off:** This relies on the native entity ignoring pointColors/pointScales when useDefaultColors/useDefaultScale are true, which the flags imply but the wasm source is not visible to confirm. After metadata is removed, the vectors may hold stale values that the flags then ignore. hasMetadata stays true after removeRange (conservative). Check visually with metadata on and off.
+**Trade-off:** This relies on the native entity ignoring pointColors/pointScales when useDefaultColors/useDefaultScale are true, which the flags imply but the wasm source is not visible to confirm. getOrCreateVector only fills new slots on resize, so after metadata is removed the vectors may hold stale values that the flags then ignore. hasMetadata stays true after removeAt/removeRange (conservative). App code that writes into the array returned by getMetadataValues() in place, bypassing the setters, is no longer picked up while hasMetadata is false; it must call setMetadata/setMetadataAt. Check visually with metadata on and off.
 
 ## App-side workaround
 
@@ -75,5 +101,5 @@ measure.md#fps, stream scenario: a 500k-point ScatterRenderableSeries3D with one
 ## Review notes
 
 - Found by reviewer slice `s12-pie-3d-surface`.
-- Not yet adversarially verified. The code quote and line numbers come from the slice reviewer; re-check them before acting.
+- Adversarial verification (corrected): Re-read RenderableSeriesSceneEntity.js:78-106 (quote matches :91-98; primary :91 is the loop). Callers: ScatterPointsSceneEntity.js:119, PointLine3DSceneEntity.js:100, ColumnSceneEntity.js:88, each from updateSeries, which RenderableSeriesSceneEntity.Update :31-38 runs whenever state.validate() is false: data modified (RenderableSeriesSceneEntityState.js:71, set by BaseDataSeries3D.notifyDataChanged :83-84 from every XyzDataSeries3D mutator) or any visible-range/world-dimension change (:73-85, so autoRange Always while streaming changes it every frame). No guard skips the loop: getMetadataValues (XyzDataSeries3D.js:62-63) returns the live array, which appendRange without metadata only grows by setting length (:139-143), so every metadata[i] is a hole/undefined and the loop writes defaultColor/1.0 into all N slots and returns both flags true. A local node check with --allow-natives-syntax confirmed the length-grown array stays in fast holey mode (no dictionary transition), so the cost is the plain O(N) pass, not slower. Evidence H kept (its share next to the native UpdateMeshesVec is not visible), severity medium kept (per frame only while streaming or ranging, unmeasured). Fix corrected: the original only maintained the flag in append/update/insert/appendRange/insertRange/clear and missed the public setMetadataAt (:299-307) and setMetadata (:313-321), so an app that adds colors with setMetadata to a series created without metadata would have them ignored; both now update the flag, and the flag is initialized in the constructor so ds.hasMetadata === false holds from the start (UniformGrid series lack the field and keep the loop).
 
