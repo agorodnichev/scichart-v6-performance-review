@@ -185,6 +185,37 @@ var Probe = (function () {
         });
       });
     },
+    // Inline style writes, opt-in. Chromium defines CSS properties on each CSSStyleDeclaration
+    // object, so watch.domWrites cannot hook them on the prototype. This wraps the element.style
+    // getter in a cached Proxy: "style.<prop>.set" counts writes and marks layout dirty.
+    styleWrites: function () {
+      once("styleWrites", function () {
+        startClearAfterRender();
+        var proxies = new WeakMap();
+        [window.HTMLElement, window.SVGElement].forEach(function (K) {
+          var d = K && Object.getOwnPropertyDescriptor(K.prototype, "style");
+          if (!d || !d.get) return;
+          Object.defineProperty(K.prototype, "style", {
+            configurable: true, enumerable: d.enumerable,
+            get: function () {
+              var st = d.get.call(this);
+              if (!st) return st;
+              var px = proxies.get(st);
+              if (!px) {
+                px = new Proxy(st, {
+                  set: function (t, k, v) { if (enabled && typeof k === "string") { count("style." + k + ".set"); markDirty(); } t[k] = v; return true; },
+                  get: function (t, k) { var v = t[k]; return typeof v === "function" ? v.bind(t) : v; },
+                });
+                proxies.set(st, px);
+              }
+              return px;
+            },
+            set: d.set ? function (v) { if (enabled) { count("style.set"); markDirty(); } d.set.call(this, v); } : undefined,
+          });
+          hooks.push(function () { Object.defineProperty(K.prototype, "style", d); });
+        });
+      });
+    },
     // Canvas 2D work: readbacks, clears, text
     canvas2d: function () {
       once("canvas2d", function () {
@@ -229,7 +260,7 @@ var Probe = (function () {
         [window.WebGLRenderingContext, window.WebGL2RenderingContext].forEach(function (K) {
           if (!K) return;
           var p = K.prototype;
-          hookMethod(p, "texImage2D", { name: "gl.texImage2D", bytes: texBytes });
+          hookMethod(p, "texImage2D", { name: "gl.texImage2D", bytes: texBytes, onCall: function (a) { if (a.length >= 9 && a[8] == null) count("gl.texImage2D (allocation, no data)", 1, texBytes(a)); } });
           hookMethod(p, "texSubImage2D", { name: "gl.texSubImage2D", bytes: subBytes });
           hookMethod(p, "createTexture", { name: "gl.createTexture" });
           hookMethod(p, "deleteTexture", { name: "gl.deleteTexture" });
@@ -248,7 +279,9 @@ var Probe = (function () {
           hookMethod(GPUQueue.prototype, "copyExternalImageToTexture", { name: "gpu.copyExternalImageToTexture", bytes: function (a) { var s = a[0] && a[0].source; return s ? s.width * s.height * 4 : 0; } });
           hookMethod(GPUQueue.prototype, "submit", { name: "gpu.submit" });
           hookMethod(GPUDevice.prototype, "createTexture", { name: "gpu.createTexture" });
-          hookMethod(GPUDevice.prototype, "createBuffer", { name: "gpu.createBuffer" });
+          hookMethod(GPUDevice.prototype, "createBuffer", { name: "gpu.createBuffer", onCall: function (a) { if (a[0] && a[0].mappedAtCreation) count("gpu.createBuffer (mappedAtCreation)", 1, a[0].size || 0); } });
+          if (window.GPUCommandEncoder) hookMethod(GPUCommandEncoder.prototype, "copyTextureToBuffer", { name: "gpu.copyTextureToBuffer", bytes: function (a) { var z = a[2]; return z ? (z.width || z[0] || 0) * (z.height || z[1] || 1) * 4 : 0; } });
+          if (window.GPUBuffer) hookMethod(GPUBuffer.prototype, "destroy", { name: "gpu.buffer.destroy" });
           hookMethod(GPUDevice.prototype, "createShaderModule", { name: "gpu.createShaderModule" });
           if (window.GPUTexture) hookMethod(GPUTexture.prototype, "destroy", { name: "gpu.texture.destroy" });
           if (window.GPUBuffer) hookMethod(GPUBuffer.prototype, "mapAsync", { name: "gpu.buffer.mapAsync (readback)" });
@@ -370,17 +403,17 @@ var Probe = (function () {
 
   // Count calls into wasm: "Class.method" (prototype), "Class::staticMethod" or "functionName" (module level)
   function watchEmbind(wasmContext, specs) {
-    specs.forEach(function (s) {
+    var undos = specs.map(function (s) {
       var m;
       if ((m = /^(\w+)\.(\w+)$/.exec(s))) {
         var K = wasmContext[m[1]];
-        if (K && K.prototype) hookMethod(K.prototype, m[2], { name: "wasm " + s });
+        return K && K.prototype ? hookMethod(K.prototype, m[2], { name: "wasm " + s }) : function () {};
       } else if ((m = /^(\w+)::(\w+)$/.exec(s))) {
-        if (wasmContext[m[1]]) hookMethod(wasmContext[m[1]], m[2], { name: "wasm " + s });
-      } else {
-        hookMethod(wasmContext, s, { name: "wasm " + s });
+        return wasmContext[m[1]] ? hookMethod(wasmContext[m[1]], m[2], { name: "wasm " + s }) : function () {};
       }
+      return hookMethod(wasmContext, s, { name: "wasm " + s });
     });
+    return function () { undos.forEach(function (u) { u(); }); };
   }
 
   // ---------------------------------------------------------------- frames, pointer, timing
@@ -542,6 +575,13 @@ var Probe = (function () {
       el.report.appendChild(h("div", { class: "probe-table-wrap" }, [h("table", null, [h("thead", null, [thead]), h("tbody", null, body)])]));
     }
     (r.notes || []).forEach(function (n) { el.report.appendChild(h("p", { class: "probe-note", text: n })); });
+    if (rendererInfo === "renderer unknown" && api.SciChart) {
+      var log0 = console.log, info0 = console.info;
+      try {
+        console.log = console.info = function () {};
+        rendererInfo = (api.SciChart.SciChartSurface.debugWasmWebGPU().webGpu ? "WebGPU" : "WebGL") + " (configured)";
+      } catch (e) { /* ignore */ } finally { console.log = log0; console.info = info0; }
+    }
     var env = environment();
     el.env.textContent = [env.scichart, env.renderer, "DPR " + env.dpr, env.ua].join(" · ");
     status("Done in " + ((now() - startedAt) / 1000).toFixed(1) + " s.");
@@ -568,11 +608,19 @@ var Probe = (function () {
     var S = api.SciChart.SciChartSurface;
     var r = await (single ? S.createSingle(div, options) : S.create(div, options));
     hookNativeDelete(r.wasmContext);
-    api.surfaces.push(r.sciChartSurface); // for console debugging: Probe.surfaces
+    track(r.sciChartSurface);
     if (rendererInfo === "renderer unknown") {
       try { rendererInfo = S.debugWasmWebGPU().webGpu ? "WebGPU" : "WebGL"; } catch (e) { /* ignore */ }
     }
     return r;
+  }
+
+  // Surfaces made through the helpers, for console debugging (Probe.surfaces). Weak references, so
+  // the harness never keeps a deleted surface (or its canvas) alive.
+  var surfaceRefs = [];
+  function track(surface) { surfaceRefs.push(window.WeakRef ? new WeakRef(surface) : { deref: function () { return surface; } }); }
+  function liveSurfaces() {
+    return surfaceRefs.map(function (r) { return r.deref(); }).filter(function (s) { return s && !s.isDeleted; });
   }
 
   // 3D surface: { sciChart3DSurface, wasmContext }
@@ -580,7 +628,7 @@ var Probe = (function () {
     var S = api.SciChart.SciChart3DSurface;
     var r = await (single ? S.createSingle(div, options) : S.create(div, options));
     hookNativeDelete(r.wasmContext);
-    api.surfaces.push(r.sciChart3DSurface);
+    track(r.sciChart3DSurface);
     if (rendererInfo === "renderer unknown") {
       try { rendererInfo = api.SciChart.SciChartSurface.debugWasmWebGPU().webGpu ? "WebGPU" : "WebGL"; } catch (e) { /* ignore */ }
     }
@@ -589,7 +637,7 @@ var Probe = (function () {
   // Pie surface (DOM based): returns the SciChartPieSurface
   async function createPie(div, options) {
     var pie = await api.SciChart.SciChartPieSurface.create(div, options);
-    api.surfaces.push(pie);
+    track(pie);
     return pie;
   }
   // Force a garbage collection when the browser allows it (headless runs pass --js-flags=--expose-gc).
@@ -623,7 +671,7 @@ var Probe = (function () {
 
   var api = {
     SciChart: null,
-    surfaces: [],
+    get surfaces() { return liveSurfaces(); },
     boot: boot,
     // counters
     hookMethod: hookMethod, hookAccessor: hookAccessor, hookConstructor: hookConstructor,

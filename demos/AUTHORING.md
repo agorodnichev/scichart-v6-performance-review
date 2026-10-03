@@ -88,6 +88,19 @@ Prototype methods of exported classes can be wrapped or patched (`P.SciChart.Som
 - `P.gc()` works only in the headless verifier (`--js-flags=--expose-gc`), not on JSFiddle. Do not make the verdict depend on it.
 - Keep charts visible so a reader can see the scenario run. Restore every patch you apply.
 
+## Gotchas (from writing the first 94 demos)
+
+- **Methods bound in constructors.** SciChart binds some methods per instance (`invalidateElement`, `onRenderSurfaceDraw`, MouseManager handlers, `RolloverModifier.hitTestRenderableSeries`, `getDataPointWidth`, the pie's `update`/`drawChart`, ...). A prototype patch made after the object exists never reaches it: patch the instance, or patch the prototype before the object is created.
+- **Base classes missing from the bundle.** The UMD namespace does not export several base classes (`SvgAnnotationBase`, `SciChartSurfaceBase`, `BaseDataSeries`, `BasePointMarker`, `BaseSeriesDrawingProvider`, `ChartModifierBase2D`, `LabelProviderBase2D`, 3D bases...). Reach them with `Object.getPrototypeOf(SomeExportedSubclass.prototype)` and walk up to the class that owns the method.
+- **Synchronous deltas.** Inside a `P.frames` callback or around one call, use `const a = P.snap(); ...; const d = P.diff(a, P.snap()); P.get(d, "name")`.
+- **Scoped counts.** To count a browser call only while a library method runs (for example `getBBox` inside a marker update), wrap the method with a flag and count from an `onCall` hook, as the 012 demo does.
+- **Removable hooks.** `P.hookMethod`, `P.hookAccessor`, `P.hookConstructor` and `P.watchEmbind` return an undo function: remove per-call counters before a timing pass.
+- **Timer resolution.** `performance.now()` is coarsened (about 0.1 ms in normal pages), so time sub-millisecond work over many calls, never one call at a time.
+- **Inline style writes.** Chromium defines CSS properties on each style object, so `P.watch.domWrites()` cannot see `el.style.left = ...`. Call `P.watch.styleWrites()` (opt-in) when a forced-layout count must include style writes.
+- **WebGPU byte counters.** `P.watch.gpu()` also counts `gpu.copyTextureToBuffer` (readbacks) and `gpu.createBuffer (mappedAtCreation)` (geometry uploads, which bypass `writeBuffer`); `gl.texImage2D (allocation, no data)` separates texture allocations from uploads on WebGL.
+- **Several 3D surfaces on one page** redraw each other about 30 times per second with no input; keep one 3D chart per demo unless that is the subject.
+- **Renderer line.** Pages that never call `P.createSurface` (pie only, Builder API, iframes) report the configured renderer at the end.
+
 ## Build and verify
 
 ```bash

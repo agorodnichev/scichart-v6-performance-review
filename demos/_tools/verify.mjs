@@ -31,7 +31,7 @@ const browser = await puppeteer.launch({
   args: [
     "--enable-unsafe-webgpu", "--ignore-gpu-blocklist", "--no-first-run", "--no-default-browser-check",
     "--disable-background-timer-throttling", "--disable-renderer-backgrounding", "--disable-backgrounding-occluded-windows",
-    "--js-flags=--expose-gc", "--window-size=1100,1000",
+    "--js-flags=--expose-gc", "--enable-precise-memory-info", "--window-size=1100,1000",
   ],
   defaultViewport: { width: 1100, height: 1000, deviceScaleFactor: dpr },
 });
@@ -55,7 +55,9 @@ for (const id of targets) {
       try { result.partialLog = await page.evaluate(() => Array.from(document.querySelectorAll(".probe-log li")).map((li) => li.textContent)); } catch (e2) { /* ignore */ }
     }
     const secs = ((Date.now() - t0) / 1000).toFixed(1);
-    const out = { ...result, renderer, dpr, seconds: Number(secs), consoleErrors: logs.filter((l) => !/favicon|404 \(File not found\)/.test(l)).slice(-20) };
+    // Known noise: favicon 404s, and the engine's own WebGL query warnings on 3D surfaces (see demos/README.md).
+    const noise = /favicon|404 \(File not found\)|beginQuery|getQueryParameter|endQuery/;
+    const out = { ...result, renderer, dpr, seconds: Number(secs), consoleErrors: logs.filter((l) => !noise.test(l)).slice(-20) };
     if (existsSync(join(root, "_dist", id))) writeFileSync(join(root, "_dist", id, `result-${renderer}${dpr !== 1 ? `-dpr${dpr}` : ""}.json`), JSON.stringify(out, null, 2));
     if (!["reproduced", "not-reproduced", "inconclusive"].includes(out.verdict)) failures++;
     const rows = (out.rows || []).slice(0, 6).map((r) => `      ${r[0]}: ${r.slice(1).join(" | ")}`).join("\n");
