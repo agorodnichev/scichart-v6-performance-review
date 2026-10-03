@@ -22,9 +22,9 @@ Nothing here is measured. Every issue names the recipe that would measure it.
 
 | Status | Issues |
 |---|---|
-| Verified by an adversarial reviewer (confirmed or corrected) | 85 |
+| Verified by an adversarial reviewer (confirmed or corrected) | 86 |
 | Refuted by an adversarial reviewer (file kept, marked) | 0 |
-| **Not yet verified** (reviewer only) | 9 |
+| **Not yet verified** (reviewer only) | 8 |
 
 Each issue file and the index below show its own verification status; all high-severity issues are verified. Unverified issues are strong candidates: re-check the quoted line and the caller chain before acting. Raw data for resuming: [`data/findings.json`](data/findings.json) (`verified: false`).
 
@@ -115,7 +115,7 @@ Each issue file and the index below show its own verification status; all high-s
 | [081](issues/081-createsingle-context-loss-reloads-page.md) | low | Memory and lifecycle | A createSingle() canvas reloads the whole page on webglcontextlost, although monitorWebGL already handles loss and restore; past the context cap this becomes a reload loop | `esm/Charting/Visuals/sciChartInitCommon.js:195` | S | yes | small |
 | [082](issues/082-wasm-streaming-fallback-silent-refetch.md) | low | Network | When streaming compile fails (for example a wrong MIME type), the compiled-module cache silently fetches again and compiles from an ArrayBuffer, losing the overlap and the wasm code cache with no console message | `esm/Charting/Visuals/wasmModuleCache.js:28` | S | yes | small |
 | [083](issues/083-license-wizard-localhost-polling-on-any-host.md) | low | Network | Without a runtime key, every page on any hostname polls http://localhost:24278 for the licensing wizard, up to 10 times at 5 s intervals, also in hidden tabs | `esm/Charting/Visuals/licenseManager2D.js:847` | S | yes | small |
-| [084](issues/084-stacked-column-collection-unused-native-provider-leak.md) | low | Memory and lifecycle | StackedColumnCollection.onAttach allocates an unused native drawing provider on every attach and never frees the previous one | `esm/Charting/Visuals/RenderableSeries/StackedColumnCollection.js:312` | S | no | small |
+| [084](issues/084-stacked-column-collection-unused-native-provider-leak.md) | low | Memory and lifecycle | StackedColumnCollection.onAttach allocates an unused native drawing provider on every attach and never frees the previous one | `esm/Charting/Visuals/RenderableSeries/StackedColumnCollection.js:312` | S | yes | small |
 | [085](issues/085-insert-metadata-range-copies-whole-array.md) | low | JS execution | insertRange on a series with metadata copies the whole metadata array three times (two slices and a concat), and the generator branch reads the global `length` | `esm/Charting/Model/BaseDataSeries.js:1317` | S | no | small |
 | [086](issues/086-draw-copy-destination-lookup-allocates-per-frame.md) | low | JS execution | Each per-frame Draw and CopyToDestination callback builds a new array of all destinations and scans it linearly, which is O(N^2) work with N fresh arrays per frame | `esm/Charting/Visuals/createMaster.js:563` | S | no | small |
 | [087](issues/087-painted-event-new-messagechannel-per-frame.md) | low | Memory and lifecycle | While a painted listener exists, each surface creates a new MessageChannel every frame and never closes its ports | `esm/Charting/Visuals/SciChartSurface.js:1367` | H | yes | small |
@@ -133,7 +133,7 @@ Each issue file and the index below show its own verification status; all high-s
 |---|---|---|
 | `s01-surface-render` | 7 | 7 verified, 0 refuted, 0 not verified |
 | `s02-init-loading` | 7 | 7 verified, 0 refuted, 0 not verified |
-| `s03-renderable-series` | 8 | 5 verified, 0 refuted, 3 not verified |
+| `s03-renderable-series` | 8 | 6 verified, 0 refuted, 2 not verified |
 | `s04-drawing-providers` | 10 | 9 verified, 0 refuted, 1 not verified |
 | `s05-labels-hittest-anim` | 5 | 5 verified, 0 refuted, 0 not verified |
 | `s06-axis-text` | 7 | 7 verified, 0 refuted, 0 not verified |
