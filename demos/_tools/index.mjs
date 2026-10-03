@@ -33,6 +33,11 @@ function combined(res) {
   const a = res.webgl && res.webgl.verdict, b = res.webgpu && res.webgpu.verdict;
   if (!a && !b) return { key: "not run", text: "not run" };
   if (a === b || !a || !b) return { key: a || b, text: `${word(a || b).toLowerCase()} on ${[a && "WebGL", b && "WebGPU"].filter(Boolean).join(" and ")}` };
+  // Reproduced on one renderer, inconclusive on the other: the code path exists on one renderer only.
+  if ((a === "reproduced" && b === "inconclusive") || (b === "reproduced" && a === "inconclusive")) {
+    const on = a === "reproduced" ? "WebGL" : "WebGPU", off = a === "reproduced" ? "WebGPU" : "WebGL";
+    return { key: "renderer-specific", only: on, text: `reproduced on ${on} (the code path does not exist on ${off}: inconclusive there by design)` };
+  }
   return { key: "mixed", text: `WebGL: ${word(a).toLowerCase()}, WebGPU: ${word(b).toLowerCase()}` };
 }
 const esc = (s) => String(s ?? "").replace(/\|/g, "\\|").replace(/\s+/g, " ").trim();
@@ -59,7 +64,7 @@ for (const f of findings) {
 const chrome = env && /(?:Headless)?Chrome\/([\d.]+)/.exec(env.ua);
 const summary = [
   `${rows.length} of ${findings.length} issues have a demo`,
-  ...Object.entries(tally).map(([k, n]) => `${n} ${k === "mixed" ? "with different verdicts per renderer" : word(k).toLowerCase()}`),
+  ...Object.entries(tally).map(([k, n]) => `${n} ${k === "mixed" ? "with different verdicts per renderer" : k === "renderer-specific" ? "reproduced on the one renderer that has the code path" : k === "reproduced" ? "reproduced on WebGL and WebGPU" : word(k).toLowerCase()}`),
   skippedRows.length ? `${skippedRows.length} without a demo (see why)` : null,
   pendingRows.length ? `${pendingRows.length} in progress` : null,
 ].filter(Boolean).join(" · ");
@@ -92,7 +97,7 @@ ${rows.join("\n")}
 
 ## Issues without a demo
 
-${skippedRows.length ? `| # | Severity | Issue | Why there is no demo |\n|---|---|---|---|\n${skippedRows.join("\n")}` : "None so far."}
+${skippedRows.length ? `| # | Severity | Issue | Why there is no demo |\n|---|---|---|---|\n${skippedRows.join("\n")}` : pendingRows.length ? "None so far." : "None: every issue has a demo."}
 ${pendingRows.length ? `\n## In progress\n\n| # | Severity | Issue | Status |\n|---|---|---|---|\n${pendingRows.join("\n")}\n` : ""}
 ${Object.keys(notes.corrections).length ? `## Where a demo changed the write-up\n\nEach note is also added to the issue file under **Demo findings**.\n\n${Object.entries(notes.corrections).map(([id, n]) => `- **[${id}](../issues/${issueFiles[id]})**: ${n}`).join("\n")}\n` : ""}
 ${notes.newFindings.length ? `## Found along the way (not in the review)\n\n${notes.newFindings.map((n) => `- ${n}`).join("\n")}\n` : ""}
@@ -128,7 +133,7 @@ if (hdr >= 0) {
     let cell;
     if (demoDirs[id] && gists[id]) {
       const c = combined(results(id));
-      cell = `[${c.key === "mixed" ? "see demo" : word(c.key).toLowerCase()}](${gists[id].fiddle})`;
+      cell = `[${c.key === "mixed" ? "see demo" : c.key === "renderer-specific" ? `reproduced (${c.only} only)` : word(c.key).toLowerCase()}](${gists[id].fiddle})`;
     } else if (skipped[id]) cell = "none";
     else cell = "in progress";
     if (withDemo) { cells[cells.length - 1] = `${cell} |`; lines[i] = cells.join(" | "); } else lines[i] += ` ${cell} |`;
