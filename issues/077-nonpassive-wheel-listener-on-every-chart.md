@@ -8,7 +8,7 @@
 | Pipeline stage | Composite (`composite`) |
 | Metric | frame time / scroll start latency (dropped frames while scrolling the page) |
 | Evidence | H — hypothesis, depends on data size/hardware (not measured) |
-| Verification | **not yet verified**: reviewer-only candidate, see README "Verification status" |
+| Verification | verified by an independent adversarial reviewer (corrected) |
 | Rule | EVT-09 (web-performance skill) |
 | Effort to fix | medium |
 
@@ -32,6 +32,8 @@ Chromium defaults wheel listeners to passive only on window, document, html and 
 
 ```diff
 --- esm/Core/Mouse/MouseManager.js
++import { ChartModifierBase } from "../../Charting/ChartModifiers/ChartModifierBase";
+@@ subscribe(source)
 -        source.addEventListener("wheel", this.onMouseWheel);
 +        // Non-passive only while some modifier can consume the wheel (it needs preventDefault);
 +        // otherwise the compositor scrolls the page over this chart without waiting for the main thread.
@@ -39,11 +41,14 @@ Chromium defaults wheel listeners to passive only on window, document, html and 
 +        source.addEventListener("wheel", this.onMouseWheel, { passive: this.wheelPassive });
 @@
 +    anyModifierHandlesWheel() {
++        const base = ChartModifierBase.prototype.modifierMouseWheel;
 +        const surfaces = [this.sciChartSurface, ...(this.sciChartSurface.subCharts || [])];
-+        return surfaces.some(s => s.chartModifiers.asArray().some(cm => cm.modifierGroup !== undefined ||
-+            Object.getPrototypeOf(cm).modifierMouseWheel !== Object.getPrototypeOf(ChartModifierBase.prototype).constructor.prototype.modifierMouseWheel));
++        // group copies sent to other surfaces never set handled on this event, so only own and sub-chart overrides count
++        return surfaces.some(s => s.chartModifiers.asArray().some(cm => cm.modifierMouseWheel !== base));
 +    }
-+    refreshWheelListener() { // call from chartModifiers.collectionChanged (SciChartSurfaceBase.js:269)
++    refreshWheelListener() {
++        // call from chartModifiers.collectionChanged (SciChartSurfaceBase.js:269) of this surface and of each sub-chart
++        // (via parentSurface.mouseManager, since a sub-chart's own MouseManager has no canvas), and from addSubChart/removeSubChart
 +        const passive = !this.anyModifierHandlesWheel();
 +        if (!this.canvas || passive === this.wheelPassive) return;
 +        this.canvas.removeEventListener("wheel", this.onMouseWheel);
@@ -56,7 +61,7 @@ Chromium defaults wheel listeners to passive only on window, document, html and 
              event.preventDefault();
 ```
 
-**Trade-off:** Adds a re-subscribe when modifiers change, which is rare. Detection works by method override, so a custom modifier that consumes the wheel without overriding modifierMouseWheel needs an explicit flag. Surfaces with grouped modifiers stay non-passive because they may forward wheel events to other charts. Behavior is unchanged otherwise: without a wheel modifier, handled is never set, so the page already scrolls today.
+**Trade-off:** Adds a re-subscribe when modifiers or sub-charts change, which is rare. Detection works by method override, so a custom modifier that consumes the wheel without overriding modifierMouseWheel needs an explicit flag; a disabled wheel modifier still keeps the listener non-passive. Grouped modifiers do not need it: copies forwarded to other surfaces never set handled on the source event, so the page already scrolls today when only another chart in the group zooms. Behavior is unchanged otherwise: without a wheel modifier, handled is never set, so the page already scrolls today.
 
 ## App-side workaround
 
@@ -75,5 +80,5 @@ measure.md#fps with a trusted wheel scroll of the page, pointer over a chart tha
 ## Review notes
 
 - Found by reviewer slice `s10-modifiers-input`.
-- Not yet adversarially verified. The code quote and line numbers come from the slice reviewer; re-check them before acting.
+- Adversarial verification (corrected): Re-read MouseManager.js:54 (onMouseWheel bound once), :66-80 (subscribe: `source.addEventListener("wheel", this.onMouseWheel)` at :74 with no options), :215-231 (onMouseWheel: preventDefault only when modifierEvent.handled, :223-225), :454-472 (modifierMouseWheel: group copies are new objects from ModifierMouseArgs.copy, so a handled flag set on another surface never comes back to the source event; sub-chart handling does come back through updateSubCharts/processSubChartEvent :658-661). SciChartSurfaceBase.js:290-296 (every surface subscribes; createMaster.js:99 uses ECanvasType.canvas2D, so the source is the per-chart 2D canvas). ChartModifierBase.js:136-138 (no-op base). Only MouseWheelZoomModifier.js:84, PolarMouseWheelZoomModifier.js:58, OverviewRangeSelectionModifier.js:138 and MouseWheelZoomModifier3D.js:40 override it; no other wheel listener exists in esm. The listener targets a canvas, not window/document/body, so it is not default-passive and the compositor must wait for it at the start of each wheel scroll over the chart. Severity medium (once per scroll start over a chart) and evidence H (delay depends on main-thread load) kept. Corrections to the fix: the detector compared against `Object.getPrototypeOf(ChartModifierBase.prototype).constructor.prototype.modifierMouseWheel`, which is DeletableEntity.prototype.modifierMouseWheel === undefined (ChartModifierBase extends DeletableEntity, ChartModifierBase.js:12), so every modifier counted as a wheel consumer and any chart with a modifier stayed non-passive; now compares with ChartModifierBase.prototype.modifierMouseWheel. Dropped the modifierGroup clause: forwarded group copies cannot make the source call preventDefault, so passive changes nothing for them. Added the refresh hooks the diff missed: sub-surfaces' MouseManagers are unsubscribed (SciChartSurface.js:371) and have no canvas, so sub-chart modifier changes and addSubChart/removeSubChart must refresh the parent's listener.
 

@@ -22,9 +22,9 @@ Nothing here is measured. Every issue names the recipe that would measure it.
 
 | Status | Issues |
 |---|---|
-| Verified by an adversarial reviewer (confirmed or corrected) | 67 |
+| Verified by an adversarial reviewer (confirmed or corrected) | 68 |
 | Refuted by an adversarial reviewer (file kept, marked) | 0 |
-| **Not yet verified** (reviewer only) | 27 |
+| **Not yet verified** (reviewer only) | 26 |
 
 Each issue file and the index below show its own verification status; all high-severity issues are verified. Unverified issues are strong candidates: re-check the quoted line and the caller chain before acting. Raw data for resuming: [`data/findings.json`](data/findings.json) (`verified: false`).
 
@@ -108,7 +108,7 @@ Each issue file and the index below show its own verification status; all high-s
 | [074](issues/074-hittest-selection-pass-left-enabled-after-detach.md) | medium | GPU draw | Tooltip/selection modifiers turn on the per-frame selection pass on attach and never turn it off on detach | `esm/Charting3D/ChartModifiers/TooltipModifier3D.js:210` | H | no | small |
 | [075](issues/075-rectangle-series-no-visible-range-culling.md) | medium | GPU draw | FastRectangleRenderableSeries always reports the full index range, so every frame processes every rectangle regardless of zoom | `esm/Charting/Visuals/RenderableSeries/FastRectangleRenderableSeries.js:331` | H | yes | medium |
 | [076](issues/076-pointer-offsetx-forced-layout-per-event.md) | medium | Layout | Every pointer and wheel event reads MouseEvent.offsetX/offsetY, which forces style and layout whenever anything on the page dirtied layout since the last frame | `esm/Charting/ChartModifiers/ModifierMouseArgs.js:57` | H | yes | medium |
-| [077](issues/077-nonpassive-wheel-listener-on-every-chart.md) | medium | Composite | MouseManager attaches a non-passive wheel listener to every chart canvas, even when no attached modifier uses the wheel, so a page scroll that starts over any chart waits for the main thread | `esm/Core/Mouse/MouseManager.js:74` | H | no | medium |
+| [077](issues/077-nonpassive-wheel-listener-on-every-chart.md) | medium | Composite | MouseManager attaches a non-passive wheel listener to every chart canvas, even when no attached modifier uses the wheel, so a page scroll that starts over any chart waits for the main thread | `esm/Core/Mouse/MouseManager.js:74` | H | yes | medium |
 | [078](issues/078-3d-point-metadata-loop-runs-without-metadata.md) | medium | JS execution | Every 3D XYZ series rebuild walks all N metadata entries in JS, even when the series has no metadata and the result is 'all defaults' | `esm/Charting3D/Visuals/Primitives/RenderableSeriesSceneEntity.js:91` | H | no | medium |
 | [079](issues/079-delete-rebuilds-native-destinations-for-all-charts.md) | medium | Tasks and scheduling | Deleting one create() chart clears and re-adds the native destination of every other chart: O(N) per delete, O(N^2) per dashboard teardown | `esm/Charting/Visuals/createMaster.js:417` | H | no | medium |
 | [080](issues/080-invalidateelement-builds-debug-string-every-call.md) | low | JS execution | invalidateElement builds a Logger.debug template string on every call, even though debug logging is off by default | `esm/Charting/Visuals/SciChartSurface.js:572` | S | yes | small |
@@ -140,7 +140,7 @@ Each issue file and the index below show its own verification status; all high-s
 | `s07-annotations-legend` | 10 | 9 verified, 0 refuted, 1 not verified |
 | `s08-data-series` | 9 | 5 verified, 0 refuted, 1 not verified |
 | `s09-filters-numerics-utils` | 7 | 6 verified, 0 refuted, 0 not verified |
-| `s10-modifiers-input` | 7 | 5 verified, 0 refuted, 2 not verified |
+| `s10-modifiers-input` | 7 | 6 verified, 0 refuted, 1 not verified |
 | `s11-layout-core-themes` | 2 | not verified yet |
 | `s12-pie-3d-surface` | 7 | 1 verified, 0 refuted, 6 not verified |
 | `s13-3d-series-modifiers` | 6 | 2 verified, 0 refuted, 3 not verified |
