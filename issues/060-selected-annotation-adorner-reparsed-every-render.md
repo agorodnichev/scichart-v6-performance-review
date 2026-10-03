@@ -8,7 +8,7 @@
 | Pipeline stage | JS execution (`js`) |
 | Metric | frame time (also INP while dragging) |
 | Evidence | S — static, mechanism certain (not measured) |
-| Verification | **not yet verified**: reviewer-only candidate, see README "Verification status" |
+| Verification | verified by an independent adversarial reviewer (confirmed) |
 | Rule | DOM-07 (web-performance skill) |
 | Effort to fix | medium |
 
@@ -90,5 +90,5 @@ measure.md#fps: select a BoxAnnotation and a TextAnnotation on a chart streaming
 ## Review notes
 
 - Found by reviewer slice `s07-annotations-legend`.
-- Not yet adversarially verified. The code quote and line numbers come from the slice reviewer; re-check them before acting.
+- Adversarial verification (confirmed): Re-read DomAnnotationBase.js:235-243 (quote verbatim) and the copies in LineAnnotation.js:453-461, BoxAnnotation.js:319-327, NativeTextAnnotation.js:565-573, AxisMarkerAnnotation.js:327-335, ArcAnnotationBase.js:228-235; deleteAdorner AnnotationBase.js:1076-1081 (early return only when no adorner, so no cost while unselected); annotationHelpers.createSvg :5-13 (createRange().createContextualFragment + appendChild). Call chain re-established: SciChartRenderer.getAnnotationDrawFunctions (Services/SciChartRenderer.js:360-381) runs every render; DOM annotations go straight to annotation.update (:396) -> SvgAnnotationBase.update (SvgAnnotationBase.js:30-34) -> TextAnnotation.create, whose non-dirty path still calls updateAdornerInner whenever isSelected (TextAnnotation.js:189-193); HtmlCustomAnnotation.update :73 and SvgLineAnnotation :291 call it on every update; render-context annotations add drawFn via renderPassInfo.addRenderable (:405-438) -> drawWithContext (:429) -> updateAdornerInner at LineAnnotation.js:314, BoxAnnotation.js:154, NativeTextAnnotation.js:416, AxisMarkerAnnotation.js:266. PolarPointerAnnotation.js:323 rebuilds the whole pointer SVG while selected. Renders are rAF-coalesced invalidations (SciChartSurface.js:570-600), so this is once per rendered frame per selected annotation. No guard found: nothing caches the adorner markup, and nothing else mutates svgAdorner (rg 'svgAdorner\.' finds no writers), so the string-compare fix is semantics-preserving; deleteAdorner callers (AnnotationBase.js:558 on detach, AxisMarkerAnnotation.js:268 off-range) clear svgAdorner, so the guard re-creates correctly. setSvgClipPathDefinitions on the adorner root (SciChartSurfaceBase.js:744) only touches <defs>. Severity medium kept: per-frame path, but only while an annotation is selected (normally one, a small subtree). Evidence S.
 
