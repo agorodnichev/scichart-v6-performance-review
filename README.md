@@ -22,9 +22,9 @@ Nothing here is measured. Every issue names the recipe that would measure it.
 
 | Status | Issues |
 |---|---|
-| Verified by an adversarial reviewer (confirmed or corrected) | 16 |
+| Verified by an adversarial reviewer (confirmed or corrected) | 17 |
 | Refuted by an adversarial reviewer (file kept, marked) | 0 |
-| **Not yet verified** (reviewer only) | 78 |
+| **Not yet verified** (reviewer only) | 77 |
 
 Verified so far: all issues of `s01-surface-render` and `s02-init-loading`, plus the high-severity issues of the slices listed in the coverage table. Unverified issues are strong candidates: re-check the quoted line and the caller chain before acting. Raw data for resuming: [`data/findings.json`](data/findings.json) (`verified: false`).
 
@@ -36,7 +36,7 @@ Verified so far: all issues of `s01-surface-render` and `s02-init-loading`, plus
 | [002](issues/002-annotation-label-texture-rasterized-every-frame.md) | high | GPU upload | Line-annotation labels and AxisMarkerAnnotation are re-rasterized on a 1920x1080 CPU canvas, read back with getImageData and uploaded to a new GPU texture on every frame, then deleted | `esm/Charting/Visuals/Helpers/drawLabel.js:33` | S | yes | medium |
 | [003](issues/003-native-objects-created-per-redraw-never-deleted.md) | high | Memory and lifecycle | The polar heatmap creates a native SCRTHeatmapSeriesDrawingProvider on every redraw and never deletes it, and the contour series leaks the TSRVector4 returned by each texture fill | `esm/Charting/Visuals/RenderableSeries/Polar/DrawingProviders/PolarHeatmapDrawingProvider.js:31` | S | yes | small |
 | [004](issues/004-heatmap-texture-reuploaded-every-redraw.md) | high | GPU upload | The uniform heatmap, polar heatmap and contour providers re-upload the whole W x H float texture on every redraw, even when the data and colour map have not changed | `esm/Charting/Visuals/RenderableSeries/DrawingProviders/UniformHeatmapDrawingProvider.js:80` | S | yes | small |
-| [005](issues/005-mountain-palette-cache-forced-dirty-every-frame.md) | high | JS execution | The mountain drawing provider marks the palette dirty on every draw, so palette providers run per point per frame and shouldUpdatePalette/isRangeIndependant are ignored. PolarBand never checks them at all. | `esm/Charting/Visuals/RenderableSeries/DrawingProviders/MountainSeriesDrawingProvider.js:154` | S | no | small |
+| [005](issues/005-mountain-palette-cache-forced-dirty-every-frame.md) | high | JS execution | The mountain drawing provider marks the palette dirty on every draw, so palette providers run per point per frame and shouldUpdatePalette/isRangeIndependant are ignored. PolarBand never checks them at all. | `esm/Charting/Visuals/RenderableSeries/DrawingProviders/MountainSeriesDrawingProvider.js:154` | S | yes | small |
 | [006](issues/006-spline-index-fill-one-wasm-call-per-vertex.md) | high | JS execution | SplineRenderDataTransform writes the source index of every interpolated vertex with one wasm call per vertex, on every data change and every pan/zoom frame | `esm/Charting/Visuals/RenderableSeries/RenderDataTransforms/SplineRenderDataTransform.js:59` | S | no | small |
 | [007](issues/007-polar-column-label-leaks-native-linebounds.md) | high | Memory and lifecycle | Radial (vertical) PolarColumn data labels leak one native TSRTextLineBounds per label on every render | `esm/Charting/Visuals/RenderableSeries/Polar/DataLabels/PolarColumnSeriesDataLabelProvider.js:199` | S | no | small |
 | [008](issues/008-line-segment-hittest-full-scan-embind-get.md) | high | Tasks and scheduling | Line-segment and unsorted-line hit tests scan the whole series in JS, 3 passes, with an embind get() per value, on every pointer move | `esm/Charting/Visuals/RenderableSeries/HitTest/hitTestHelpers.js:193` | S | no | small |
@@ -134,7 +134,7 @@ Verified so far: all issues of `s01-surface-render` and `s02-init-loading`, plus
 | `s01-surface-render` | 7 | 7 verified, 0 refuted, 0 not verified |
 | `s02-init-loading` | 7 | 7 verified, 0 refuted, 0 not verified |
 | `s03-renderable-series` | 8 | not verified yet |
-| `s04-drawing-providers` | 10 | 2 verified, 0 refuted, 8 not verified |
+| `s04-drawing-providers` | 10 | 3 verified, 0 refuted, 7 not verified |
 | `s05-labels-hittest-anim` | 5 | not verified yet |
 | `s06-axis-text` | 7 | not verified yet |
 | `s07-annotations-legend` | 10 | not verified yet |
