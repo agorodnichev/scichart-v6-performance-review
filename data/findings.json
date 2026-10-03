@@ -2590,7 +2590,7 @@
   "effort": "small",
   "primary": {
    "path": "esm/Charting/ChartModifiers/RolloverModifier.js",
-   "line": 468,
+   "line": 464,
    "note": "getSeriesInfos() repeats the hit tests that updateSeriesAnnotations() just ran"
   },
   "code_quote": "    update() {\n        this.updateLine();\n        this.updateSeriesAnnotations();\n        if (this.tooltipLegendTemplate) {\n            this.legendAnnotation.seriesInfos = this.getSeriesInfos();\n        }\n    }",
@@ -2624,15 +2624,17 @@
    },
    {
     "path": "esm/Charting/ChartModifiers/VerticalSliceModifier.js",
-    "line": 1,
+    "line": 184,
     "note": "update() repeats the same updateSeriesAnnotations + getSeriesInfos pair on every render"
    }
   ],
   "slice": "s10-modifiers-input",
-  "verified": false,
+  "verified": true,
   "merged_from": [],
   "file": "045-rollover-update-hit-tests-every-series-twice.md",
-  "refuted": false
+  "refuted": false,
+  "verdict": "corrected",
+  "verification_notes": "Re-read RolloverModifier.js:252-296 (modifierMouseMove -> update at :273; onParentSurfaceLayoutComplete -> update at :294-295), :321-336 (getIncludedRenderableSeries), :342-352 (hitTestRenderableSeries), :464-470 (update), :471-485 (updateLine snapToDataPoint hit test at :483), :537-630 (updateSeriesAnnotations; hit test per series at :579 after the out-of-series-area early return), :631-641 (getSeriesInfos: hit test at :634 and getSeriesInfo at :638 again for every included series), VerticalSliceModifier.js:184-197 (same updateSeriesAnnotations + getSeriesInfos pair), SciChartRenderer.js:169-182 (onParentSurfaceLayoutComplete for every modifier on every full render), MouseManager.js:322 (per-pointermove dispatch), BaseHitTestProvider.js:66-110 (hitTestXSlice: wasm nearest-point search plus a fresh HitTestInfo and a valueNames reduce per call). No cache or dirty flag between the two passes: same mousePoint, same series list, and nothing in calcTooltipProps/updateRolloverModifierProps writes to the HitTestInfo, so reusing the first pass is output-identical. The other getSeriesInfos callers (RolloverModifier.js:239, :309) run outside update(), so clearing the cache at the end of update() keeps them on the uncached path. Corrections: primary line 468 -> 464 (where the quoted update() starts); VerticalSliceModifier location line 1 -> 184. Severity kept medium: it runs per pointermove and per full render, but only when the opt-in tooltipLegendTemplate is set, and it doubles an existing per-series cost rather than adding a new scaling term. Evidence S: the duplicate pass is unconditional on that path."
  },
  {
   "id": "046",

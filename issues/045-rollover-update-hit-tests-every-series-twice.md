@@ -3,12 +3,12 @@
 | | |
 |---|---|
 | Package | `scichart@6.0.6` (npm, ESM build) |
-| Location | `esm/Charting/ChartModifiers/RolloverModifier.js:468` |
+| Location | `esm/Charting/ChartModifiers/RolloverModifier.js:464` |
 | Severity | **medium** |
 | Pipeline stage | JS execution (`js`) |
 | Metric | frame time during hover (also per-frame cost on live charts) |
 | Evidence | S — static, mechanism certain (not measured) |
-| Verification | **not yet verified**: reviewer-only candidate, see README "Verification status" |
+| Verification | verified by an independent adversarial reviewer (corrected) |
 | Rule | SC-27, V8-01 (web-performance skill) |
 | Effort to fix | small |
 
@@ -78,10 +78,10 @@ measure.md#fps hover scenario: 50 line series, RolloverModifier with tooltipLege
 - `esm/Charting/ChartModifiers/RolloverModifier.js:634` — second hit-test pass in getSeriesInfos
 - `esm/Charting/ChartModifiers/RolloverModifier.js:483` — third hit test of the first series when snapToDataPoint
 - `esm/Charting/ChartModifiers/RolloverModifier.js:295` — update() also runs in every full render
-- `esm/Charting/ChartModifiers/VerticalSliceModifier.js:1` — update() repeats the same updateSeriesAnnotations + getSeriesInfos pair on every render
+- `esm/Charting/ChartModifiers/VerticalSliceModifier.js:184` — update() repeats the same updateSeriesAnnotations + getSeriesInfos pair on every render
 
 ## Review notes
 
 - Found by reviewer slice `s10-modifiers-input`.
-- Not yet adversarially verified. The code quote and line numbers come from the slice reviewer; re-check them before acting.
+- Adversarial verification (corrected): Re-read RolloverModifier.js:252-296 (modifierMouseMove -> update at :273; onParentSurfaceLayoutComplete -> update at :294-295), :321-336 (getIncludedRenderableSeries), :342-352 (hitTestRenderableSeries), :464-470 (update), :471-485 (updateLine snapToDataPoint hit test at :483), :537-630 (updateSeriesAnnotations; hit test per series at :579 after the out-of-series-area early return), :631-641 (getSeriesInfos: hit test at :634 and getSeriesInfo at :638 again for every included series), VerticalSliceModifier.js:184-197 (same updateSeriesAnnotations + getSeriesInfos pair), SciChartRenderer.js:169-182 (onParentSurfaceLayoutComplete for every modifier on every full render), MouseManager.js:322 (per-pointermove dispatch), BaseHitTestProvider.js:66-110 (hitTestXSlice: wasm nearest-point search plus a fresh HitTestInfo and a valueNames reduce per call). No cache or dirty flag between the two passes: same mousePoint, same series list, and nothing in calcTooltipProps/updateRolloverModifierProps writes to the HitTestInfo, so reusing the first pass is output-identical. The other getSeriesInfos callers (RolloverModifier.js:239, :309) run outside update(), so clearing the cache at the end of update() keeps them on the uncached path. Corrections: primary line 468 -> 464 (where the quoted update() starts); VerticalSliceModifier location line 1 -> 184. Severity kept medium: it runs per pointermove and per full render, but only when the opt-in tooltipLegendTemplate is set, and it doubles an existing per-series cost rather than adding a new scaling term. Evidence S: the duplicate pass is unconditional on that path.
 
