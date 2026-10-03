@@ -8,7 +8,7 @@
 | Pipeline stage | Layout (`layout`) |
 | Metric | frame time during hover/pan (also INP for pointerdown/up) |
 | Evidence | H — hypothesis, depends on data size/hardware (not measured) |
-| Verification | **not yet verified**: reviewer-only candidate, see README "Verification status" |
+| Verification | verified by an independent adversarial reviewer (corrected) |
 | Rule | EVT-08 (web-performance skill) |
 | Effort to fix | medium |
 
@@ -36,9 +36,10 @@ In Chromium, offsetX/offsetY compute the position relative to the target node an
 +    static fromPointerEvent(pointerEvent, targetRect) {
          Guard.notNull(pointerEvent, "pointerEvent");
 -        const mousePoint = new Point(pointerEvent.offsetX * DpiHelper.PIXEL_RATIO, pointerEvent.offsetY * DpiHelper.PIXEL_RATIO);
-+        // offsetX/Y force style+layout when anything is dirty; use a rect cached by MouseManager instead
++        // offsetX/Y force style+layout when anything is dirty; use the origin cached by MouseManager instead
 +        const rect = targetRect !== null && targetRect !== void 0 ? targetRect : pointerEvent.target.getBoundingClientRect();
 +        const mousePoint = new Point((pointerEvent.clientX - rect.left) * DpiHelper.PIXEL_RATIO, (pointerEvent.clientY - rect.top) * DpiHelper.PIXEL_RATIO);
+   (same change in fromWheelEvent :39 and fromMouseEvent :22)
 --- esm/Core/Mouse/MouseManager.js
 @@ subscribe(source)
          this.canvas = source;
@@ -50,16 +51,22 @@ In Chromium, offsetX/offsetY compute the position relative to the target node an
 +        source.addEventListener("pointerenter", this.markRectDirty);
 @@
 +    getCanvasRect() {
-+        if (this.rectDirty) { this.rect = this.canvas.getBoundingClientRect(); this.rectDirty = false; }
++        if (this.rectDirty) {
++            const r = this.canvas.getBoundingClientRect();
++            // offsetX is measured from the padding edge, getBoundingClientRect from the border edge
++            this.rect = { left: r.left + this.canvas.clientLeft, top: r.top + this.canvas.clientTop };
++            this.rectDirty = false;
++        }
 +        return this.rect;
 +    }
      onPointerMove(event) {
 -        const modifierEvent = ModifierMouseArgs.fromPointerEvent(event);
 +        const modifierEvent = ModifierMouseArgs.fromPointerEvent(event, this.getCanvasRect());
+@@ onPointerDown (also the tap event), onPointerUp, onPointerCancel, onMouseWheel (fromWheelEvent), onDoubleClick/onMouseLeave/onMouseEnter/onDrop (fromMouseEvent): pass this.getCanvasRect() the same way
 @@ unsubscribe(): disconnect resizeObserver, remove the scroll and pointerenter listeners
 ```
 
-**Trade-off:** The rect is read once after a resize, scroll or pointerenter rather than on every event. If the canvas moves without any of those (content above it grows while the pointer stays inside), coordinates are stale until the next enter or scroll. offsetX is in the target's local CSS space and clientX - rect.left is in viewport space, so charts inside CSS-scaled containers need the cached scale (rect.width / canvas.offsetWidth) applied as well.
+**Trade-off:** The rect is read once after a resize, scroll or pointerenter rather than on every event. If the canvas moves without any of those (content above it grows while the pointer stays inside), coordinates are stale until the next enter or scroll. offsetX is in the target's local CSS space and from its padding edge, while clientX - rect.left is in viewport space from the border edge: the cached origin adds clientLeft/clientTop for app-styled borders, and charts inside CSS-transformed or scaled containers need the cached scale (rect.width / canvas.offsetWidth) applied as well.
 
 ## App-side workaround
 
@@ -78,5 +85,5 @@ measure.md#fps hover scenario: an app timer writes text into a page element at 6
 ## Review notes
 
 - Found by reviewer slice `s10-modifiers-input`.
-- Not yet adversarially verified. The code quote and line numbers come from the slice reviewer; re-check them before acting.
+- Adversarial verification (corrected): Re-read ModifierMouseArgs.js:20-70 (fromMouseEvent :22, fromWheelEvent :39, fromPointerEvent :57 all read offsetX/offsetY), MouseManager.js:66-80 (subscribe on the canvas), :98-279 (every handler builds args through these factories: pointercancel :100, pointermove :113, pointerdown :133 and tap :152, pointerup :179, dblclick :203, wheel :221, leave :242, enter :260, drop :277), SciChartSurfaceBase.js:290-296 (the source is the WebGL or 2D canvas, which has no children, so the target is the canvas), SciChartSurface.js:365-375 (sub-surfaces unsubscribe their own MouseManager, so one read per event per top-level surface). No cached rect or coordinate exists anywhere on this path. The mechanism is real: offsetX/offsetY are on the list of layout-forcing reads, and in Chromium the first read updates style and layout for the target. It costs only when something dirtied style or layout since the last frame; SciChart's own SVG writes run in rAF and are laid out in that frame, so the trigger is usually app code or a DOM write by an earlier handler in the same frame. Evidence H and severity medium kept for that reason. Corrections to the fix: offsetX is measured from the target's padding edge and getBoundingClientRect from the border edge, so the cached origin must add canvas.clientLeft/clientTop to be exact when app CSS gives the canvas a border; the diff only rewired onPointerMove, and now names the other handlers (down/up/cancel, wheel through fromWheelEvent, dblclick/leave/enter/drop through fromMouseEvent) that need the same rect.
 
