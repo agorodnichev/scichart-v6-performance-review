@@ -8,7 +8,7 @@
 | Pipeline stage | Layout (`layout`) |
 | Metric | frame time (also INP on hover) |
 | Evidence | S — static, mechanism certain (not measured) |
-| Verification | **not yet verified**: reviewer-only candidate, see README "Verification status" |
+| Verification | verified by an independent adversarial reviewer (corrected) |
 | Rule | EVT-07 (web-performance skill) |
 | Effort to fix | small |
 
@@ -25,7 +25,7 @@
 
 ## Call path and frequency
 
-Full render: SciChartRenderer.render -> getAnnotationDrawFunctions (SciChartRenderer.js:201 -> :375) -> getHTMLAnnotationDrawFunction (:396) -> SvgLineAnnotation.update (SvgLineAnnotation.js:194) -> drawSvgAxisLabel (:235 -> :296) -> getBBox (:331). Pointer: CursorModifier.modifierMouseMove (CursorModifier.js:256) -> update (:540) sets x1/x2/y1/y2 -> svg-only invalidate (SciChartSurface.js:581-589) -> renderDomOnly -> drawSvgAnnotations (SciChartRenderer.js:532 -> :550) -> same path. Rate: 2 lines x labelled axes per render, from the first render on, whether or not the crosshair is visible.
+Full render: SciChartRenderer.render -> getAnnotationDrawFunctions (SciChartRenderer.js:201 -> :360, modifier loop :375) -> getHTMLAnnotationDrawFunction (:382, update at :396) -> SvgLineAnnotation.update (SvgLineAnnotation.js:194) -> label branch (:218) -> drawSvgAxisLabel (:235 -> :296) -> getBBox (:331). Pointer: CursorModifier.modifierMouseMove (CursorModifier.js:256) -> update (:540) sets x1/x2/y1/y2 -> svg-only invalidate (SciChartSurface.js:581-589) -> renderDomOnly -> drawSvgAnnotations (SciChartRenderer.js:74 -> :532 -> :550) -> same path. Neither renderer path checks isHidden. Before the first hover the lines have no coordinates; AnnotationBase.getResolvedCoordinate (:1008-1009) maps undefined to 0, so both lines take the vertical-line branch (:222) and label the X axes at coord 0. After the pointer leaves, CursorModifier.update (:541-552) only sets isHidden and keeps the last coordinates. Rate: 2 lines x labelled axes per render, from the first render on, whether or not the crosshair is visible.
 
 ## Why it costs
 
@@ -38,9 +38,22 @@ drawSvgAxisLabel writes textContent and 7 attributes, reads getBBox(), then writ
 ```diff
 --- a/esm/Charting/Visuals/Annotations/SvgLineAnnotation.js
 +++ b/esm/Charting/Visuals/Annotations/SvgLineAnnotation.js
-@@ -218 +218 @@
+@@ update(xCalc, yCalc, xCoordSvgTrans, yCoordSvgTrans) {
 -        if (this.showLabel && this.labelsContainer && !this.parentSurface.isPolar) {
 +        if (this.showLabel && this.labelsContainer && !this.parentSurface.isPolar && !this.isHidden) {
++            // show the container before measuring: text under display:none has no layout box and getBBox is empty
++            this.labelsContainer.style.display = "block";
+             this.labelCache.forEach(l => (l.inUse = false));
+@@
+             // Delete unused labels
+             this.labelCache.forEach(l => {
+                 if (!l.inUse) {
+                     l.group.remove();
+                     this.labelCache.delete(l.axisId);
+                 }
+             });
+-            this.labelsContainer.style.display = "block";
+         }
 @@ drawSvgAxisLabel(axis, coord) {
 -        cached.text.textContent = labelText;
 +        const fontKey = `${fontFamily}|${fontSize}`;
@@ -50,13 +63,14 @@ drawSvgAxisLabel writes textContent and 7 attributes, reads getBBox(), then writ
 -        const bbox = cached.text.getBBox();
 +        if (textChanged || !cached.bbox) {
 +            cached.bbox = cached.text.getBBox();   // layout read only when text or font changed
-+            cached.lastText = labelText;
++            // never keep an empty measurement (text not laid out yet); measure again next render
++            cached.lastText = cached.bbox.width > 0 ? labelText : undefined;
 +            cached.lastFont = fontKey;
 +        }
 +        const bbox = cached.bbox;
 ```
 
-**Trade-off:** A hidden crosshair no longer refreshes its invisible labels; the container gets display:none through the existing else branch. A cached bbox can go stale if a web font loads after the first measurement, so clear labelCache on document.fonts 'loadingdone'. When the label text changes on every pointer move, one getBBox per line per frame remains. Measuring with a cached canvas measureText would remove it, at the cost of possible sub-pixel mismatch with SVG text.
+**Trade-off:** A hidden crosshair no longer refreshes its invisible labels; the container gets display:none through the existing else branch and is switched back to display:block before the first measurement when the crosshair shows again, so getBBox never runs on an undisplayed label. A cached bbox can go stale if a web font loads after the first measurement, so clear labelCache on document.fonts 'loadingdone'. When the label text changes on every pointer move, one getBBox per line per frame remains. Measuring with a cached canvas measureText would remove it, at the cost of possible sub-pixel mismatch with SVG text.
 
 ## App-side workaround
 
@@ -76,5 +90,5 @@ measure.md#fps: chart with default CursorModifier streaming one appendRange per 
 ## Review notes
 
 - Found by reviewer slice `s07-annotations-legend`.
-- Not yet adversarially verified. The code quote and line numbers come from the slice reviewer; re-check them before acting.
+- Adversarial verification (corrected): Re-read SvgLineAnnotation.js:174-401. The code_quote matches :326-331 verbatim, with getBBox at :331. drawSvgAxisLabel writes 5 text attributes plus textContent (:321-326) and 3 rect attributes (:327-330), reads getBBox (:331), then writes rect x/y/width/height and text x/y (:393-400). Caller chain confirmed. Full render: SciChartRenderer.render -> getAnnotationDrawFunctions (:201 -> :360, modifier loop :375) -> getHTMLAnnotationDrawFunction (:382) -> annotation.update (:396). Pointer: CursorModifier.modifierMouseMove (:256) -> update (:540) sets x1/x2/y1/y2 (:566-608) -> SciChartSurface.invalidateElement svgOnly (:581-589, rAF) -> renderDomOnly (SciChartRenderer.js:39) -> drawSvgAnnotations (:74 -> :532) -> a.update (:550). Neither path checks isHidden. SvgLineAnnotation.update (:194) -> label branch (:218, no isHidden check) -> drawSvgAxisLabel (:235 -> :296). The hidden-from-first-render claim holds. CursorModifier.newLineAnnotation (:620-641) creates the lines with isHidden true and no coordinates, and showLabel defaults to true (:129) with isSvgOnly true (:130, SvgLineAnnotation at :636-637). AnnotationBase.getResolvedCoordinate (:1005-1009) maps undefined to 0, so before any hover both lines resolve to (0,0,0,0) and take the vertical-line branch (:222), labelling every visible X axis at coord 0. getLabelValue (drawLabel.js:353-364) returns a formatted label, so it is non-empty. After the pointer leaves, CursorModifier.update (:541-552) sets only isHidden and keeps the coordinates, so the labels keep being measured. Rule EVT-07 applies, and its Avoid field does not excuse it. Severity high and evidence S hold. Fix diff bug found and corrected. With the new !this.isHidden guard, a hidden line takes the else branch (:247-248) and sets labelsContainer display:none. On the first render after the crosshair is shown, drawSvgAxisLabel would call getBBox while the container is still display:none, because the original sets display:block only after the loop at :245. The text then has no layout box and measures empty, and the proposed cache would keep that empty box for as long as the label text stays the same. Corrected diff: set display:block before the loop, and do not remember an empty measurement. trade_off updated to match. call_path now explains why the hidden crosshair labels from the first render.
 
