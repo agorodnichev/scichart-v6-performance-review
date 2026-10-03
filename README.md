@@ -22,9 +22,9 @@ Nothing here is measured. Every issue names the recipe that would measure it.
 
 | Status | Issues |
 |---|---|
-| Verified by an adversarial reviewer (confirmed or corrected) | 73 |
+| Verified by an adversarial reviewer (confirmed or corrected) | 74 |
 | Refuted by an adversarial reviewer (file kept, marked) | 0 |
-| **Not yet verified** (reviewer only) | 21 |
+| **Not yet verified** (reviewer only) | 20 |
 
 Each issue file and the index below show its own verification status; all high-severity issues are verified. Unverified issues are strong candidates: re-check the quoted line and the caller chain before acting. Raw data for resuming: [`data/findings.json`](data/findings.json) (`verified: false`).
 
@@ -96,7 +96,7 @@ Each issue file and the index below show its own verification status; all high-s
 | [062](issues/062-heatmap-full-renormalize-on-any-change.md) | medium | JS execution | Heatmap data series re-normalizes every cell in a JS double loop after any change, including one setZValue or an xStart/xStep change that leaves z untouched | `esm/Charting/Model/BaseHeatmapDataSeries.js:355` | S | yes | medium |
 | [063](issues/063-3d-series-property-set-rebuilds-mesh-twice.md) | medium | JS execution | 3D point-line/scatter/column property setters rebuild the whole series synchronously, then the next frame rebuilds it again | `esm/Charting3D/Visuals/Primitives/PointLine3DSceneEntity.js:60` | S | yes | medium |
 | [064](issues/064-3d-tooltip-svg-reparsed-every-pointer-move.md) | medium | JS execution | TooltipSvgAnnotation3D tears down and re-parses the tooltip SVG (and legend SVG) on every pointer move, even when only x1/y1 changed | `esm/Charting3D/Visuals/Annotations/TooltipSvgAnnotation3D.js:144` | S | yes | medium |
-| [065](issues/065-pie-sync-redraw-per-setter-and-timer-animations.md) | medium | Tasks and scheduling | Pie surface redraws its whole DOM synchronously on every property set, and drives 30-step and 10-step animations with setTimeout(20) chains that delete() never cancels | `esm/Charting/Visuals/SciChartPieSurface/SciChartPieSurface.js:214` | S | no | medium |
+| [065](issues/065-pie-sync-redraw-per-setter-and-timer-animations.md) | medium | Tasks and scheduling | Pie surface redraws its whole DOM synchronously on every property set, and drives 30-step and 10-step animations with setTimeout(20) chains that delete() never cancels | `esm/Charting/Visuals/SciChartPieSurface/SciChartPieSurface.js:214` | S | yes | medium |
 | [066](issues/066-getfontkey-linear-style-registry-scan-per-getfont.md) | medium | JS execution | getFontKey does a linear for-in scan of the global label-style registry (and allocates) on every getFont call: per axis, data-label series, title and native text annotation, every frame | `esm/Charting/Visuals/Helpers/NativeObject.js:295` | H | yes | small |
 | [067](issues/067-embind-generic-invoker-per-call-alloc.md) | medium | JS execution | Every embind call runs two generic rest/spread layers: craftInvokerFunction's shared invokerFn (DYNAMIC_EXECUTION=0, no EMBIND_AOT) and the 'p'-signature getDynCaller/dynCall wrapper | `_glue-pretty/scichart.js:4648` | H | yes | small |
 | [068](issues/068-builder-json-reviver-runs-per-data-point.md) | medium | JS execution | The Builder parses definition strings with a reviver, so JSON.parse calls chartReviver for every value, including every data point in xValues/yValues | `esm/Builder/helpers/chartReviver.js:6` | H | yes | small |
@@ -142,7 +142,7 @@ Each issue file and the index below show its own verification status; all high-s
 | `s09-filters-numerics-utils` | 7 | 6 verified, 0 refuted, 0 not verified |
 | `s10-modifiers-input` | 7 | 6 verified, 0 refuted, 1 not verified |
 | `s11-layout-core-themes` | 2 | 1 verified, 0 refuted, 1 not verified |
-| `s12-pie-3d-surface` | 7 | 5 verified, 0 refuted, 2 not verified |
+| `s12-pie-3d-surface` | 7 | 6 verified, 0 refuted, 1 not verified |
 | `s13-3d-series-modifiers` | 6 | 2 verified, 0 refuted, 3 not verified |
 | `x1-frame-path` | 6 | 1 verified, 0 refuted, 3 not verified |
 | `x2-data-and-lifecycle` | 7 | not verified yet |
