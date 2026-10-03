@@ -9,6 +9,7 @@
 | Metric | frame time (also wasm heap churn) |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/4eef8c72c6654d1583924043cb65d8a1/): reproduced on WebGL and WebGPU ([source](../demos/036-unused-native-palette-rebuilt/)) |
 | Rule | V8-06 (web-performance skill) |
 | Effort to fix | small |
 

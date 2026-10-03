@@ -9,6 +9,7 @@
 | Metric | frame time (pan/zoom) |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/a99ae1672337287b8a23dbbf3820acf2/): reproduced on WebGL and WebGPU ([source](../demos/028-nonuniform-heatmap-texture-per-pan/)) |
 | Rule | GPU-08, GPU-36, GPU-05 (web-performance skill) |
 | Effort to fix | large |
 

@@ -11,6 +11,30 @@
     "fiddle": "https://jsfiddle.net/gh/gist/library/pure/7ba80fdf18310bb90abe773194754dd2/",
     "gistUrl": "https://gist.github.com/7ba80fdf18310bb90abe773194754dd2"
   },
+  "003": {
+    "gist": "7d2d5234f08cf912a921502b2452fa96",
+    "dir": "003-polar-heatmap-native-leak",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/7d2d5234f08cf912a921502b2452fa96/",
+    "gistUrl": "https://gist.github.com/7d2d5234f08cf912a921502b2452fa96"
+  },
+  "004": {
+    "gist": "41b48f656c2abe156283db825db9f746",
+    "dir": "004-heatmap-texture-reupload",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/41b48f656c2abe156283db825db9f746/",
+    "gistUrl": "https://gist.github.com/41b48f656c2abe156283db825db9f746"
+  },
+  "005": {
+    "gist": "9ef904a22f95ff06df798f2e57f1954f",
+    "dir": "005-mountain-palette-cache-forced-dirty",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/9ef904a22f95ff06df798f2e57f1954f/",
+    "gistUrl": "https://gist.github.com/9ef904a22f95ff06df798f2e57f1954f"
+  },
+  "006": {
+    "gist": "52e645a15c82478c68424114fdc223b3",
+    "dir": "006-spline-index-fill-wasm-call-per-vertex",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/52e645a15c82478c68424114fdc223b3/",
+    "gistUrl": "https://gist.github.com/52e645a15c82478c68424114fdc223b3"
+  },
   "007": {
     "gist": "6c6ce13d5c960239c4cd1e12dabb597c",
     "dir": "007-polar-column-label-leaks-linebounds",
@@ -119,6 +143,12 @@
     "fiddle": "https://jsfiddle.net/gh/gist/library/pure/a9c69252ac92e115113c4e4ff04161b5/",
     "gistUrl": "https://gist.github.com/a9c69252ac92e115113c4e4ff04161b5"
   },
+  "028": {
+    "gist": "a99ae1672337287b8a23dbbf3820acf2",
+    "dir": "028-nonuniform-heatmap-texture-per-pan",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/a99ae1672337287b8a23dbbf3820acf2/",
+    "gistUrl": "https://gist.github.com/a99ae1672337287b8a23dbbf3820acf2"
+  },
   "030": {
     "gist": "91e8b2da94216d1669badb28679555d4",
     "dir": "030-datavalue-subchart-forced-layout",
@@ -142,6 +172,18 @@
     "dir": "034-stacked-mountain-palette-invalidation",
     "fiddle": "https://jsfiddle.net/gh/gist/library/pure/24a7c68a7fe7fe340b69b7d596163b84/",
     "gistUrl": "https://gist.github.com/24a7c68a7fe7fe340b69b7d596163b84"
+  },
+  "035": {
+    "gist": "702665e3ccacd450d8c39e25ec5d1a88",
+    "dir": "035-palette-getmetadataat-wasm-call-per-point",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/702665e3ccacd450d8c39e25ec5d1a88/",
+    "gistUrl": "https://gist.github.com/702665e3ccacd450d8c39e25ec5d1a88"
+  },
+  "036": {
+    "gist": "4eef8c72c6654d1583924043cb65d8a1",
+    "dir": "036-unused-native-palette-rebuilt",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/4eef8c72c6654d1583924043cb65d8a1/",
+    "gistUrl": "https://gist.github.com/4eef8c72c6654d1583924043cb65d8a1"
   },
   "037": {
     "gist": "f7540ebca682608b070bcb3facd23253",
@@ -226,6 +268,18 @@
     "dir": "053-offscreen-charts-render-freeze-stale",
     "fiddle": "https://jsfiddle.net/gh/gist/library/pure/79c6448e37a530d67422688efa0fedcd/",
     "gistUrl": "https://gist.github.com/79c6448e37a530d67422688efa0fedcd"
+  },
+  "056": {
+    "gist": "caa67b597d5608519fc7fec5c7b9eb69",
+    "dir": "056-error-bars-full-dataset-per-frame",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/caa67b597d5608519fc7fec5c7b9eb69/",
+    "gistUrl": "https://gist.github.com/caa67b597d5608519fc7fec5c7b9eb69"
+  },
+  "057": {
+    "gist": "b07d2c31b62f3ceae1fad73bec4c6f49",
+    "dir": "057-point-marker-three-textures-eager",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/b07d2c31b62f3ceae1fad73bec4c6f49/",
+    "gistUrl": "https://gist.github.com/b07d2c31b62f3ceae1fad73bec4c6f49"
   },
   "058": {
     "gist": "6f6b236087d5372656a774aee833e93d",
@@ -364,6 +418,12 @@
     "dir": "090-stacked-setters-rebuild-on-unchanged-value",
     "fiddle": "https://jsfiddle.net/gh/gist/library/pure/bb2a26675884a1666cf4c9cd18357bd5/",
     "gistUrl": "https://gist.github.com/bb2a26675884a1666cf4c9cd18357bd5"
+  },
+  "091": {
+    "gist": "57a1fddafb848c9e2c7a07db85542a5e",
+    "dir": "091-bezier-transform-growable-arrays",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/57a1fddafb848c9e2c7a07db85542a5e/",
+    "gistUrl": "https://gist.github.com/57a1fddafb848c9e2c7a07db85542a5e"
   },
   "092": {
     "gist": "69122af960cdcf3822f58d79f10b433f",

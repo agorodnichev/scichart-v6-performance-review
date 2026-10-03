@@ -9,6 +9,7 @@
 | Metric | frame time (also INP during pan/zoom) |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/9ef904a22f95ff06df798f2e57f1954f/): reproduced on WebGL and WebGPU ([source](../demos/005-mountain-palette-cache-forced-dirty/)) |
 | Rule | SC-23 (web-performance skill) |
 | Effort to fix | small |
 

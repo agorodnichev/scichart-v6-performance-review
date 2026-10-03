@@ -9,6 +9,7 @@
 | Metric | frame time |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/52e645a15c82478c68424114fdc223b3/): reproduced on WebGL and WebGPU ([source](../demos/006-spline-index-fill-wasm-call-per-vertex/)) |
 | Rule | TASK-13, SC-06, SC-12 (web-performance skill) |
 | Effort to fix | small |
 
