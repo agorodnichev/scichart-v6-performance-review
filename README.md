@@ -22,9 +22,9 @@ Nothing here is measured. Every issue names the recipe that would measure it.
 
 | Status | Issues |
 |---|---|
-| Verified by an adversarial reviewer (confirmed or corrected) | 18 |
+| Verified by an adversarial reviewer (confirmed or corrected) | 19 |
 | Refuted by an adversarial reviewer (file kept, marked) | 0 |
-| **Not yet verified** (reviewer only) | 76 |
+| **Not yet verified** (reviewer only) | 75 |
 
 Verified so far: all issues of `s01-surface-render` and `s02-init-loading`, plus the high-severity issues of the slices listed in the coverage table. Unverified issues are strong candidates: re-check the quoted line and the caller chain before acting. Raw data for resuming: [`data/findings.json`](data/findings.json) (`verified: false`).
 
@@ -59,7 +59,7 @@ Verified so far: all issues of `s01-surface-render` and `s02-init-loading`, plus
 | [025](issues/025-datapointselection-per-point-metadata-objects.md) | high | Memory and lifecycle | DataPointSelectionModifier gives every point of every series its own metadata object, at attach and on every later append, and keeps doing so after the modifier is removed | `esm/Charting/ChartModifiers/DataPointSelectionModifier.js:171` | S | no | medium |
 | [026](issues/026-3d-hittest-reads-selection-buffer-per-series.md) | high | Tasks and scheduling | 3D hover/tooltip hit tests read the same selection-buffer pixel once per series (and up to 17-33 pixels per sample), on every pointermove and again on every rendered frame | `esm/Charting3D/ChartModifiers/TooltipModifier3D.js:257` | S | no | medium |
 | [027](issues/027-engine-raf-loop-never-stops.md) | high | Tasks and scheduling | The engine's rAF main loop asks for a frame every vsync for the life of the wasm module, including when nothing is invalidated and after every chart has been deleted | `_glue-pretty/scichart.js:5918` | S | no | medium |
-| [028](issues/028-nonuniform-heatmap-cpu-texture-rebuild-per-pan.md) | high | JS execution | The non-uniform heatmap rebuilds a colour texture the size of its on-screen area in JS and re-uploads it on every pan/zoom frame | `esm/Charting/Visuals/RenderableSeries/DrawingProviders/HeatmapHelpers.js:313` | S | no | large |
+| [028](issues/028-nonuniform-heatmap-cpu-texture-rebuild-per-pan.md) | high | JS execution | The non-uniform heatmap rebuilds a colour texture the size of its on-screen area in JS and re-uploads it on every zoom frame, and on every pan frame while the heatmap is clipped by the plot area | `esm/Charting/Visuals/RenderableSeries/DrawingProviders/HeatmapHelpers.js:313` | S | yes | large |
 | [029](issues/029-wasm-fetch-waits-for-webgpu-device-and-glue.md) | medium | Network | The core wasm download and compile start only after the WebGPU adapter and device requests (auto mode on every Mac) and, with wasm64, after the glue chunk import | `esm/Charting/Visuals/createMaster.js:294` | S | yes | small |
 | [030](issues/030-datavalue-subchart-wrapper-forced-layout-per-frame.md) | medium | Layout | A DataValue-positioned sub-chart with a subChartContainer writes 4 inline styles and then reads clientWidth/clientHeight of its sections on every frame, forcing a synchronous layout per sub-chart | `esm/Charting/Visuals/SciChartSubSurface.js:207` | S | yes | medium |
 | [031](issues/031-charting3d-module-serial-nonstreaming-per-context.md) | medium | Script load | The 3D side module (scichart-charting3d.wasm) is fetched only after the core is up, read into an ArrayBuffer, copied twice through MEMFS and compiled from bytes in every wasm context: no streaming compile, no code cache, no shared compiled module | `esm/Charting/Visuals/moduleLoader.js:333` | S | yes | medium |
@@ -134,7 +134,7 @@ Verified so far: all issues of `s01-surface-render` and `s02-init-loading`, plus
 | `s01-surface-render` | 7 | 7 verified, 0 refuted, 0 not verified |
 | `s02-init-loading` | 7 | 7 verified, 0 refuted, 0 not verified |
 | `s03-renderable-series` | 8 | not verified yet |
-| `s04-drawing-providers` | 10 | 4 verified, 0 refuted, 6 not verified |
+| `s04-drawing-providers` | 10 | 5 verified, 0 refuted, 5 not verified |
 | `s05-labels-hittest-anim` | 5 | not verified yet |
 | `s06-axis-text` | 7 | not verified yet |
 | `s07-annotations-legend` | 10 | not verified yet |
