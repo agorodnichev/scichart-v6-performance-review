@@ -22,9 +22,9 @@ Nothing here is measured. Every issue names the recipe that would measure it.
 
 | Status | Issues |
 |---|---|
-| Verified by an adversarial reviewer (confirmed or corrected) | 54 |
+| Verified by an adversarial reviewer (confirmed or corrected) | 55 |
 | Refuted by an adversarial reviewer (file kept, marked) | 0 |
-| **Not yet verified** (reviewer only) | 40 |
+| **Not yet verified** (reviewer only) | 39 |
 
 Each issue file and the index below show its own verification status; all high-severity issues are verified. Unverified issues are strong candidates: re-check the quoted line and the caller chain before acting. Raw data for resuming: [`data/findings.json`](data/findings.json) (`verified: false`).
 
@@ -103,7 +103,7 @@ Each issue file and the index below show its own verification status; all high-s
 | [069](issues/069-label-cache-prune-evicts-visible-labels.md) | medium | GPU upload | labelCache.pruneCache evicts labels that are on screen whenever the visible label set exceeds maxSize (200), every 200 ms, and they are re-created on the next frame | `esm/Charting/Visuals/Axis/LabelProvider/LabelCache.js:103` | H | yes | small |
 | [070](issues/070-label-provider-setters-flush-cache-without-change.md) | low | JS execution | LabelProvider setters (precision, numericFormat, prefix, postfix, formatLabel...) flush the label caches even when the value is unchanged | `esm/Charting/Visuals/Axis/LabelProvider/LabelProvider.js:48` | H | yes | small |
 | [071](issues/071-two-1920x1080-scratch-canvases-per-axis.md) | medium | Memory and lifecycle | Every axis owns two 1920x1080 willReadFrequently scratch canvases (axis renderer and title renderer), each about 7.9 MiB of CPU bitmap once used | `esm/Charting/Visuals/TextureManager/TextureManager.js:23` | H | yes | small |
-| [072](issues/072-textannotation-text-change-reparses-and-measures-twice.md) | medium | JS execution | TextAnnotation rebuilds its whole SVG through the HTML parser and calls getBBox one to two times on every text change | `esm/Charting/Visuals/Annotations/TextAnnotation.js:198` | H | no | small |
+| [072](issues/072-textannotation-text-change-reparses-and-measures-twice.md) | medium | JS execution | TextAnnotation rebuilds its whole SVG through the HTML parser and calls getBBox one to two times on every text change | `esm/Charting/Visuals/Annotations/TextAnnotation.js:198` | H | yes | small |
 | [073](issues/073-nativetext-wraps-and-remeasures-every-frame.md) | medium | JS execution | NativeTextAnnotation with wrapTo re-wraps and re-measures its text on every frame, allocating one wasm LineBounds per word | `esm/Charting/Visuals/Annotations/NativeTextAnnotation.js:359` | H | no | small |
 | [074](issues/074-hittest-selection-pass-left-enabled-after-detach.md) | medium | GPU draw | Tooltip/selection modifiers turn on the per-frame selection pass on attach and never turn it off on detach | `esm/Charting3D/ChartModifiers/TooltipModifier3D.js:210` | H | no | small |
 | [075](issues/075-rectangle-series-no-visible-range-culling.md) | medium | GPU draw | FastRectangleRenderableSeries always reports the full index range, so every frame processes every rectangle regardless of zoom | `esm/Charting/Visuals/RenderableSeries/FastRectangleRenderableSeries.js:331` | H | yes | medium |
@@ -137,7 +137,7 @@ Each issue file and the index below show its own verification status; all high-s
 | `s04-drawing-providers` | 10 | 9 verified, 0 refuted, 1 not verified |
 | `s05-labels-hittest-anim` | 5 | 3 verified, 0 refuted, 2 not verified |
 | `s06-axis-text` | 7 | 7 verified, 0 refuted, 0 not verified |
-| `s07-annotations-legend` | 10 | 7 verified, 0 refuted, 3 not verified |
+| `s07-annotations-legend` | 10 | 8 verified, 0 refuted, 2 not verified |
 | `s08-data-series` | 9 | 1 verified, 0 refuted, 5 not verified |
 | `s09-filters-numerics-utils` | 7 | 3 verified, 0 refuted, 3 not verified |
 | `s10-modifiers-input` | 7 | 1 verified, 0 refuted, 6 not verified |

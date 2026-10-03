@@ -4107,10 +4107,12 @@
   "verify": "measure.md#fps: 20 TextAnnotations whose text is set every frame on a streaming chart for 10 s. Pass: 'Forced by script' layouts from SvgAnnotationBase.getSvgDomRect and attachSvgBackgroundRect drop to at most 1 per annotation per change, LoAF script time in createSvg drops, and frame p95 wins or stays neutral.",
   "app_workaround": "Use NativeTextAnnotation for labels whose text changes often (SC-21), or update only when the formatted string actually changes.",
   "slice": "s07-annotations-legend",
-  "verified": false,
+  "verified": true,
   "merged_from": [],
   "file": "072-textannotation-text-change-reparses-and-measures-twice.md",
-  "refuted": false
+  "refuted": false,
+  "verdict": "confirmed",
+  "verification_notes": "Re-read TextAnnotation.js: text setter :51-56 -> notifyPropertyChanged :169-184 (TEXT is not in the position exclusion list, so isDirty = true; invalidateParentCallback({svgOnly: !reDrawChartOnChange}), and SciChartDefaults.alwaysRedrawFullChartOnSvgChange is false at SciChartDefaults.js:128, so an rAF-coalesced renderDomOnly via SciChartSurface.invalidateElement). create :188-204: non-dirty path only re-runs calcAndSetAnnotationBorders with the cached svgDOMRect, dirty path runs clear() (SvgAnnotationBase.js:81-88, resets svgDOMRect) + createSvg :205-219 (template string with unescaped ${this.text} -> annotationHelpers.createSvg createContextualFragment) + attachSvgBackgroundRect getBBox :231 then rect insert :241 when background is set, then calcAndSetAnnotationBorders (DomAnnotationBase.js:256-257) -> TextAnnotation.getSize :220 -> SvgAnnotationBase.getSize :139-143 -> getSvgDomRect getBBox :77. SvgAnnotationBase.update :37 then hits the cache, so 1 getBBox without background and 2 with, as claimed. Renderer calls annotation.update for every DOM annotation each render (Services/SciChartRenderer.js:365-367, :396), so N changed labels in one render interleave insert/x-y attribute writes and getBBox reads (EVT-07). isSelected/isHovered setters (AnnotationBase.js:232-237, :248-253, :592-594) notify IS_SELECTED/IS_HOVERED, which also set isDirty, as the :179 note says (hover only on enter/leave). Code quote matches TextAnnotation.js:197-202. Fix checked: guarded on existing svg, not dirty, no background and no '<' or '&', so the in-place textContent write gives the same rendered text as the parse; svgDOMRect reset gives one lazy getBBox in the next create; no subclass extends TextAnnotation and its notifyPropertyChanged has no other listener, so skipping it for TEXT loses nothing. Rate depends on how often the app sets text, so H and medium stand."
  },
  {
   "id": "073",
