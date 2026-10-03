@@ -127,6 +127,29 @@ None so far.
 | 074 | medium | [Tooltip/selection modifiers turn on the per-frame selection pass on attach and never turn it off on detach](../issues/074-hittest-selection-pass-left-enabled-after-detach.md) | Demo in progress ([source](074-selection-pass-after-detach/)) |
 | 078 | medium | [Every 3D XYZ series rebuild walks all N metadata entries in JS, even when the series has no metadata and the result is 'all defaults'](../issues/078-3d-point-metadata-loop-runs-without-metadata.md) | Demo in progress ([source](078-3d-metadata-loop-no-metadata/)) |
 
+## Where a demo changed the write-up
+
+Each note is also added to the issue file under **Demo findings**.
+
+- **[006](../issues/006-spline-index-fill-one-wasm-call-per-vertex.md)**: One wasm set() per interpolated vertex, as claimed. Also seen: with default resampling and 10,000 points the spline throws on the resampled input ("X data may contain duplicates"), falls back to the plain line and logs an error every frame. The suggested second run per frame with Y autoRange Always did not show (1.00 run per frame).
+- **[010](../issues/010-date-format-new-icu-formatter-per-call.md)**: The call count differs from the write-up's 2N: N calls per pointer move (the default SVG rollover line does not trigger a render), and 4N per frame when the chart redraws, because the tooltip's seriesInfo setter calls SeriesInfo.equals, which formats both infos (not only with tooltipLegendTemplate).
+- **[016](../issues/016-hlc-getxrange-leaks-minmax-result.md)**: Reproduces only with errorDirection = Horizontal; the default vertical branch does not leak.
+- **[044](../issues/044-subchart-event-copies-rebroadcast-to-all-surfaces.md)**: The re-broadcast is confirmed (15.8 moves and update() calls per pointermove with 16 sub-charts, 1.0 with the fix), but series hit tests are not multiplied (4.25 per move with or without the fix): points mapped through inactive sub-charts land outside the other chart and only hide its rollover. The re-broadcast also misplaces the other chart's rollover (correct on 0 of 120 moves, 120 of 120 with the fix).
+- **[057](../issues/057-point-marker-rebuilds-three-textures-eagerly.md)**: Also seen: a point marker passed in the series constructor options never gets a redraw callback, so changing its properties later requests no redraw.
+- **[065](../issues/065-pie-sync-redraw-per-setter-and-timer-animations.md)**: The suggested workaround (pieSegments.clear() then add()) leaves the legend showing the old segments, because clear() replaces the array the legend holds; call legend.setPieSegmentArray(pie.pieSegments.asArray()) between the two. delete() also leaves the pie's DOM containers in the page.
+- **[066](../issues/066-getfontkey-linear-style-registry-scan-per-getfont.md)**: The registry walk stops at the first match, so fonts registered early cost about 3 entries per call; the O(S)-per-call cost holds for fonts registered after the registry has grown.
+- **[070](../issues/070-label-provider-setters-flush-cache-without-change.md)**: Contrary to the note that the shared default style only re-formats: in native-text mode (the default), clearing the tick-to-text map sends every label back to native measurement, so even the shared style re-measures all labels each time (cheap per label).
+- **[075](../issues/075-rectangle-series-no-visible-range-culling.md)**: Answers the open question (evidence H): off-screen rectangles do reach the GPU, 4.55 MB uploaded per frame for 200,000 rectangles with 2,000 visible.
+- **[081](../issues/081-createsingle-context-loss-reloads-page.md)**: Removing the reload alone, as the fix proposes, leaves the createSingle chart blank: with the reload cancelled it drew 0 frames after restoreContext (Chrome: "bindBufferBase: object does not belong to this context"), while a create() chart recovered. The createSingle restore path needs fixing too.
+- **[085](../issues/085-insert-metadata-range-copies-whole-array.md)**: The generator branch's use of the global length is a correctness bug in practice: inserting 100 points adds 0 metadata entries, leaving the metadata 100 entries behind count().
+
+## Found along the way (not in the review)
+
+- WebGPU: SciChart never calls GPUTexture.destroy(). Textures are released by dropping the JS object (emwgpuDelete), so their GPU memory waits for garbage collection: about 1,930 textures were created and 0 destroyed in demo 033's as-shipped run, and the per-render label textures of demo 022 (4 per frame) take the same path.
+- Spline series with default resampling on 10,000 points fail on every frame with "X data may contain duplicates" and fall back to a plain line (seen in demo 006).
+- A point marker passed in the series constructor options never gets a redraw callback, so later property changes do not redraw (seen in demo 057).
+- animationHelpers.createPointMarker spreads the style object, so a new marker starts with the default #5555FF fill until the first animation frame (minor, seen in demo 033).
+
 ## How the demos work
 
 - Each fiddle's JS panel starts with the demo code (`META` and `demo(P)`), followed by the shared measurement harness ([`_shared/probe.js`](_shared/probe.js)). The harness sets the renderer flag, injects `https://cdn.jsdelivr.net/npm/scichart@6.0.6/index.min.js`, installs counters (browser APIs, wasm calls, embind object creation and deletion), drives frames and synthetic pointer input, and renders the table.

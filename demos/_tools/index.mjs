@@ -13,6 +13,7 @@ const json = (p, d) => (existsSync(p) ? JSON.parse(read(p)) : d);
 const findings = json(join(repo, "data", "findings.json"), []);
 const gists = json(join(root, "gists.json"), {});
 const skipped = json(join(root, "skipped.json"), {}); // { "NNN": "reason" }
+const notes = json(join(root, "notes.json"), { corrections: {}, newFindings: [] });
 const issueFiles = Object.fromEntries(readdirSync(join(repo, "issues")).filter((f) => /^\d{3}-.*\.md$/.test(f)).map((f) => [f.slice(0, 3), f]));
 const demoDirs = Object.fromEntries(readdirSync(root, { withFileTypes: true }).filter((d) => d.isDirectory() && /^\d{3}-/.test(d.name)).map((d) => [d.name.slice(0, 3), d.name]));
 
@@ -93,6 +94,8 @@ ${rows.join("\n")}
 
 ${skippedRows.length ? `| # | Severity | Issue | Why there is no demo |\n|---|---|---|---|\n${skippedRows.join("\n")}` : "None so far."}
 ${pendingRows.length ? `\n## In progress\n\n| # | Severity | Issue | Status |\n|---|---|---|---|\n${pendingRows.join("\n")}\n` : ""}
+${Object.keys(notes.corrections).length ? `## Where a demo changed the write-up\n\nEach note is also added to the issue file under **Demo findings**.\n\n${Object.entries(notes.corrections).map(([id, n]) => `- **[${id}](../issues/${issueFiles[id]})**: ${n}`).join("\n")}\n` : ""}
+${notes.newFindings.length ? `## Found along the way (not in the review)\n\n${notes.newFindings.map((n) => `- ${n}`).join("\n")}\n` : ""}
 ## How the demos work
 
 - Each fiddle's JS panel starts with the demo code (\`META\` and \`demo(P)\`), followed by the shared measurement harness ([\`_shared/probe.js\`](_shared/probe.js)). The harness sets the renderer flag, injects \`https://cdn.jsdelivr.net/npm/scichart@6.0.6/index.min.js\`, installs counters (browser APIs, wasm calls, embind object creation and deletion), drives frames and synthetic pointer input, and renders the table.
@@ -150,6 +153,9 @@ for (const f of findings) {
   } else continue;
   if (/^\| Demo \|.*\|$/m.test(text)) text = text.replace(/^\| Demo \|.*\|$/m, row);
   else text = text.replace(/^(\| Verification \|.*\|)$/m, `$1\n${row}`);
+  const note = notes.corrections[id];
+  text = text.replace(/\n## Demo findings\n[\s\S]*?(?=\n## |$)/, "");
+  if (note) text = text.replace(/\n## Code\n/, `\n## Demo findings\n\n${note} See the [demo](${gists[id] ? gists[id].fiddle : `../demos/${demoDirs[id]}/`}).\n\n## Code\n`);
   writeFileSync(p, text);
 }
 console.log(`demos/README.md: ${summary}`);

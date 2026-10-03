@@ -13,6 +13,10 @@
 | Rule | TASK-13 (web-performance skill) |
 | Effort to fix | small |
 
+## Demo findings
+
+Reproduces only with errorDirection = Horizontal; the default vertical branch does not leak. See the [demo](https://jsfiddle.net/gh/gist/library/pure/cdedcd3e2e690bcd3d7af4d34c4d5394/).
+
 ## Code
 
 ```js

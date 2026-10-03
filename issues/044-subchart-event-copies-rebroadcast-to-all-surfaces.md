@@ -13,6 +13,10 @@
 | Rule | SC-42 (web-performance skill) |
 | Effort to fix | small |
 
+## Demo findings
+
+The re-broadcast is confirmed (15.8 moves and update() calls per pointermove with 16 sub-charts, 1.0 with the fix), but series hit tests are not multiplied (4.25 per move with or without the fix): points mapped through inactive sub-charts land outside the other chart and only hide its rollover. The re-broadcast also misplaces the other chart's rollover (correct on 0 of 120 moves, 120 of 120 with the fix). See the [demo](https://jsfiddle.net/gh/gist/library/pure/b18ab9f565ed5563ff6b5157fd8df34c/).
+
 ## Code
 
 ```js

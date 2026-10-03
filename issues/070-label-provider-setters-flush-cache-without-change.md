@@ -13,6 +13,10 @@
 | Rule | none (web-performance skill) |
 | Effort to fix | small |
 
+## Demo findings
+
+Contrary to the note that the shared default style only re-formats: in native-text mode (the default), clearing the tick-to-text map sends every label back to native measurement, so even the shared style re-measures all labels each time (cheap per label). See the [demo](https://jsfiddle.net/gh/gist/library/pure/9ca6469f124d3627be377f43812194a0/).
+
 ## Code
 
 ```js
