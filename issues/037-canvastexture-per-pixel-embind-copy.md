@@ -8,7 +8,7 @@
 | Pipeline stage | JS execution (`js`) |
 | Metric | frame time during series fade animations and resizes (also brush creation time) |
 | Evidence | S — static, mechanism certain (not measured) |
-| Verification | **not yet verified**: reviewer-only candidate, see README "Verification status" |
+| Verification | verified by an independent adversarial reviewer (corrected) |
 | Rule | SC-06, TASK-13 (web-performance skill) |
 | Effort to fix | small |
 
@@ -77,7 +77,7 @@ Each UIntVector.set is an embind method call. The JS wrapper validates `this`, c
 
 ## App-side workaround
 
-Do not animate opacity on gradient-filled series: animate the alpha in the gradient stops or the data instead. There is no workaround for resize-triggered rebuilds.
+For series with fillLinearGradient, do not use FadeAnimation or style animations that change opacity. Use a Sweep, Scale or Wave animation instead, which change the data and not the brush key. Do not animate the gradient stops either: a new fillLinearGradient object is also part of the BrushCache key and rebuilds the texture every frame. There is no workaround for resize-triggered rebuilds.
 
 ## Verify
 
@@ -92,5 +92,5 @@ measure.md#fps on a chart with 5 FastMountainRenderableSeries using fillLinearGr
 ## Review notes
 
 - Found by reviewer slice `s06-axis-text`.
-- Not yet adversarially verified. The code quote and line numbers come from the slice reviewer; re-check them before acting.
+- Adversarial verification (corrected): Re-read esm/Charting/Visuals/TextureManager/CanvasTexture.js:40-135. The code_quote matches :110-124 verbatim, with the first UIntVector.set at the primary line :122 and the second at :123. UIntVector is an embind std::vector (types/types/TSciChart.d.ts:2109, set(index, element)), so each set is one JS-to-wasm embind call. Call path confirmed: MountainSeriesDrawingProvider.draw calls this.createBrush() on every draw (:61), which calls fillBrushCache.create(fill, opacity, textureHeightRatio, textureWidthRatio, fillLinearGradient, customTextureOptions) (:153-163). BrushCache.create (Drawing/BrushCache.js:30-63) returns the cached brush only when all of those are identical (:35-43), otherwise it calls invalidateCache and createGradientBrush -> createGradientTexture -> new CanvasTexture(256, 256) (:108) -> clear -> fillRect -> copyTexture (:123). opacity is part of the key although createGradientTexture never reads it. SeriesAnimation writes rs.opacity on every animation step for style animations with opacity (Animations/SeriesAnimation.js:146-147) and for fade animations (:170-172), so each animation frame rebuilds the gradient brush. The ratios come from domCanvas2D/domMasterCanvas sizes (MountainSeriesDrawingProvider.js:156-161), so a resize that changes them rebuilds too. Column, StackedColumn, Band, PolarBand and BoxPlot providers use the same isMasterCanvasRenderTarget ratio pattern. Every caller of copyTexture runs clear() first (BrushCache :67/:109, BasePointMarker :260/:264/:268, UniformHeatmapDrawingProvider :125, 3D GradientColorPalette :53 and SolidColorBrushPalette :54), so writing 0 for transparent pixels in the fix matches current output. Point markers handle opacity changes with applyOpacity (BasePointMarker.js:363-368, one SCRTMultiplyColorVectorOpacity call) and do not rebuild. other_locations checked: TextureManager.js:358 is aPixels.set inside createTextureFromCtx (:336), which has no caller in esm; CanvasTexture.js:47 and BrushCache.js:108 are correct. Fix checked: little-endian Uint32 view of RGBA gives 0xAABBGGRR; (p & 0xff00ff00) | (R << 16) | B yields (a<<24)|(r<<16)|(g<<8)|b, the same word as the original; HEAPU32 is exported on Module (_glue-pretty/scichart.js:58) and HeatmapHelpers.js:89-92 already writes UIntVectors this way; no wasm allocation happens between taking the view and the last write. Severity stays medium: the rebuild is per frame only inside fade/opacity animation and resize windows, not in steady state. Evidence S: the per-pixel embind calls and the per-frame rebuild during opacity animation follow directly from the code. Corrected app_workaround: animating gradient-stop alpha means assigning a new fillLinearGradient each frame, which is also in the BrushCache key (:40) and rebuilds the texture just the same, so that suggestion was wrong.
 

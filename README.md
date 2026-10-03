@@ -22,9 +22,9 @@ Nothing here is measured. Every issue names the recipe that would measure it.
 
 | Status | Issues |
 |---|---|
-| Verified by an adversarial reviewer (confirmed or corrected) | 48 |
+| Verified by an adversarial reviewer (confirmed or corrected) | 49 |
 | Refuted by an adversarial reviewer (file kept, marked) | 0 |
-| **Not yet verified** (reviewer only) | 46 |
+| **Not yet verified** (reviewer only) | 45 |
 
 Each issue file and the index below show its own verification status; all high-severity issues are verified. Unverified issues are strong candidates: re-check the quoted line and the caller chain before acting. Raw data for resuming: [`data/findings.json`](data/findings.json) (`verified: false`).
 
@@ -68,7 +68,7 @@ Each issue file and the index below show its own verification status; all high-s
 | [034](issues/034-stacked-mountain-per-frame-palette-invalidation.md) | medium | Tasks and scheduling | StackedXyCollection.draw sets strokeY1DashArray on every child each frame, forcing a full palette recompute on paletted stacked mountains | `esm/Charting/Visuals/RenderableSeries/StackedXyCollection.js:200` | S | yes | small |
 | [035](issues/035-palette-loop-wasm-call-per-point-in-getmetadataat.md) | medium | JS execution | Per-point palette loops call dataSeries.getMetadataAt for every point, which crosses into wasm (xValues.size(), plus getStartIndex() for FIFO) even when the series has no metadata | `esm/Charting/Visuals/RenderableSeries/DrawingProviders/BaseSeriesDrawingProvider.js:262` | S | yes | small |
 | [036](issues/036-unused-native-palette-rebuilt-per-palette-update.md) | medium | Memory and lifecycle | Band and mountain paletting builds a native SCRTPalette from all paletted colours on every palette update, but nothing reads it any more | `esm/Charting/Visuals/RenderableSeries/DrawingProviders/BaseSeriesDrawingProvider.js:282` | S | yes | small |
-| [037](issues/037-canvastexture-per-pixel-embind-copy.md) | medium | JS execution | CanvasTexture.copyTexture copies pixels into wasm with two embind UIntVector.set() calls per pixel: up to 131,072 boundary calls for one 256x256 gradient | `esm/Charting/Visuals/TextureManager/CanvasTexture.js:122` | S | no | small |
+| [037](issues/037-canvastexture-per-pixel-embind-copy.md) | medium | JS execution | CanvasTexture.copyTexture copies pixels into wasm with two embind UIntVector.set() calls per pixel: up to 131,072 boundary calls for one 256x256 gradient | `esm/Charting/Visuals/TextureManager/CanvasTexture.js:122` | S | yes | small |
 | [038](issues/038-pie-legend-rebuilt-on-every-pie-invalidate.md) | medium | JS execution | SciChartPieLegend.update has no dirty check, so the whole legend DOM is rebuilt on every synchronous pie invalidate: each segment property set, and about 11 times per click | `esm/Charting/Visuals/Legend/SciChartPieLegend.js:58` | S | no | small |
 | [039](issues/039-gradient-palette-wasm-clamp-per-point.md) | medium | JS execution | PaletteFactory gradient palettes do an integer clamp through wasm (NumberUtil.Constrain) plus a wasm count() for every point on every frame | `esm/Charting/Model/PaletteFactory.js:28` | S | no | small |
 | [040](issues/040-table-renumber-rows-embind-set-per-row.md) | medium | Tasks and scheduling | Tabular TableDataSeries renumbers row positions with one embind xValues.set(i, i) per remaining row after every remove or insert | `esm/Charting/Model/TableDataSeries.js:350` | S | no | small |
@@ -136,7 +136,7 @@ Each issue file and the index below show its own verification status; all high-s
 | `s03-renderable-series` | 8 | 5 verified, 0 refuted, 3 not verified |
 | `s04-drawing-providers` | 10 | 9 verified, 0 refuted, 1 not verified |
 | `s05-labels-hittest-anim` | 5 | 3 verified, 0 refuted, 2 not verified |
-| `s06-axis-text` | 7 | 3 verified, 0 refuted, 4 not verified |
+| `s06-axis-text` | 7 | 4 verified, 0 refuted, 3 not verified |
 | `s07-annotations-legend` | 10 | 5 verified, 0 refuted, 5 not verified |
 | `s08-data-series` | 9 | 1 verified, 0 refuted, 5 not verified |
 | `s09-filters-numerics-utils` | 7 | 3 verified, 0 refuted, 3 not verified |
