@@ -22,9 +22,9 @@ Nothing here is measured. Every issue names the recipe that would measure it.
 
 | Status | Issues |
 |---|---|
-| Verified by an adversarial reviewer (confirmed or corrected) | 47 |
+| Verified by an adversarial reviewer (confirmed or corrected) | 48 |
 | Refuted by an adversarial reviewer (file kept, marked) | 0 |
-| **Not yet verified** (reviewer only) | 47 |
+| **Not yet verified** (reviewer only) | 46 |
 
 Each issue file and the index below show its own verification status; all high-severity issues are verified. Unverified issues are strong candidates: re-check the quoted line and the caller chain before acting. Raw data for resuming: [`data/findings.json`](data/findings.json) (`verified: false`).
 
@@ -88,7 +88,7 @@ Each issue file and the index below show its own verification status; all high-s
 | [054](issues/054-createsingle-delete-wipes-global-label-cache.md) | medium | Memory and lifecycle | Deleting a createSingle chart resets the page-wide label/style cache: every live chart re-measures labels and each live context gains a new SCRTFontKey per text style | `esm/Charting/Visuals/createSingle.js:192` | S | no | small |
 | [055](issues/055-webgpu-specialhtmltargets-retains-deleted-canvases.md) | medium | Memory and lifecycle | WebGPU: each chart's canvas is registered in wasmContext.specialHTMLTargets and never removed on delete | `esm/Charting/Visuals/createMaster.js:288` | S | no | small |
 | [056](issues/056-error-bars-process-full-dataset-every-frame.md) | medium | JS execution | The error-bar provider draws and pre-processes every data point on each redraw, ignoring the visible index range; on log axes it makes about 20 wasm calls per point | `esm/Charting/Visuals/RenderableSeries/DrawingProviders/ErrorSeriesDrawingProvider.js:101` | S | yes | medium |
-| [057](issues/057-point-marker-rebuilds-three-textures-eagerly.md) | medium | GPU upload | Every point-marker property set, and every resumeUpdates, rebuilds three canvas textures (sprite, stroke mask, fill mask) at once, though the masks are used only with a point-marker palette provider | `esm/Charting/Visuals/PointMarkers/BasePointMarker.js:347` | S | no | medium |
+| [057](issues/057-point-marker-rebuilds-three-textures-eagerly.md) | medium | GPU upload | Every point-marker property set, and every resumeUpdates, rebuilds three canvas textures (sprite, stroke mask, fill mask) at once, though the masks are used only with a point-marker palette provider | `esm/Charting/Visuals/PointMarkers/BasePointMarker.js:347` | S | yes | medium |
 | [058](issues/058-data-labels-repeat-native-linebounds-per-label.md) | medium | JS execution | Data-label generation makes 2-3 native GetLineBounds allocations per label per frame, and they are loop-invariant in TextDataLabelProvider | `esm/Charting/Visuals/RenderableSeries/DataLabels/DataLabelProvider.js:411` | S | no | medium |
 | [059](issues/059-style-animation-rebuilds-marker-textures-per-frame.md) | medium | GPU upload | Point-marker style animations create 3 canvases, 3 GPU textures and run getImageData on every animation frame | `esm/Charting/Visuals/RenderableSeries/Animations/SeriesAnimation.js:149` | S | no | medium |
 | [060](issues/060-selected-annotation-adorner-reparsed-every-render.md) | medium | JS execution | A selected annotation deletes and re-parses its adorner SVG on every render, even when it has not moved | `esm/Charting/Visuals/Annotations/DomAnnotationBase.js:236` | S | no | medium |
@@ -134,7 +134,7 @@ Each issue file and the index below show its own verification status; all high-s
 | `s01-surface-render` | 7 | 7 verified, 0 refuted, 0 not verified |
 | `s02-init-loading` | 7 | 7 verified, 0 refuted, 0 not verified |
 | `s03-renderable-series` | 8 | 5 verified, 0 refuted, 3 not verified |
-| `s04-drawing-providers` | 10 | 8 verified, 0 refuted, 2 not verified |
+| `s04-drawing-providers` | 10 | 9 verified, 0 refuted, 1 not verified |
 | `s05-labels-hittest-anim` | 5 | 3 verified, 0 refuted, 2 not verified |
 | `s06-axis-text` | 7 | 3 verified, 0 refuted, 4 not verified |
 | `s07-annotations-legend` | 10 | 5 verified, 0 refuted, 5 not verified |
