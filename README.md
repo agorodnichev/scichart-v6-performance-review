@@ -22,9 +22,9 @@ Nothing here is measured. Every issue names the recipe that would measure it.
 
 | Status | Issues |
 |---|---|
-| Verified by an adversarial reviewer (confirmed or corrected) | 68 |
+| Verified by an adversarial reviewer (confirmed or corrected) | 69 |
 | Refuted by an adversarial reviewer (file kept, marked) | 0 |
-| **Not yet verified** (reviewer only) | 26 |
+| **Not yet verified** (reviewer only) | 25 |
 
 Each issue file and the index below show its own verification status; all high-severity issues are verified. Unverified issues are strong candidates: re-check the quoted line and the caller chain before acting. Raw data for resuming: [`data/findings.json`](data/findings.json) (`verified: false`).
 
@@ -78,7 +78,7 @@ Each issue file and the index below show its own verification status; all high-s
 | [044](issues/044-subchart-event-copies-rebroadcast-to-all-surfaces.md) | medium | JS execution | Every sub-chart copy of a pointermove keeps isMaster: true, so each sub-chart, active or not, re-broadcasts the move to every other top-level 2D surface for each modifier group | `esm/Core/Mouse/MouseManager.js:654` | S | yes | small |
 | [045](issues/045-rollover-update-hit-tests-every-series-twice.md) | medium | JS execution | RolloverModifier.update() hit-tests every series a second time to fill the legend, and runs on every pointer event and every full render | `esm/Charting/ChartModifiers/RolloverModifier.js:464` | S | yes | small |
 | [046](issues/046-polar-cursor-post-render-update-extra-frame.md) | medium | Tasks and scheduling | PolarCursorModifier updates after the render has re-armed invalidation, and the default cursor tooltip template stamps Date.now() into its SVG, so each full render with the pointer over the series area schedules one more frame | `esm/Charting/ChartModifiers/Polar/PolarCursorModifier.js:277` | S | yes | small |
-| [047](issues/047-sync-layout-double-measures-left-right-axes.md) | medium | JS execution | SynchronizedLayoutManager measures left and right outer axes twice per frame when the chart has no vertical group, which is the case for every SciChartHorizontalGroup chart | `esm/Charting/LayoutManager/SynchronizedLayoutManager.js:64` | S | no | small |
+| [047](issues/047-sync-layout-double-measures-left-right-axes.md) | medium | JS execution | SynchronizedLayoutManager measures left and right outer axes twice per frame when the chart has no vertical group, which is the case for every chart in a SciChartHorizontalGroup that is not also in a SciChartVerticalGroup | `esm/Charting/LayoutManager/SynchronizedLayoutManager.js:64` | S | yes | small |
 | [048](issues/048-3d-axis-descriptors-remarshalled-to-wasm-every-frame.md) | medium | JS execution | AxisCubeEntity pushes all three axis descriptors (ticks, labels, styles) into wasm on every frame, even when they compare equal | `esm/Charting3D/Visuals/Axis/AxisCubeEntity.js:74` | S | no | small |
 | [049](issues/049-pie-label-forced-layout-per-segment.md) | medium | Layout | Pie label placement reads offsetWidth/offsetHeight right after writing each label's styles and innerHTML, forcing one layout per segment per draw | `esm/Charting/Visuals/SciChartPieSurface/SciChartPieSurface.js:727` | S | no | small |
 | [050](issues/050-hover-select-triggers-full-3d-geometry-rebuild.md) | medium | GPU upload | Hover/selection flips (and idempotent marker/visibility sets) flag a full point-cloud geometry rebuild although no 3D entity renders them | `esm/Charting3D/Visuals/RenderableSeries/BaseRenderableSeries3D.js:314` | S | no | small |
@@ -141,7 +141,7 @@ Each issue file and the index below show its own verification status; all high-s
 | `s08-data-series` | 9 | 5 verified, 0 refuted, 1 not verified |
 | `s09-filters-numerics-utils` | 7 | 6 verified, 0 refuted, 0 not verified |
 | `s10-modifiers-input` | 7 | 6 verified, 0 refuted, 1 not verified |
-| `s11-layout-core-themes` | 2 | not verified yet |
+| `s11-layout-core-themes` | 2 | 1 verified, 0 refuted, 1 not verified |
 | `s12-pie-3d-surface` | 7 | 1 verified, 0 refuted, 6 not verified |
 | `s13-3d-series-modifiers` | 6 | 2 verified, 0 refuted, 3 not verified |
 | `x1-frame-path` | 6 | 1 verified, 0 refuted, 3 not verified |
