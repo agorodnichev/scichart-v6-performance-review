@@ -9,7 +9,7 @@
 | Metric | startup (time to first chart frame) |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
-| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/f78111985edeb4f3ef5aa5074239a852/): WebGL: inconclusive, WebGPU: reproduced ([source](../demos/029-wasm-fetch-waits-for-webgpu-device/)) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/f78111985edeb4f3ef5aa5074239a852/): reproduced on WebGPU (the code path does not exist on WebGL: inconclusive there by design) ([source](../demos/029-wasm-fetch-waits-for-webgpu-device/)) |
 | Rule | TASK-16 (also TASK-14, SC-36) (web-performance skill) |
 | Effort to fix | small |
 

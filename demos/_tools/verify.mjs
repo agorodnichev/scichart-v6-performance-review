@@ -56,7 +56,7 @@ for (const id of targets) {
     }
     const secs = ((Date.now() - t0) / 1000).toFixed(1);
     // Known noise: favicon 404s, and the engine's own WebGL query warnings on 3D surfaces (see demos/README.md).
-    const noise = /favicon|404 \(File not found\)|beginQuery|getQueryParameter|endQuery/;
+    const noise = /favicon|404 \(File not found\)|beginQuery|getQueryParameter|endQuery|WebGL: too many errors/;
     const out = { ...result, renderer, dpr, seconds: Number(secs), consoleErrors: logs.filter((l) => !noise.test(l)).slice(-20) };
     if (existsSync(join(root, "_dist", id))) writeFileSync(join(root, "_dist", id, `result-${renderer}${dpr !== 1 ? `-dpr${dpr}` : ""}.json`), JSON.stringify(out, null, 2));
     if (!["reproduced", "not-reproduced", "inconclusive"].includes(out.verdict)) failures++;
