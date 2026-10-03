@@ -3,12 +3,12 @@
 | | |
 |---|---|
 | Package | `scichart@6.0.6` (npm, ESM build) |
-| Location | `esm/Charting/Model/XyTextDataSeries.js:177` |
+| Location | `esm/Charting/Model/XyTextDataSeries.js:175` |
 | Severity | **medium** |
 | Pipeline stage | Tasks and scheduling (`tasks`) |
 | Metric | frame time (per data update) |
 | Evidence | S — static, mechanism certain (not measured) |
-| Verification | **not yet verified**: reviewer-only candidate, see README "Verification status" |
+| Verification | verified by an independent adversarial reviewer (corrected) |
 | Rule | SC-01, TASK-13 (web-performance skill) |
 | Effort to fix | medium |
 
@@ -61,7 +61,16 @@ A range call is meant to cross the boundary once per batch (SC-01), and the nume
 -            store.setValueAt(firstRow + i, textValues[dropped + i]);
 -        }
 +        store.setValuesAt(firstRow, dropped === 0 && written === textValues.length ? textValues : textValues.slice(dropped, dropped + written));
---- a/esm/Charting/Model/TableDataSeries.js (writeStringCells: same replacement per store)
+--- a/esm/Charting/Model/TableDataSeries.js
++++ b/esm/Charting/Model/TableDataSeries.js
+@@ writeStringCells(columns, startIndex, rowCount)
+         this.stringColumns.forEach((store, name) => {
+             const incoming = columns[name];
+-            for (let i = 0; i < written; i++) {
+-                store.setValueAt(firstRow + i, incoming[dropped + i]);
+-            }
++            store.setValuesAt(firstRow, dropped === 0 && written === incoming.length ? incoming : incoming.slice(dropped, dropped + written));
+         });
 ```
 
 **Trade-off:** AddRef stays one crossing per value because the shipped wasm API has no batch AddRef; a native batch encode would remove it. The FIFO mapping (start + row) % capacity must match SCRTIntFifoVector's logical indexing, the same rule getTextAt documents, so the existing FIFO string-column tests must pass. The blank pre-fill could also be skipped for columns the subclass fills, but that changes the onAppend contract.
@@ -85,5 +94,5 @@ measure.md#fps, scenario "stream": an XyTextDataSeries with fifoCapacity 10,000,
 ## Review notes
 
 - Found by reviewer slice `s08-data-series`.
-- Not yet adversarially verified. The code quote and line numbers come from the slice reviewer; re-check them before acting.
+- Adversarial verification (corrected): Quote matches XyTextDataSeries.js:175-178 verbatim (primary moved from :177 to :175 where the quote starts). Re-traced: XyTextDataSeries.appendRange :94-96 -> BaseDataSeries.appendRangeN :195 -> numeric columns through doubleVectorProvider.appendArray (:215-218, bulk) -> appendEmptyToStringColumns :219 -> :1014-1017 -> StringColumnStore.appendEmpty :127-139 (bulk HEAP32 write; on FIFO releaseEvictedBy :355-361 does codes.get + Release per evicted row) -> onAppend :220-221 -> writeText :165-178 -> setValueAt :165-174 per row. setValueAt crossings counted from the code: codes.size() in the Guard :167, codes.get :168, encode :332-344 (AddRef always, Append for an unseen string), dictionary.Release :172 (a no-op for -1 per the class doc :46-47), codes.set :173 = 5, or 6 for a new string. TableDataSeries.appendRange :444-460 (onAppend :458) and insertRange :476-494 (onInsert :491) -> writeStringCells :421-435 run the same loop per string column. No guard or batching: compactStringColumnsIfNeeded runs after and does not touch this. Checked the fix: SCRTIntFifoVector.getStartIndex exists (types/types/TSciChart.d.ts:509); encode() runs before rawCodesView(), so an Append that grows the heap cannot detach the view; AddRef-all-then-Release-all leaves the same final refcounts as the per-row order and never drops a shared entry to zero mid-batch; skipping Release(-1) matches the native no-op; the dropped===0 shortcut is safe because validateColumnar (:371-374) enforces equal column lengths. Severity medium kept: per data update and per appended row, a constant factor on an API that already batches the numeric columns. Evidence S. Corrected the fix diff to spell out the TableDataSeries hunk.
 
