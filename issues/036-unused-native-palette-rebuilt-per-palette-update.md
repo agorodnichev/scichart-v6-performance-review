@@ -5,11 +5,11 @@
 | Package | `scichart@6.0.6` (npm, ESM build) |
 | Location | `esm/Charting/Visuals/RenderableSeries/DrawingProviders/BaseSeriesDrawingProvider.js:282` |
 | Severity | **medium** |
-| Pipeline stage | GPU upload (`gpu-upload`) |
+| Pipeline stage | Memory and lifecycle (`memory`) |
 | Metric | frame time (also wasm heap churn) |
 | Evidence | S — static, mechanism certain (not measured) |
-| Verification | **not yet verified**: reviewer-only candidate, see README "Verification status" |
-| Rule | GPU-05 (web-performance skill) |
+| Verification | verified by an independent adversarial reviewer (corrected) |
+| Rule | V8-06 (web-performance skill) |
 | Effort to fix | small |
 
 ## Code
@@ -31,9 +31,9 @@ SciChartRenderer.js:354 -> BaseRenderableSeries.js:628 -> MountainSeriesDrawingP
 
 ## Why it costs
 
-The comments say the per-point colour arrays replaced the SCRTPalette/SetPalette path, but the palette creation was left in place. reset() at :238 runs before the hash compare at :279, so the hash check never skips a rebuild. The native allocation and copy are certain. What SCRTCreatePalette does in the engine (a texture create and upload, going by the 'paletteTextureCache' name) is not visible from JS, so the GPU part is a hypothesis.
+The comments in the Mountain and Band providers say the per-point colour arrays (SetPalettedColors) replaced the old SCRTPalette/SetPalette path, but the palette creation and its hash were left in place. reset() at :238 runs before the hash compare at :279, so the hash check never skips a rebuild. A node probe of the core wasm (pal.cjs) shows SCRTCreatePalette allocates 4 bytes per colour, so it copies the whole colour array. A probe that logs the stubbed GL context (pal2.cjs) shows no WebGL call during creation, so no texture is created or uploaded when the palette is built. The waste is wasm-heap malloc, copy and free per update, plus the per-point hash. Neither result is read.
 
-**Scale where it matters:** One native palette per update per series, built from 2 colours per visible point. 100k points means 200k colours copied into a new native object that is freed on the next update.
+**Scale where it matters:** One native palette per palette update per series, holding 2 colours per visible point at 4 bytes each: 100k visible points means an 800 KB wasm-heap allocation and copy per update, freed on the next update. There are also 2 numericHashCode calls per point that feed only the dead hash compare. For paletted mountain series this happens every redraw.
 
 ## Fix (library side)
 
@@ -73,10 +73,12 @@ measure.md#fps, `pan` on a FastBandRenderableSeries and a FastMountainRenderable
 ## Other locations
 
 - `esm/Charting/Visuals/RenderableSeries/DrawingProviders/BaseSeriesDrawingProvider.js:238` — an unconditional reset() before the hash check makes the hash comparison useless
-- `esm/Charting/Drawing/PaletteCache.js:24` — new SCRTCreatePalette(fillColors)
+- `esm/Charting/Visuals/RenderableSeries/DrawingProviders/BaseSeriesDrawingProvider.js:273` — 2 numericHashCode calls per point whose only consumer is the dead compare at :279
+- `esm/Charting/Drawing/PaletteCache.js:24` — new SCRTCreatePalette(fillColors): native allocation and copy of 4 bytes per colour
+- `esm/Charting/Visuals/RenderableSeries/DrawingProviders/MountainSeriesDrawingProvider.js:154` — createBrush(), called from every draw (:60), forces requiresUpdate, so the palette is rebuilt every redraw
 
 ## Review notes
 
 - Found by reviewer slice `s04-drawing-providers`.
-- Not yet adversarially verified. The code quote and line numbers come from the slice reviewer; re-check them before acting.
+- Adversarial verification (corrected): Re-read DrawingProviders/BaseSeriesDrawingProvider.js:176-320 and Drawing/PaletteCache.js:1-30. The code_quote matches :277-284 verbatim, with create() at :282. Mechanism: when requiresUpdate is set, :238 calls paletteTextureCache.reset(), which deletes cachedEntity and clears fillColors (PaletteCache.js:26-29, BaseCache.js:31-33). create(palettedColors) at :282 therefore never takes the cached branch (PaletteCache.js:18-20) and always runs `new SCRTCreatePalette(fillColors)` (:24). The hash compare at :279 never skips a rebuild. Callers with usePalette = true: MountainSeriesDrawingProvider.js:70 (BaseMountainRenderableSeries.js:26) and BandSeriesDrawingProvider.js:123 (BaseBandRenderableSeries.js:38, and BaseStackedMountainRenderableSeries.js:262 also uses the band provider). Both draw paths use SetPalettedColors plus paletteStart (Mountain :73-76, Band :128-131). rg over esm and types finds no reader of paletteTextureCache.value, SCRTPalette or SetPalette; the only other references are reset() calls (PolarBand :153/:190, Base :288) and delete (:320). palettedColorsHashCode is read only at :279. Rate: Mountain draw calls createBrush() (:60), which sets requiresUpdate = true (:154), so this runs on every redraw. Band series run it whenever shouldUpdatePalette forces an update (Base :394-396; DefaultPaletteProvider returns true). New evidence: a node probe of the core wasm (agent-scratch/s04v/pal.cjs) shows that SCRTCreatePalette allocates 4 bytes per colour plus 8 on the wasm heap (n=1000 -> 4008 B, n=100000 -> 400008 B, n=400000 -> 1600008 B), so it copies all colours. A second probe (pal2.cjs) logs every call on the stubbed GL context and records no WebGL call during SCRTCreatePalette. The texture/GPU-upload hypothesis is refuted for creation: the cost is a native malloc, a copy of 8 bytes per visible point, a free on the next update, and 2 numericHashCode calls per point (:272-275, utils/number.js:9-13), all for an object nothing reads. Corrected: stage gpu-upload -> memory; rule GPU-05 -> V8-06 (no GPU object is created); why_it_costs, scale and other_locations updated. The fix is semantics-preserving: PaletteCache.value (:7-12) still builds lazily from fillColors, which is the same palettedColors vector updated in place, for any custom reader. Severity stays medium: it runs per frame for paletted mountain series, but it is a linear memcpy plus a cheap hash on top of the per-point palette callback loop. Evidence S.
 
