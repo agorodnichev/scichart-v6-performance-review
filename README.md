@@ -22,9 +22,9 @@ Nothing here is measured. Every issue names the recipe that would measure it.
 
 | Status | Issues |
 |---|---|
-| Verified by an adversarial reviewer (confirmed or corrected) | 33 |
+| Verified by an adversarial reviewer (confirmed or corrected) | 34 |
 | Refuted by an adversarial reviewer (file kept, marked) | 0 |
-| **Not yet verified** (reviewer only) | 61 |
+| **Not yet verified** (reviewer only) | 60 |
 
 Verified so far: all issues of `s01-surface-render` and `s02-init-loading`, plus the high-severity issues of the slices listed in the coverage table. Unverified issues are strong candidates: re-check the quoted line and the caller chain before acting. Raw data for resuming: [`data/findings.json`](data/findings.json) (`verified: false`).
 
@@ -55,7 +55,7 @@ Verified so far: all issues of `s01-surface-render` and `s02-init-loading`, plus
 | [021](issues/021-stacked-accumulation-per-point-push-back-rebuild.md) | high | JS execution | Stacked collections rebuild every accumulated vector with per-point embind push_back calls on every data change | `esm/Charting/Visuals/RenderableSeries/StackedXyCollection.js:79` | S | no | medium |
 | [022](issues/022-annotation-axis-label-texture-rebuilt-every-frame.md) | high | GPU upload | Axis-marker, line-annotation and modifier axis labels are re-rasterized on a Canvas 2D, read back, uploaded and deleted on every render, even when the text is unchanged | `esm/Charting/Visuals/Axis/AxisRenderer.js:539` | S | yes | medium |
 | [023](issues/023-rollover-cursor-tooltip-svg-reparsed-every-render.md) | high | JS execution | Rollover and Cursor tooltip SVGs (blur filter included) are torn down and re-parsed on every render while the pointer is over the series area, including hidden tooltips and unchanged content | `esm/Charting/Visuals/Annotations/RolloverTooltipSvgAnnotation.js:57` | S | yes | medium |
-| [024](issues/024-linear-trend-filter-full-recompute-per-append.md) | high | JS execution | XyLinearTrendFilter recomputes and re-uploads the whole series on every source append/update | `esm/Charting/Model/Filters/XyLinearTrendFilter.js:81` | S | no | medium |
+| [024](issues/024-linear-trend-filter-full-recompute-per-append.md) | high | JS execution | XyLinearTrendFilter recomputes and re-uploads the whole series on every source append/update | `esm/Charting/Model/Filters/XyLinearTrendFilter.js:81` | S | yes | medium |
 | [025](issues/025-datapointselection-per-point-metadata-objects.md) | high | Memory and lifecycle | DataPointSelectionModifier gives every point of every series its own metadata object, at attach and on every later append, and keeps doing so after the modifier is removed | `esm/Charting/ChartModifiers/DataPointSelectionModifier.js:171` | S | no | medium |
 | [026](issues/026-3d-hittest-reads-selection-buffer-per-series.md) | high | Tasks and scheduling | 3D hover/tooltip hit tests read the same selection-buffer pixel once per series (and up to 17-33 pixels per sample), on every pointermove and again on every rendered frame | `esm/Charting3D/ChartModifiers/TooltipModifier3D.js:257` | S | no | medium |
 | [027](issues/027-engine-raf-loop-never-stops.md) | high | Tasks and scheduling | The engine's rAF main loop asks for a frame every vsync for the life of the wasm module, including when nothing is invalidated and after every chart has been deleted | `_glue-pretty/scichart.js:5918` | S | no | medium |
@@ -139,7 +139,7 @@ Verified so far: all issues of `s01-surface-render` and `s02-init-loading`, plus
 | `s06-axis-text` | 7 | 3 verified, 0 refuted, 4 not verified |
 | `s07-annotations-legend` | 10 | 5 verified, 0 refuted, 5 not verified |
 | `s08-data-series` | 9 | 1 verified, 0 refuted, 5 not verified |
-| `s09-filters-numerics-utils` | 7 | 2 verified, 0 refuted, 4 not verified |
+| `s09-filters-numerics-utils` | 7 | 3 verified, 0 refuted, 3 not verified |
 | `s10-modifiers-input` | 7 | not verified yet |
 | `s11-layout-core-themes` | 2 | not verified yet |
 | `s12-pie-3d-surface` | 7 | not verified yet |
