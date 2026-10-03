@@ -1,6 +1,6 @@
 const META = {
   id: "074",
-  title: "Removing the 3D tooltip/selection modifiers leaves the per-frame selection pass and its GPU readback on",
+  title: "Removing 3D tooltip/selection modifiers leaves the per-frame selection pass and readback on",
   issue: "issues/074-hittest-selection-pass-left-enabled-after-detach.md",
   severity: "medium",
   claim: "TooltipModifier3D and SeriesSelectionModifier3D set sciChart3DSurface.isHitTestEnabled = true on attach and never reset it on detach. Every later frame still draws the scene into the selection (ID) buffer and reads it back to the CPU, although nothing reads it any more.",

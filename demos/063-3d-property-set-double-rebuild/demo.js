@@ -1,6 +1,6 @@
 const META = {
   id: "063",
-  title: "3D point-line/column style setters rebuild the whole series synchronously, then again next frame",
+  title: "3D style setters rebuild the whole series synchronously, then again in the next frame",
   issue: "issues/063-3d-series-property-set-rebuilds-mesh-twice.md",
   severity: "medium",
   claim: "PointLine3DSceneEntity (and the scatter/column entities) call updateSeries() inside notifySeriesPropertyChanged, then also set the dirty flag that makes the next frame call updateSeries() again. k style sets in one handler cost k+1 full O(N) rebuilds, and a column series with fill re-notifies itself from every rebuild, costing one extra frame.",

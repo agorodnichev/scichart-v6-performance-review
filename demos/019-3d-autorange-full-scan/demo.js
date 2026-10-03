@@ -1,6 +1,6 @@
 const META = {
   id: "019",
-  title: "3D autoRange Always rescans every XYZ point for min/max on every frame, even when only the camera moves",
+  title: "3D autoRange Always rescans all XYZ data for min/max every frame, even camera-only frames",
   issue: "issues/019-3d-autorange-always-scans-full-data-every-frame.md",
   severity: "high",
   claim: "XyzDataSeries3D.xRange/yRange/zRange run a full NumberUtil.MinMax over the data on every read and cache nothing, and with EAutoRange.Always the 3D renderer reads them for each axis on every frame. A camera orbit over static data pays three O(N) scans per frame.",
@@ -40,6 +40,7 @@ async function demo(P) {
     const res = {
       rendersPerFrame: r.perFrame("3D render()"),
       minMaxPerRender: r.total("NumberUtil.MinMax") / n,
+      minMaxTotal: r.total("NumberUtil.MinMax"),
       mbScannedPerRender: r.total("NumberUtil.MinMax", "bytes") / n / 1048576,
       minMaxMsPerRender: r.total("NumberUtil.MinMax", "t") / n,
       rebuildsPerRender: r.total("updateSeries()") / n,
@@ -85,7 +86,7 @@ async function demo(P) {
   P.report({
     verdict: reproduced ? "reproduced" : "not-reproduced",
     headline: reproduced
-      ? `Each camera-only frame runs ${orbitShipped.minMaxPerRender.toFixed(1)} full MinMax scans (${orbitShipped.mbScannedPerRender.toFixed(1)} MB of ${N.toLocaleString("en-US")} points) with no data change and no rebuild. With cached ranges: ${orbitFixed.minMaxPerRender.toFixed(1)} per orbit frame, and still ${streamFixed.minMaxPerRender.toFixed(1)} per streaming frame, where the data really changed.`
+      ? `Each camera-only frame runs ${orbitShipped.minMaxPerRender.toFixed(1)} full MinMax scans (${orbitShipped.mbScannedPerRender.toFixed(1)} MB of ${N.toLocaleString("en-US")} points) with no data change and no rebuild. With cached ranges: ${orbitFixed.minMaxTotal} scans over all ${FRAMES} orbit frames (filling the cache once), and still ${streamFixed.minMaxPerRender.toFixed(1)} per streaming frame, where the data really changed.`
       : `Expected three MinMax scans per camera-only frame with autoRange Always; measured ${orbitShipped.minMaxPerRender.toFixed(2)} (cached ranges: ${orbitFixed.minMaxPerRender.toFixed(2)}).`,
     columns: ["Orbit, as shipped", "Orbit, cached ranges", "Orbit, autoRange Once", "Streaming, as shipped", "Streaming, cached ranges"],
     rows: [
@@ -99,7 +100,7 @@ async function demo(P) {
     ],
     notes: [
       "Orbit frames change only the camera: the series is not rebuilt (0 updateSeries), yet each axis still re-reads its range, and each read is a fresh NaN-aware scan in wasm (invisible as JS self time). Streaming frames genuinely need one scan per axis; the cached version keeps exactly those.",
-      "The upload row (WebGL bufferData/bufferSubData; WebGPU writeBuffer plus buffers created with mappedAtCreation) confirms that orbit frames send only uniforms to the GPU: the three scans are the only O(N) work in them. Counts and bytes do not depend on hardware; times do.",
+      "The upload row (WebGL bufferData/bufferSubData; WebGPU writeBuffer plus buffers created with mappedAtCreation) confirms that orbit frames send only uniforms to the GPU: the three scans are the only O(N) CPU work in them. Counts and bytes do not depend on hardware; times do.",
     ],
     metrics: { N, orbitShipped, orbitFixed, orbitOnce, streamShipped, streamFixed },
   });

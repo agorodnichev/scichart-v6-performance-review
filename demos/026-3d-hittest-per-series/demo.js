@@ -52,7 +52,7 @@ async function demo(P) {
     wrapScope(TooltipModifier3D.prototype, "update", "tooltip"),
     wrapScope(SeriesSelectionModifier3D.prototype, "updateHoverState", "hover"),
   ];
-  series.forEach((rs) => P.hookMethod(rs, "hitTest", { name: "series hitTest()", time: true, onCall: () => P.count("hitTest from " + who) }));
+  series.forEach((rs) => P.hookMethod(rs, "hitTest", { name: "series hitTest()", onCall: () => P.count("hitTest from " + who) }));
   P.hookMethod(TooltipModifier3D.prototype, "update", { name: "tooltip update()" });
   P.hookMethod(SeriesSelectionModifier3D.prototype, "hitTestAtPointAllSeries", { name: "hover sample pixels" });
   P.watchEmbind(wasm, ["SCRTGetSelectionInfo", "SCRTSetActiveWorld"]);
@@ -148,7 +148,7 @@ async function demo(P) {
       ["wasm SCRTSetActiveWorld calls per frame", s.setActiveWorld, f.setActiveWorld, so.setActiveWorld, fo.setActiveWorld],
       ["Selection reads per sample pixel", s.readsPerSample, f.readsPerSample, so.readsPerSample, fo.readsPerSample],
       ["Frames with a hovered series (of " + FRAMES + ")", s.hoverHitFrames, f.hoverHitFrames, so.hoverHitFrames, fo.hoverHitFrames],
-      ["Time in tooltip update() + hover updateHoverState() per frame, ms", s.modifierMs, f.modifierMs, so.modifierMs, fo.modifierMs],
+      ["Time in tooltip update() + hover updateHoverState() per frame, ms (includes the per-call counters' overhead)", s.modifierMs, f.modifierMs, so.modifierMs, fo.modifierMs],
       ["Frame interval p95, ms", s.p95, f.p95, so.p95, fo.p95],
     ],
     notes: [

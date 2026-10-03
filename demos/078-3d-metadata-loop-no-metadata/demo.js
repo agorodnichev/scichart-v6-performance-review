@@ -28,12 +28,12 @@ async function demo(P) {
     P.count("slots walked", 1, count); // the shipped loop runs over `count` slots
     return shippedRebuild.apply(this, arguments);
   };
-  let impl = walk;
+  let impl = walk, loopMs = 0;
   entity.rebuildPointMetadata = function (colors, scales, metadata, count, defaultColor) {
     const t0 = P.now();
     const r = impl.apply(this, arguments);
+    loopMs += P.now() - t0;
     P.count("rebuildPointMetadata()");
-    P.count("rebuildPointMetadata ms x1000", Math.round((P.now() - t0) * 1000));
     if (r && r.hasDefaultColors && r.hasDefaultScales) P.count("returned all defaults");
     return r;
   };
@@ -42,6 +42,7 @@ async function demo(P) {
 
   async function stream(label) {
     const batches = Array.from({ length: FRAMES }, () => batch(BATCH)); // generated outside the measured frames
+    loopMs = 0;
     const r = await P.frames(FRAMES, (i) => { const [x, y, z] = batches[i]; ds.appendRange(x, y, z); });
     const calls = r.total("rebuildPointMetadata()");
     const res = {
@@ -49,7 +50,7 @@ async function demo(P) {
       callsPerFrame: calls / FRAMES,
       pointsPerFrame: r.total("slots walked", "bytes") / FRAMES,
       allDefaults: calls ? r.total("returned all defaults") / calls : 0,
-      loopMs: r.total("rebuildPointMetadata ms x1000") / 1000 / FRAMES,
+      loopMs: loopMs / FRAMES,
       nativeMs: r.total("UpdateMeshesVec", "t") / FRAMES,
       p95: r.frameP95,
       count: ds.count(),

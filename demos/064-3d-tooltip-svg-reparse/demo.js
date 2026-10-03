@@ -48,9 +48,9 @@ async function demo(P) {
     pointer.enter(spot.fx, spot.fy);
     await P.idleFrames(5);
     let samePoint = 0;
-    const px = 1 / rect.width; // one CSS pixel as a fraction of the canvas
+    const px = 1 / rect.width, py = 1 / rect.height; // one CSS pixel as a fraction of the canvas
     const r = await P.frames(FRAMES, (i) => {
-      pointer.move(spot.fx + px * 3 * Math.sin(i * 0.9), spot.fy + px * 3 * Math.cos(i * 0.7));
+      pointer.move(spot.fx + px * 3 * Math.sin(i * 0.9), spot.fy + py * 3 * Math.cos(i * 0.7));
       const si = tooltip.tooltipAnnotation.seriesInfo;
       if (si && si.isHit && si.dataSeriesIndex === 0) samePoint++;
     });

@@ -1,10 +1,10 @@
 const META = {
   id: "050",
-  title: "A 3D hover or selection flip rebuilds and re-uploads the whole point cloud, though nothing draws it",
+  title: "3D hover/selection flips rebuild and re-upload the whole point cloud; nothing draws them",
   issue: "issues/050-hover-select-triggers-full-3d-geometry-rebuild.md",
   severity: "medium",
   claim: "Setting isHovered or isSelected on a 3D series forwards the property name to the scene entity, which marks its geometry dirty for any property. The next frame runs updateSeries: an O(N) metadata loop and a full mesh rebuild and upload, although no built-in 3D entity draws hover or selection state. isVisible re-sets with an unchanged value do the same.",
-  method: "<p>One ScatterRenderableSeries3D with 100,000 points (EllipsePointMarker3D) in a dense cloud, and SeriesSelectionModifier3D({ enableHover: true }). The pointer alternates every 10 frames between the middle of the cloud and an empty corner (120 frames, 12 hover flips). Then the app toggles series.isSelected 10 times and sets series.isVisible = true (unchanged) 10 times, one change every 3 frames.</p><p>The demo counts hover/selection flips, geometry rebuilds (ScatterPointsSceneEntity.updateSeries), points walked by rebuildPointMetadata and bytes uploaded to the GPU (bufferData/bufferSubData or writeBuffer). A/B: the same steps with the issue's app-side workaround (the series' notifyPropertyChanged no longer forwards HOVERED and IS_SELECTED to the scene entity, but still invalidates) plus the fix's equality guard on isVisible, both installed on the series instance and removed afterwards.</p>",
+  method: "<p>One ScatterRenderableSeries3D with 100,000 points (EllipsePointMarker3D) in a dense cloud, and SeriesSelectionModifier3D({ enableHover: true }). The pointer alternates every 10 frames between the middle of the cloud and an empty corner (120 frames, so a hover flip every 10 frames). Then the app toggles series.isSelected 10 times and sets series.isVisible = true (unchanged) 10 times, one change every 3 frames.</p><p>The demo counts hover/selection flips, geometry rebuilds (ScatterPointsSceneEntity.updateSeries), points walked by rebuildPointMetadata and bytes uploaded to the GPU (WebGL bufferData/bufferSubData; WebGPU writeBuffer and mapped buffers). A/B: the same steps with the issue's app-side workaround (the series' notifyPropertyChanged no longer forwards HOVERED and IS_SELECTED to the scene entity, but still invalidates) plus the fix's equality guard on isVisible, both installed on the series instance and removed afterwards.</p>",
 };
 
 async function demo(P) {
@@ -36,7 +36,6 @@ async function demo(P) {
   // WebGPU uploads rebuilt geometry through new buffers created with mappedAtCreation; count their size too.
   if (window.GPUDevice) P.hookMethod(GPUDevice.prototype, "createBuffer", { name: "gpu mapped buffers", bytes: (a) => (a[0] && a[0].mappedAtCreation ? a[0].size : 0) });
   const uploadBytes = (r) => r.total("gl.bufferData", "bytes") + r.total("gl.bufferSubData", "bytes") + r.total("gpu.writeBuffer", "bytes") + r.total("gpu mapped buffers", "bytes");
-  const writeBufferBytes = (r) => r.total("gpu.writeBuffer", "bytes");
   const pointer = P.pointer(scs);
 
   async function scenario(label) {
@@ -59,7 +58,6 @@ async function demo(P) {
       perFlip: flips ? r.total("updateSeries()") / flips : 0,
       pointsWalked: r.total("rebuildPointMetadata()", "bytes"),
       uploadBytes: uploadBytes(r),
-      writeBufferBytes: writeBufferBytes(r),
       rebuildMs: r.total("updateSeries()", "t"),
       renders: r.total("3D render()"),
     });
@@ -117,7 +115,7 @@ async function demo(P) {
       ["  renders", s.visible.renders, f.visible.renders],
     ],
     notes: [
-      "No data, camera or style changes during the runs: hover, selection and visibility state are the only inputs, and no built-in 3D scene entity reads isHovered or isSelected. The chart still renders once per change in both columns (the workaround keeps the invalidate), so app styling in onHoveredChanged keeps working.",
+      "No data, camera or style changes during the runs: hover, selection and visibility state are the only inputs, and no built-in 3D scene entity reads isHovered or isSelected. For hover and selection the chart still renders once per change in both columns (the workaround keeps the invalidate), so app styling in onHoveredChanged keeps working.",
       P.renderer() === "WebGPU"
         ? "On WebGPU the engine writes the whole point buffer (about 32 bytes per point) on every render, rebuild or not, so the upload row does not change with the workaround here; the rebuild still costs the JS metadata loop and the native transform. (Seen in this demo only; on WebGL the upload happens only on rebuild.) Counts and bytes do not depend on hardware; times do."
         : "On WebGL the point buffer is uploaded only when the geometry is rebuilt, so the upload per render drops to uniforms only with the workaround. Rebuild cost grows with N (JS metadata loop, native transform, upload). Counts and bytes do not depend on hardware; times do.",

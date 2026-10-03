@@ -1,10 +1,10 @@
 const META = {
   id: "048",
-  title: "The 3D axis cube pushes all three axis descriptors into wasm every frame, even when they compare equal",
+  title: "3D axis cube copies all three axis descriptors into wasm every frame, even when unchanged",
   issue: "issues/048-3d-axis-descriptors-remarshalled-to-wasm-every-frame.md",
   severity: "medium",
   claim: "AxisCubeEntity.Update deep-compares each new axis descriptor with the previous one but uses the result only to decide DestroyMeshes(); it then copies all three descriptors (ticks, labels, styles) into the persistent native descriptors anyway, hundreds of wasm calls per frame during a camera orbit where nothing changed.",
-  method: "<p>A default 3D surface (three NumericAxis3D, one 100-point scatter). The app turns the camera (camera.orbitalYaw += 0.5 per frame) for 60 frames. While AxisCubeEntity.Update runs, the demo counts every call and property write it makes on the native descriptor classes (SCRTAxisDescriptor, SCRTAxisCubeDescriptor, SCRTTickStyle, SCRTTextStyle, TSRVector4, FloatVector, WStringVector), the native vectors and text styles it allocates (new FloatVector / WStringVector / SCRTTextStyle), the strings it marshals, and whether the three descriptors compared equal to the previous frame (getDescriptorsEqual).</p><p>A/B: the same orbit with the issue's fix, a copy of Update that calls updateScrtAxisDescriptor only for axes whose descriptor changed (patched onto AxisCubeEntity.prototype, removed afterwards). The chart canvas is compared pixel by pixel at the same camera position before and after the fixed run, to check that the persistent native descriptors still draw the same axes.</p>",
+  method: "<p>A default 3D surface (three NumericAxis3D, one 100-point scatter). The app turns the camera (camera.orbitalYaw += 0.5 per frame) for 60 frames. While AxisCubeEntity.Update runs, the demo counts every call and property write it makes on the native descriptor classes (SCRTAxisDescriptor, SCRTAxisCubeDescriptor, SCRTTickStyle, SCRTTextStyle, TSRVector4, FloatVector, WStringVector), the native vectors and text styles it allocates (new FloatVector / WStringVector / SCRTTextStyle), the strings it marshals, and whether the three descriptors compared equal to the previous frame (getDescriptorsEqual).</p><p>A/B: the same orbit with the issue's fix, a copy of Update that calls updateScrtAxisDescriptor only for axes whose descriptor changed (patched onto AxisCubeEntity.prototype, removed afterwards). After each orbit the camera returns to its start and the chart canvas is read back (WebGL only): the image after the fixed orbit is compared with the last shipped one, next to the difference between two shipped orbits, to check that the persistent native descriptors still draw the same axes.</p>",
 };
 
 async function demo(P) {
@@ -25,7 +25,7 @@ async function demo(P) {
   let inUpdate = false;
   const entityProto = AxisCubeEntity.prototype;
   const shippedUpdate = entityProto.Update;
-  let currentUpdate = shippedUpdate;
+  let currentUpdate = shippedUpdate, updateMs = 0;
   entityProto.Update = function (dt) {
     const d = this.currentRenderPassData && this.currentRenderPassData.sceneDescriptor.axisCubeDescriptor;
     if (d) {
@@ -34,7 +34,7 @@ async function demo(P) {
     }
     const t0 = P.now();
     inUpdate = true;
-    try { return currentUpdate.call(this, dt); } finally { inUpdate = false; P.count("Update ms x1000", Math.round((P.now() - t0) * 1000)); }
+    try { return currentUpdate.call(this, dt); } finally { inUpdate = false; updateMs += P.now() - t0; }
   };
   const STRING_PROPS = new Set(["m_strTitle", "m_strFont"]);
   for (const cls of ["SCRTAxisDescriptor", "SCRTAxisCubeDescriptor", "SCRTTickStyle", "SCRTTextStyle", "TSRVector4", "FloatVector", "WStringVector"]) {
@@ -74,6 +74,7 @@ async function demo(P) {
   async function at(yaw) { scs.camera.orbitalYaw = yaw; await P.idleFrames(6); return snapshot(); }
 
   async function orbit(label) {
+    updateMs = 0;
     const r = await P.frames(FRAMES, () => { scs.camera.orbitalYaw += 0.5; });
     const n = r.total("3D render()") || 1;
     const res = {
@@ -86,7 +87,7 @@ async function demo(P) {
       labelsMarshalled: r.total("push_back in Update", "bytes") / n,
       stringsMarshalled: r.total("strings marshalled in Update") / n,
       allocations: r.total("native allocations in Update") / n,
-      updateMs: r.total("Update ms x1000") / 1000 / n,
+      updateMs: updateMs / n,
     };
     P.log(`${label}: ${JSON.stringify(res)}`);
     return res;
@@ -94,12 +95,11 @@ async function demo(P) {
 
   P.status("Camera orbit, library as shipped…");
   const shipped = await orbit("orbit, as shipped");
-  const refShipped = await at(yaw0); // image at the starting camera after a shipped orbit
-  await orbit("DBG orbit 2, as shipped");
-  const refShipped2 = await at(yaw0);
-  const bbox = (a, b) => { let x0 = 1e9, y0 = 1e9, x1 = -1, y1 = -1, n = 0; const w = canvas.width; for (let i = 0; i < a.length; i += 4) if (a[i] !== b[i] || a[i + 1] !== b[i + 1] || a[i + 2] !== b[i + 2]) { const p = i / 4, x = p % w, y = (p / w) | 0; n++; x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); } return { n, x0, y0, x1, y1, w, h: canvas.height }; };
-  const drawnBox = (a) => { let x0 = 1e9, y0 = 1e9, x1 = -1, y1 = -1; const w = canvas.width; for (let i = 3; i < a.length; i += 4) if (a[i]) { const p = (i - 3) / 4, x = p % w, y = (p / w) | 0; x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); } return { x0, y0, x1, y1 }; };
-  if (refShipped) { P.log("DBG noise shipped vs shipped2: " + JSON.stringify(bbox(refShipped, refShipped2))); P.log("DBG drawn box: " + JSON.stringify(drawnBox(refShipped))); }
+  const imgA = await at(yaw0); // image at the starting camera after a shipped orbit
+  P.status("Second shipped orbit (image noise baseline)…");
+  await orbit("orbit 2, as shipped");
+  const refShipped = await at(yaw0);
+  const noise = diffPixels(imgA, refShipped);
 
   // ---- the issue's fix: push only the axes whose descriptor changed (copy of Update otherwise unchanged)
   const updateScrtLineStyle = (lineStyle, s) => { s.m_fStrokeThickness = lineStyle.strokeThickness; s.m_fStart = lineStyle.start; s.m_fEnd = lineStyle.end; updateTsrVector4(lineStyle.stroke, s.GetStrokeColorPtr()); };
@@ -148,17 +148,13 @@ async function demo(P) {
   P.status("Camera orbit with the per-axis push…");
   const fixed = await orbit("orbit, push only changed axes");
   const fixedImage = await at(yaw0);
-  if (refShipped) P.log("DBG shipped2 vs fixed: " + JSON.stringify(bbox(refShipped2, fixedImage)));
-  await P.idleFrames(10);
-  const fixedImage2 = snapshot();
-  if (refShipped) P.log("DBG fixed vs fixed later: " + JSON.stringify(bbox(fixedImage, fixedImage2)));
   currentUpdate = shippedUpdate;
   entityProto.Update = shippedUpdate;
 
   const drawn = nonEmpty(refShipped), drawnFixed = nonEmpty(fixedImage);
   const readable = drawn > 0; // a WebGPU canvas cannot be read back with drawImage, so it shows as empty
   const fixDiff = readable ? diffPixels(refShipped, fixedImage) : null;
-  const sameImage = readable && fixDiff <= Math.max(20, drawn * 0.01);
+  const sameImage = readable && fixDiff <= Math.max(20, drawn * 0.01, noise * 1.5);
   const spacingBug = getTextStylesEqual({ dpiScaling: 1, fontFamily: "Arial", fontSize: 12, foreground: 0, multilineAlignment: 0, multilineSpacing: 1 },
     { dpiScaling: 1, fontFamily: "Arial", fontSize: 12, foreground: 0, multilineAlignment: 0, multilineSpacing: 2 });
 
@@ -166,7 +162,7 @@ async function demo(P) {
   P.report({
     verdict: reproduced ? "reproduced" : "not-reproduced",
     headline: reproduced
-      ? `During a camera orbit all three axis descriptors compare equal in ${(shipped.unchangedPerRender * 100).toFixed(0)}% of frames, yet each frame makes ${shipped.wasmCalls.toFixed(0)} wasm calls (${shipped.pushBacks.toFixed(0)} push_back, ${shipped.labelsMarshalled.toFixed(0)} label strings) and ${shipped.allocations.toFixed(0)} native allocations to copy them again. Pushing only changed axes: ${fixed.wasmCalls.toFixed(0)} calls and ${fixed.allocations.toFixed(0)} allocations per frame${!readable ? "" : sameImage ? ", with the same image" : ", but the image changed"}.`
+      ? `During a camera orbit all three axis descriptors compare equal in ${(shipped.unchangedPerRender * 100).toFixed(0)}% of frames, yet each frame makes ${shipped.wasmCalls.toFixed(0)} wasm calls (${shipped.pushBacks.toFixed(0)} push_back, ${shipped.labelsMarshalled.toFixed(0)} label strings) and ${shipped.allocations.toFixed(0)} native allocations to copy them again. Pushing only changed axes: ${fixed.wasmCalls.toFixed(0)} calls and ${fixed.allocations.toFixed(0)} allocations per frame${!readable ? "" : sameImage ? ", with the same image" : ", but the image changed more than between shipped renders"}.`
       : `Expected hundreds of redundant descriptor calls per unchanged frame; measured ${shipped.wasmCalls.toFixed(0)} (fix: ${fixed.wasmCalls.toFixed(0)}), unchanged share ${shipped.unchangedPerRender.toFixed(2)}.`,
     columns: ["Orbit, as shipped", "Orbit, push only changed axes"],
     rows: [
@@ -179,17 +175,17 @@ async function demo(P) {
       ["  label strings marshalled (WStringVector.push_back)", shipped.labelsMarshalled, fixed.labelsMarshalled],
       ["  other strings marshalled (title, font families)", shipped.stringsMarshalled, fixed.stringsMarshalled],
       ["Native allocations per render (FloatVector, WStringVector, SCRTTextStyle)", shipped.allocations, fixed.allocations],
-      ["Time in AxisCubeEntity.Update per render, ms", shipped.updateMs, fixed.updateMs],
+      ["Time in AxisCubeEntity.Update per render, ms (includes the per-call counters' overhead)", shipped.updateMs, fixed.updateMs],
       ["Image check: pixels drawn at the starting camera after the orbit", readable ? drawn : null, readable ? drawnFixed : null],
-      ["Image check: pixels differing from the shipped image", readable ? 0 : null, fixDiff],
+      ["Image check: pixels differing from the previous shipped image", readable ? noise : null, fixDiff],
     ],
     notes: [
       "The remaining calls in the fix column are the per-frame plane flags (visibility, label and title modes) and m_bIsCameraChange, which the issue's fix leaves as they are. The descriptors themselves are still rebuilt in JS every frame by AxisBase3D.toAxisDescriptor (ticks, labels, colour parsing); that part is not measured here.",
       !readable
         ? "Image check skipped: the chart canvas cannot be read back with drawImage on this renderer (WebGPU). Run the page with the WebGL renderer for it."
-        : `Image check: after each orbit the camera returns to its starting position and the chart canvas is read back. The image after the fixed orbit differs from the shipped one by ${fixDiff} of ${drawn.toLocaleString("en-US")} drawn pixels. ${sameImage ? "So the native descriptors keep their values between frames, as the fix assumes." : "That is more than 1%: the fix's assumption that native descriptors persist may not hold."}`,
+        : `Image check: after each orbit the camera returns to its starting position and the chart canvas (${drawn.toLocaleString("en-US")} drawn pixels) is read back. Two shipped orbits in a row already differ by ${noise} pixels (the axis labels are not laid out identically after each orbit); the image after the fixed orbit differs from the last shipped one by ${fixDiff}. ${sameImage ? "That is consistent with the native descriptors keeping their values between frames, as the fix assumes." : "That is more than the shipped variation: the fix's assumption that native descriptors persist may not hold."}`,
       `Related bug from the issue: getTextStylesEqual(a, b) ${spacingBug ? "returns true for two styles that differ only in multilineSpacing (it compares a.multilineSpacing with itself), so a fix that relies on it would miss such a change" : "detects a multilineSpacing-only change"}.`,
     ],
-    metrics: { shipped, fixed, fixDiff, drawn, drawnFixed, spacingBug },
+    metrics: { shipped, fixed, noise, fixDiff, drawn, drawnFixed, spacingBug },
   });
 }
