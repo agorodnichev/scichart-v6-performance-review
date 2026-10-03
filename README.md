@@ -22,9 +22,9 @@ Nothing here is measured. Every issue names the recipe that would measure it.
 
 | Status | Issues |
 |---|---|
-| Verified by an adversarial reviewer (confirmed or corrected) | 34 |
+| Verified by an adversarial reviewer (confirmed or corrected) | 35 |
 | Refuted by an adversarial reviewer (file kept, marked) | 0 |
-| **Not yet verified** (reviewer only) | 60 |
+| **Not yet verified** (reviewer only) | 59 |
 
 Verified so far: all issues of `s01-surface-render` and `s02-init-loading`, plus the high-severity issues of the slices listed in the coverage table. Unverified issues are strong candidates: re-check the quoted line and the caller chain before acting. Raw data for resuming: [`data/findings.json`](data/findings.json) (`verified: false`).
 
@@ -50,7 +50,7 @@ Verified so far: all issues of `s01-surface-render` and `s02-init-loading`, plus
 | [016](issues/016-hlc-getxrange-leaks-minmax-result.md) | high | Memory and lifecycle | HlcDataSeries.getXRange (horizontal error bars) leaks one wasm SCRTDoubleRange per call and rescans the full data each time | `esm/Charting/Model/HlcDataSeries.js:186` | S | yes | small |
 | [017](issues/017-parsecolor-uncached-per-point-palette.md) | high | JS execution | parseColorToUIntArgb re-parses the same color strings for every point on every render (no cache) | `esm/utils/parseColor.js:31` | S | yes | small |
 | [018](issues/018-filters-on-fifo-source-grow-unbounded.md) | high | Memory and lifecycle | Filters over a FIFO source append on every source append but default to a non-FIFO output, so they grow without bound | `esm/Charting/Model/Filters/XyFilterBase.js:30` | S | yes | small |
-| [019](issues/019-3d-autorange-always-scans-full-data-every-frame.md) | high | JS execution | 3D autoRange Always rescans every XyzDataSeries3D point (min/max) on every rendered frame, including camera-only frames | `esm/Charting3D/Visuals/Axis/AxisBase3D.js:483` | S | no | small |
+| [019](issues/019-3d-autorange-always-scans-full-data-every-frame.md) | high | JS execution | 3D autoRange Always rescans every XyzDataSeries3D point (min/max) on every rendered frame, including camera-only frames | `esm/Charting3D/Visuals/Axis/AxisBase3D.js:481` | S | yes | small |
 | [020](issues/020-mesh-tooltip-hittest-equality-render-loop.md) | high | Tasks and scheduling | TooltipModifier3D over a surface mesh re-renders the chart every frame forever: HitTestInfo3D.isEqual compares selectionIjIndices by reference | `esm/Charting3D/Visuals/RenderableSeries/HitTestInfo3D.js:25` | S | no | small |
 | [021](issues/021-stacked-accumulation-per-point-push-back-rebuild.md) | high | JS execution | Stacked collections rebuild every accumulated vector with per-point embind push_back calls on every data change | `esm/Charting/Visuals/RenderableSeries/StackedXyCollection.js:79` | S | no | medium |
 | [022](issues/022-annotation-axis-label-texture-rebuilt-every-frame.md) | high | GPU upload | Axis-marker, line-annotation and modifier axis labels are re-rasterized on a Canvas 2D, read back, uploaded and deleted on every render, even when the text is unchanged | `esm/Charting/Visuals/Axis/AxisRenderer.js:539` | S | yes | medium |
@@ -142,7 +142,7 @@ Verified so far: all issues of `s01-surface-render` and `s02-init-loading`, plus
 | `s09-filters-numerics-utils` | 7 | 3 verified, 0 refuted, 3 not verified |
 | `s10-modifiers-input` | 7 | not verified yet |
 | `s11-layout-core-themes` | 2 | not verified yet |
-| `s12-pie-3d-surface` | 7 | not verified yet |
+| `s12-pie-3d-surface` | 7 | 1 verified, 0 refuted, 6 not verified |
 | `s13-3d-series-modifiers` | 6 | not verified yet |
 | `x1-frame-path` | 6 | not verified yet |
 | `x2-data-and-lifecycle` | 7 | not verified yet |
