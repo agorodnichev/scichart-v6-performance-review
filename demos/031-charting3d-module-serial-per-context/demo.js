@@ -83,7 +83,6 @@ async function demo(P) {
     return res;
   }
 
-  const t0 = P.now();
   const single = await phase("createSingle() x3", true, ["s3d1", "s3d2", "s3d3"]);
   // Order of events for the very first 3D chart (all relative to the first core fetch).
   const first = (what) => { const e = ev.find((x) => x.what === what); return e ? e.t : null; };
@@ -117,8 +116,8 @@ async function demo(P) {
       ["First chart: 3D module compiled, ms after the core request", rel(order.moduleCompiled), null],
     ],
     notes: [
-      `Renderer: ${P.renderer()}. Counts and sizes do not depend on hardware; times do. Fetches after the first are served by the HTTP cache here, so the repeated cost per context is the compile from bytes and the MEMFS copy, not the network. V8 may reuse machine code for identical bytes within a page, which keeps repeated compiles short, but only a streamed compile can feed the persistent wasm code cache across visits.`,
-      "The issue's preload-link workaround (overlap the module download with the core) needs a fresh page load to show and is not run here; the create() column shows the other workaround, one shared context.",
+      `Renderer: ${P.renderer()}. Counts and sizes do not depend on hardware; times do. Fetches after the first are served by the HTTP cache here (jsDelivr marks the file immutable), so the repeated cost per context is the read into an ArrayBuffer, the compile from bytes and the MEMFS copy, not the network. V8 compiles wasm functions lazily, on first call, so instantiate(bytes) itself returns within milliseconds here; that compiled code is what the persistent wasm code cache keeps across visits, and only a streamed compile feeds it.`,
+      "The issue's preload-link workaround (overlap the module download with the core) needs a fresh page load to show and is not run here; the create() column shows the other workaround, one shared context. Under WebGL, Chrome logs \"beginQuery: a query is already active\" warnings from the 3D engine; they are unrelated to this issue.",
     ],
     metrics: { single, multi, order: Object.fromEntries(Object.entries(order).map(([k, v]) => [k, rel(v)])) },
   });

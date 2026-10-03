@@ -3,7 +3,7 @@ const META = {
   title: "A createSingle() chart reloads the whole page when its WebGL context is lost",
   issue: "issues/081-createsingle-context-loss-reloads-page.md",
   severity: "low",
-  claim: "initCanvas() adds a webglcontextlost listener to every createSingle() canvas that calls location.reload(), although monitorWebGL() already handles loss and restore for the same canvas. One GPU reset, driver update or context eviction throws away all page state; past the browser's live-context limit the reload repeats.",
+  claim: "initCanvas() adds a webglcontextlost listener to every createSingle() canvas that calls location.reload(), although monitorWebGL() also registers loss and restore handlers on the same canvas. One GPU reset, driver update or context eviction throws away all page state; past the browser's live-context limit the reload repeats.",
   method: "<p>So that the page survives, a <code>navigate</code> listener (Navigation API) records every reload the page attempts and cancels it. (Browsers without the Navigation API get one real reload; a sessionStorage marker then reports it and the loss is not simulated again.)</p><p>WebGL: (1) two createSingle() charts; the first one's context is lost with WEBGL_lose_context.loseContext() and restored 1 s later. Counted: reload attempts, the library's \"Reloading the page\" warning, frames the <i>second</i> chart draws during the loss while it is invalidated every frame, and frames the first chart draws after the restore. (2) The workaround, a create() chart: the same loss on the shared master canvas. (3) The real trigger: the page creates 16 plain WebGL contexts, so the browser evicts its oldest ones, and the reload attempts are counted again.</p><p>WebGPU canvases never fire webglcontextlost, so on WebGPU the verdict is inconclusive; the page only shows, with a synthetic event, that the listener is attached anyway.</p>",
 };
 
@@ -27,18 +27,20 @@ async function demo(P) {
   if (marker && navType === "reload") {
     P.report({
       verdict: "reproduced",
-      headline: `The previous run lost the WebGL context of a createSingle() chart (${marker.what}) and the library reloaded the page (navigation type "${navType}"). This browser has no Navigation API, so the reload could not be intercepted; the loss is not simulated again.`,
+      headline: `The previous run simulated "${marker.what}" and the library reloaded the page (navigation type "${navType}"). The reload could not be intercepted in this browser${canCancel ? "" : " (no Navigation API)"}, so the loss is not simulated again.`,
       columns: ["Value"],
       rows: [["Navigation type of this page load", navType], ["Simulated loss in the previous run", marker.what]],
       notes: ["Run the page in a Chromium browser to see the full comparison with create() and the context-limit test."],
     });
     return;
   }
+  // The marker is set around every simulated loss: if a reload gets through (no Navigation API, or a
+  // reload that is not cancelable), the next load reports it instead of simulating the loss again.
   async function captureReloads(what, fn) {
     const before = reloads.length;
-    if (!canCancel) { try { sessionStorage.setItem(MARK, JSON.stringify({ what })); } catch (e) { /* ignore */ } }
+    try { sessionStorage.setItem(MARK, JSON.stringify({ what })); } catch (e) { /* ignore */ }
     await fn();
-    if (!canCancel) { try { sessionStorage.removeItem(MARK); } catch (e) { /* ignore */ } }
+    try { sessionStorage.removeItem(MARK); } catch (e) { /* ignore */ }
     return reloads.length - before;
   }
 

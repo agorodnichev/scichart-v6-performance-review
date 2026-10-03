@@ -9,6 +9,7 @@
 | Metric | startup (time to first 3D frame) (also memory) |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/270a194257ba59864f0731e832118d3f/): reproduced on WebGL and WebGPU ([source](../demos/031-charting3d-module-serial-per-context/)) |
 | Rule | TASK-14 (also TASK-16, SC-36) (web-performance skill) |
 | Effort to fix | medium |
 

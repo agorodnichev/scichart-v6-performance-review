@@ -9,6 +9,7 @@
 | Metric | network (also tasks) |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/e71d1491235c13b7a622cbc5279b2d11/): reproduced on WebGL and WebGPU ([source](../demos/083-license-wizard-localhost-polling/)) |
 | Rule | TASK-09 (also LIFE-06) (web-performance skill) |
 | Effort to fix | small |
 

@@ -149,11 +149,23 @@
     "fiddle": "https://jsfiddle.net/gh/gist/library/pure/a99ae1672337287b8a23dbbf3820acf2/",
     "gistUrl": "https://gist.github.com/a99ae1672337287b8a23dbbf3820acf2"
   },
+  "029": {
+    "gist": "f78111985edeb4f3ef5aa5074239a852",
+    "dir": "029-wasm-fetch-waits-for-webgpu-device",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/f78111985edeb4f3ef5aa5074239a852/",
+    "gistUrl": "https://gist.github.com/f78111985edeb4f3ef5aa5074239a852"
+  },
   "030": {
     "gist": "91e8b2da94216d1669badb28679555d4",
     "dir": "030-datavalue-subchart-forced-layout",
     "fiddle": "https://jsfiddle.net/gh/gist/library/pure/91e8b2da94216d1669badb28679555d4/",
     "gistUrl": "https://gist.github.com/91e8b2da94216d1669badb28679555d4"
+  },
+  "031": {
+    "gist": "270a194257ba59864f0731e832118d3f",
+    "dir": "031-charting3d-module-serial-per-context",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/270a194257ba59864f0731e832118d3f/",
+    "gistUrl": "https://gist.github.com/270a194257ba59864f0731e832118d3f"
   },
   "032": {
     "gist": "f0c5ea18c20f6f9dbe98d81e970a5645",
@@ -269,6 +281,18 @@
     "fiddle": "https://jsfiddle.net/gh/gist/library/pure/79c6448e37a530d67422688efa0fedcd/",
     "gistUrl": "https://gist.github.com/79c6448e37a530d67422688efa0fedcd"
   },
+  "054": {
+    "gist": "c3f0f7a714bd9757d3b50bad5f1470a7",
+    "dir": "054-createsingle-delete-wipes-label-cache",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/c3f0f7a714bd9757d3b50bad5f1470a7/",
+    "gistUrl": "https://gist.github.com/c3f0f7a714bd9757d3b50bad5f1470a7"
+  },
+  "055": {
+    "gist": "5b052905d51d037716ea6af69090cfb5",
+    "dir": "055-webgpu-specialhtmltargets-retains-canvases",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/5b052905d51d037716ea6af69090cfb5/",
+    "gistUrl": "https://gist.github.com/5b052905d51d037716ea6af69090cfb5"
+  },
   "056": {
     "gist": "caa67b597d5608519fc7fec5c7b9eb69",
     "dir": "056-error-bars-full-dataset-per-frame",
@@ -323,6 +347,18 @@
     "fiddle": "https://jsfiddle.net/gh/gist/library/pure/cd954221b1913153bd11f0a1ba661e4a/",
     "gistUrl": "https://gist.github.com/cd954221b1913153bd11f0a1ba661e4a"
   },
+  "067": {
+    "gist": "5c453a56a9f91886c28780c804eb6610",
+    "dir": "067-embind-generic-invoker-overhead",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/5c453a56a9f91886c28780c804eb6610/",
+    "gistUrl": "https://gist.github.com/5c453a56a9f91886c28780c804eb6610"
+  },
+  "068": {
+    "gist": "71126198c5d1a455cadbf67b18fa17a9",
+    "dir": "068-builder-json-reviver-per-point",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/71126198c5d1a455cadbf67b18fa17a9/",
+    "gistUrl": "https://gist.github.com/71126198c5d1a455cadbf67b18fa17a9"
+  },
   "069": {
     "gist": "cbff574fda8a34470c805355fdc81c68",
     "dir": "069-label-cache-prune-evicts-visible-labels",
@@ -371,11 +407,35 @@
     "fiddle": "https://jsfiddle.net/gh/gist/library/pure/fd478605c56b0a0c4983f7527c2f5b51/",
     "gistUrl": "https://gist.github.com/fd478605c56b0a0c4983f7527c2f5b51"
   },
+  "079": {
+    "gist": "ac89699b7425ba3b109da404d39a939c",
+    "dir": "079-delete-rebuilds-native-destinations",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/ac89699b7425ba3b109da404d39a939c/",
+    "gistUrl": "https://gist.github.com/ac89699b7425ba3b109da404d39a939c"
+  },
   "080": {
     "gist": "5682ffc022303d4517e25834557142f3",
     "dir": "080-invalidateelement-debug-string",
     "fiddle": "https://jsfiddle.net/gh/gist/library/pure/5682ffc022303d4517e25834557142f3/",
     "gistUrl": "https://gist.github.com/5682ffc022303d4517e25834557142f3"
+  },
+  "081": {
+    "gist": "1033dfaea1fb839dbbc1df81cc0d0e02",
+    "dir": "081-createsingle-context-loss-reloads-page",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/1033dfaea1fb839dbbc1df81cc0d0e02/",
+    "gistUrl": "https://gist.github.com/1033dfaea1fb839dbbc1df81cc0d0e02"
+  },
+  "082": {
+    "gist": "db03a15b3837d32ef5aa9ad61d4eb861",
+    "dir": "082-wasm-streaming-fallback-silent-refetch",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/db03a15b3837d32ef5aa9ad61d4eb861/",
+    "gistUrl": "https://gist.github.com/db03a15b3837d32ef5aa9ad61d4eb861"
+  },
+  "083": {
+    "gist": "e71d1491235c13b7a622cbc5279b2d11",
+    "dir": "083-license-wizard-localhost-polling",
+    "fiddle": "https://jsfiddle.net/gh/gist/library/pure/e71d1491235c13b7a622cbc5279b2d11/",
+    "gistUrl": "https://gist.github.com/e71d1491235c13b7a622cbc5279b2d11"
   },
   "084": {
     "gist": "9310235ca34c16f2181d9ebc06c37688",

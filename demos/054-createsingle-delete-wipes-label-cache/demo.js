@@ -85,8 +85,10 @@ async function demo(P) {
   }
 
   // Steady state: how many labels does the long-lived chart measure per frame when nothing happens?
+  const idleKeys0 = getAllFontKeys(main.wasmContext).length;
   const idle = await P.frames(CYCLES * FRAMES_AFTER, () => survivor.invalidateElement());
   const idleLabels = idle.total("labels measured by the long-lived chart");
+  const idleKeysAdded = getAllFontKeys(main.wasmContext).length - idleKeys0;
 
   const shipped = await cycles("as shipped");
   fixOn = true;
@@ -103,11 +105,11 @@ async function demo(P) {
       : `Expected one wipe, about one new font key and a label re-measure per close; measured ${shipped.wipes} wipes, ${shipped.fontKeysAdded} font keys and ${shipped.labels} labels for ${CYCLES} closes (fix: ${fixed.fontKeysAdded}, ${fixed.labels}).`,
     columns: ["As shipped", "With fix", "No close (idle control)"],
     rows: [
-      [`labelCache.resetCache() calls (${CYCLES} closes)`, shipped.resetCalls, fixed.resetCalls, 0],
-      ["…that wiped the page-wide cache", shipped.wipes, fixed.wipes, 0],
+      [`labelCache.resetCache() calls (${CYCLES} closes)`, shipped.resetCalls, fixed.resetCalls, idle.total("labelCache.resetCache() calls")],
+      ["…that wiped the page-wide cache", shipped.wipes, fixed.wipes, idle.total("global label cache wipes")],
       [`Tick labels re-measured by the long-lived chart (${FRAMES_AFTER} frames after each close)`, shipped.labels, fixed.labels, idleLabels],
       ["Labels re-measured per close", shipped.labels / CYCLES, fixed.labels / CYCLES, idleLabels / CYCLES],
-      ["Font keys added to the long-lived chart's wasm context", shipped.fontKeysAdded, fixed.fontKeysAdded, 0],
+      ["Font keys added to the long-lived chart's wasm context", shipped.fontKeysAdded, fixed.fontKeysAdded, idleKeysAdded],
       ["Font keys it holds afterwards", shipped.fontKeys, fixed.fontKeys, null],
       ["labelCache.getSize() right after each close (min)", Math.min(...shipped.sizeAfterClose), Math.min(...fixed.sizeAfterClose), null],
       ["Time the long-lived chart spent re-measuring labels, ms (all closes)", shipped.measureMs, fixed.measureMs, null],
@@ -117,6 +119,6 @@ async function demo(P) {
       "The old SCRTFontKey objects are freed only when that context is disposed, so a page that keeps a dashboard open while users open and close createSingle charts grows by one key per font per close. Whether AquireFont with a new key also rebuilds native font data is decided in C++ and is not visible here." +
         (reloadsBlocked ? ` Note: ${reloadsBlocked} page reload(s) triggered by a WebGL context loss were blocked during the run.` : ""),
     ],
-    metrics: { cycles: CYCLES, idleLabels, shipped, fixed, reloadsBlocked },
+    metrics: { cycles: CYCLES, idleLabels, idleKeysAdded, shipped, fixed, reloadsBlocked },
   });
 }

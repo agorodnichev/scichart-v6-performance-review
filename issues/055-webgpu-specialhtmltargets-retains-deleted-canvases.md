@@ -9,6 +9,7 @@
 | Metric | memory |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (confirmed) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/5b052905d51d037716ea6af69090cfb5/): WebGL: inconclusive, WebGPU: reproduced ([source](../demos/055-webgpu-specialhtmltargets-retains-canvases/)) |
 | Rule | LIFE-05, SC-28 (web-performance skill) |
 | Effort to fix | small |
 

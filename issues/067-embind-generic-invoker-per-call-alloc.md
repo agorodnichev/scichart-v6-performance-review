@@ -9,6 +9,7 @@
 | Metric | frame time (also GC) |
 | Evidence | H — hypothesis, depends on data size/hardware (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/5c453a56a9f91886c28780c804eb6610/): reproduced on WebGL and WebGPU ([source](../demos/067-embind-generic-invoker-overhead/)) |
 | Rule | TASK-13 (also V8-06) (web-performance skill) |
 | Effort to fix | small |
 

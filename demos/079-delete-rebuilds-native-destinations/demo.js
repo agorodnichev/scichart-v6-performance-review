@@ -38,13 +38,12 @@ async function demo(P) {
   const countRenders = (surface) => surface.rendered.subscribe(() => P.count("renders of other charts"));
   charts.forEach((c) => countRenders(c.sciChartSurface));
   const isWebGPU = P.renderer() === "WebGPU";
-  const pick = (r, deleteMs) => ({
+  const pick = (r) => ({
     clear: r.total("wasm SCRTRenderLoopManager.ClearDestinations"),
     add: r.total("wasm SCRTRenderLoopManager.AddDestination"),
     implement: r.total("wasm SCRTSurfaceDestination::implement"),
     configure: r.total("GPUCanvasContext.configure"),
     renders: r.total("renders of other charts"),
-    deleteMs,
   });
 
   P.status("Deleting one chart of 20…");
@@ -52,7 +51,7 @@ async function demo(P) {
   const one = pick(await P.during(async () => {
     const t0 = P.now(); charts[N - 1].sciChartSurface.delete(); ms = P.now() - t0;
     await P.idleFrames(3);
-  }), 0);
+  }));
   one.deleteMs = ms;
   P.log(`delete 1 of ${N}: ${JSON.stringify(one)}`);
 
@@ -60,7 +59,7 @@ async function demo(P) {
   const rest = pick(await P.during(async () => {
     const t0 = P.now(); for (let k = N - 2; k >= 0; k--) charts[k].sciChartSurface.delete(); ms = P.now() - t0;
     await P.idleFrames(3);
-  }), 0);
+  }));
   rest.deleteMs = ms;
   P.log(`teardown of ${N - 1}: ${JSON.stringify(rest)}`);
   P.quiet(() => { grid.innerHTML = ""; });
@@ -83,12 +82,12 @@ async function demo(P) {
   const subOne = pick(await P.during(async () => {
     const t0 = P.now(); parent.sciChartSurface.removeSubChart(subs[N - 1]); ms = P.now() - t0;
     await P.idleFrames(3);
-  }), 0);
+  }));
   subOne.deleteMs = ms;
   const subAll = pick(await P.during(async () => {
     const t0 = P.now(); parent.sciChartSurface.delete(); ms = P.now() - t0;
     await P.idleFrames(3);
-  }), 0);
+  }));
   subAll.deleteMs = ms;
   P.log(`sub-charts: remove one ${JSON.stringify(subOne)}, delete parent ${JSON.stringify(subAll)}`);
 
@@ -97,7 +96,7 @@ async function demo(P) {
   P.report({
     verdict: reproduced ? "reproduced" : "not-reproduced",
     headline: reproduced
-      ? `Deleting 1 of ${N} charts re-added ${one.add} native destinations (${one.implement} new wrappers); deleting the other ${N - 1} in one task re-added ${rest.add} (= ${N - 1}·${N - 2}/2), ${N * (N - 1) / 2} in total. ` +
+      ? `Deleting 1 of ${N} charts re-added ${one.add} native destinations (${one.implement} new wrappers); deleting the other ${N - 1} in one task re-added ${rest.add} (= ${N - 1}·${N - 2}/2), ${one.add + rest.add} in total for ${N} charts. ` +
         (isWebGPU ? `Under WebGPU the single delete also configured ${one.configure} swap chains again and redrew ${one.renders} untouched charts. ` : "") +
         `As sub-charts of one surface: ${subOne.add} and ${subAll.add}.`
       : `Expected ${N - 1} re-adds for one delete and ${expectedTeardown} for the teardown; measured ${one.add} and ${rest.add}.`,

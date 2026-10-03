@@ -4,7 +4,7 @@ const META = {
   issue: "issues/029-wasm-fetch-waits-for-webgpu-device-and-glue.md",
   severity: "medium",
   claim: "On the WebGPU path (IS_WEB_GPU=1, or auto mode on any Mac) the first create() awaits navigator.gpu.requestAdapter() and adapter.requestDevice() before createMaster() calls preloadWasm(), so the 1.56 MB wasm request waits for both, although its URL does not depend on the renderer.",
-  method: "<p>Each run needs a fresh page state (the device and the compiled module are cached per page), so each runs in its own same-origin iframe that loads the same SciChart 6.0.6 bundle and the page's renderer setting. In each frame the demo wraps navigator.gpu.requestAdapter, GPUAdapter.requestDevice and fetch, and records on one clock when each was called and resolved, when the scichart.wasm request started (fetch call and PerformanceResourceTiming), when create() resolved and when the chart drew its first frame.</p><p>Run 1, as shipped: SciChartSurface.create(). Run 2, the app-side workaround from the issue: preloadWasm() right before create(). Each run uses its own query string on the wasm URL, so neither gets the file or its compiled code from the browser cache of the other.</p><p>The verdict rests on order (did the wasm request start before or after the device was ready?), which does not depend on hardware; the milliseconds are secondary.</p>",
+  method: "<p>Each run needs a fresh page state (the device and the compiled module are cached per page), so each runs in its own same-origin iframe that loads the same SciChart 6.0.6 bundle and the page's renderer setting. In each frame the demo wraps navigator.gpu.requestAdapter, GPUAdapter.requestDevice and fetch, and records on one clock when each was called and resolved, when the scichart.wasm request started (its fetch() call; PerformanceResourceTiming inside the frames did not list it), when its streaming compile resolved, when create() resolved and when the chart drew its first frame.</p><p>Run 1, as shipped: SciChartSurface.create(). Run 2, the app-side workaround from the issue: preloadWasm() right before create(). Each run uses its own query string on the wasm URL, so neither gets the file or its compiled code from the browser cache of the other.</p><p>The verdict rests on order (did the wasm request start before or after the device was ready?), which does not depend on hardware; the milliseconds are secondary.</p>",
 };
 
 async function demo(P) {
@@ -65,7 +65,7 @@ async function demo(P) {
     if (withPreload) S.preloadWasm().catch(() => { /* create() reports errors */ });
     const { sciChartSurface, wasmContext } = await S.SciChartSurface.create(d.getElementById("chart"));
     t.created = P.now();
-    const first = new Promise((r) => { const tok = sciChartSurface.rendered.subscribe(() => { if (t.firstFrame == null) t.firstFrame = P.now(); r(); }); });
+    const first = new Promise((r) => sciChartSurface.rendered.subscribe(() => { if (t.firstFrame == null) t.firstFrame = P.now(); r(); }));
     sciChartSurface.xAxes.add(new S.NumericAxis(wasmContext));
     sciChartSurface.yAxes.add(new S.NumericAxis(wasmContext));
     const xs = Array.from({ length: 300 }, (_, i) => i);
@@ -85,7 +85,7 @@ async function demo(P) {
     return out;
   }
 
-  // The first WebGPU adapter/device request of a browser session is much slower than later ones.
+  // The first WebGPU adapter/device request of a browser session can be much slower than later ones.
   // Pay it here, once, so both runs below see the same (warm) GPU process; report it separately.
   let cold = null;
   const flag = (() => { try { return localStorage.getItem("IS_WEB_GPU"); } catch (e) { return null; } })();
@@ -141,7 +141,7 @@ async function demo(P) {
       ["First adapter + device request of this browser session (warm-up), ms", cold ? cold.adapter + cold.device : null, null],
     ],
     notes: [
-      "Start = the moment create() (or preloadWasm() then create()) was called. Order rows do not depend on hardware; the times depend on the GPU, the network and other work on the machine. The wasm URLs carry a per-run query string, so both runs download and compile the file from scratch. Before the runs the page makes one adapter + device request of its own, because the first one in a browser session is much slower than later ones and would otherwise land only in run 1; on a cold page load the shipped path waits that long.",
+      "Start = the moment create() (or preloadWasm() then create()) was called. Order rows do not depend on hardware; the times depend on the GPU, the network and other work on the machine. The wasm URLs carry a per-run query string, so both runs download and compile the file from scratch. Before the runs the page makes one adapter + device request of its own, because the first one in a browser session can be much slower than later ones and would otherwise land only in run 1; on a cold page load the shipped path waits for that first request.",
       "create() and first-frame times also differ by run order (the second frame starts with warmer browser caches and JIT), so only the request-start rows isolate this issue; the most the workaround can save is the measured adapter + device wait. On Intel Macs in auto mode the adapter is then rejected as non-Apple and the chart falls back to WebGL, so the wait buys nothing. The wasm64 part of the claim (the glue chunk import) is not exercised: useWasm64 defaults to Never.",
     ],
     metrics: { shipped, pre, cold },

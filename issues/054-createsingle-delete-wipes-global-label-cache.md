@@ -9,6 +9,7 @@
 | Metric | memory (also frame time on the next frame of every other chart) |
 | Evidence | S — static, mechanism certain (not measured) |
 | Verification | verified by an independent adversarial reviewer (corrected) |
+| Demo | [JSFiddle](https://jsfiddle.net/gh/gist/library/pure/c3f0f7a714bd9757d3b50bad5f1470a7/): reproduced on WebGL and WebGPU ([source](../demos/054-createsingle-delete-wipes-label-cache/)) |
 | Rule | LIFE-05, SC-29 (web-performance skill) |
 | Effort to fix | small |
 
