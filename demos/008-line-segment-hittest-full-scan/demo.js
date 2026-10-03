@@ -205,6 +205,7 @@ async function demo(P) {
   const fullRange = xAxis.visibleRange;
   xAxis.visibleRange = new NumberRange(500, 520);
   await P.idleFrames(6);
+  P.log(`X visible range for the zoomed run: ${xAxis.visibleRange.min} to ${xAxis.visibleRange.max} (data spans about 0 to 1000)`);
   const zoomed = await singleMoves("as shipped, zoomed to 2% of X");
   xAxis.visibleRange = fullRange;
   await P.idleFrames(6);

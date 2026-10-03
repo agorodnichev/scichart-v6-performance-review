@@ -113,11 +113,11 @@ async function demo(P) {
       ["... still alive after remove(collection, true) / delete()", shipped.liveAfterDelete, fixed.liveAfterDelete, toggled.liveAfterDelete],
       ["DrawPointsVec calls on those providers", shipped.drawsOnCollection, fixed.drawsOnCollection, toggled.drawsOnCollection],
       ["DrawPointsVec calls on the child series' own providers", shipped.drawsOnChildren, fixed.drawsOnChildren, toggled.drawsOnChildren],
-      [`Native ledger: ${CLS} created during the cycles`, shipped.ledgerCreatedDuringCycles, fixed.ledgerCreatedDuringCycles, toggled.ledgerCreatedDuringCycles],
+      [`Native ledger: ${CLS} created, excluding the ${S} child providers`, shipped.ledgerCreatedDuringCycles, fixed.ledgerCreatedDuringCycles, toggled.ledgerCreatedDuringCycles],
       [`Native ledger: ${CLS} never deleted (whole scenario)`, shipped.ledgerNetLeak, fixed.ledgerNetLeak, toggled.ledgerNetLeak],
     ],
     notes: [
-      `The leak is one small native object per re-attach, so the wasm heap size cannot show it (it grows in 64 KB pages): ${memBefore} MB before and ${memAfter} MB after the shipped run. The object is reachable only through a field that the next attach overwrites, and embind registers no finalizer for this raw-pointer class, so garbage collection cannot free it.`,
+      `The leak is one small native object per re-attach, so the wasm heap size cannot show it (it grows in 64 KB pages): ${memBefore} MB before and ${memAfter} MB after the shipped run. The object is reachable only through a field that the next attach overwrites; the issue's review found that embind registers no finalizer for this raw-pointer class, so garbage collection does not free it either.`,
       "The collection's provider is referenced only by commented-out drawing code; the fix column draws the same chart (child DrawPointsVec calls continue).",
     ],
     metrics: { CYCLES, shipped, fixed, toggled, memBefore, memAfter },

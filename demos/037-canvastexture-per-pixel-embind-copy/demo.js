@@ -4,7 +4,7 @@ const META = {
   issue: "issues/037-canvastexture-per-pixel-embind-copy.md",
   severity: "medium",
   claim: "CanvasTexture.copyTexture copies the canvas into wasm with two UIntVector.set() embind calls per non-transparent pixel. A 256x256 gradient brush costs 131,072 boundary calls, and the gradient brush of a mountain series is rebuilt on every frame of a fade animation because opacity is part of its cache key.",
-  method: "<p>5 FastMountainRenderableSeries with an opaque fillLinearGradient run a 1-second FadeAnimation together. While it runs, the demo counts CanvasTexture.copyTexture calls (gradient brush rebuilds), embind calls to UIntVector.prototype.set (the wasm vector setter), and new canvas elements. It then replaces CanvasTexture.prototype.copyTexture with the issue's fix (swizzle into a HEAPU32 view of the vector's memory, no per-pixel embind call) and runs the same fade again, then restores the original.</p><p>Before any counter is installed, a standalone 256x256 CanvasTexture (a gradient on half of it, the rest transparent) is copied with both versions: the time per copy comes from there, and the two vectors' contents are compared word for word.</p>",
+  method: "<p>5 FastMountainRenderableSeries with an opaque fillLinearGradient run a 1-second FadeAnimation together. While it runs, the demo counts chart renders, CanvasTexture.copyTexture calls (gradient brush rebuilds), embind calls to UIntVector.prototype.set (the wasm vector setter) and new canvas elements. It then replaces CanvasTexture.prototype.copyTexture with the issue's fix (swizzle into a HEAPU32 view of the vector's memory, no per-pixel embind call) and runs the same fade again. Both fades are repeated without the embind counter to measure frame intervals, and the original method is restored.</p><p>Before any counter is installed, a standalone 256x256 CanvasTexture (a gradient on half of it, the rest transparent) is copied with both versions: the time per copy comes from there, and the two vectors' contents are compared word for word.</p>",
 };
 
 async function demo(P) {
@@ -83,63 +83,78 @@ async function demo(P) {
 
   // Counters
   P.watch.canvas2d();
-  P.watchEmbind(wasmContext, ["UIntVector.set"]);
-  P.hookMethod(CanvasTexture.prototype, "copyTexture", { name: "CanvasTexture.copyTexture", time: true });
+  const unhookSet = P.hookMethod(wasmContext.UIntVector.prototype, "set", { name: "wasm UIntVector.set" });
+  P.hookMethod(CanvasTexture.prototype, "copyTexture", { name: "CanvasTexture.copyTexture" });
+  P.hookMethod(P.SciChart.SciChartRenderer.prototype, "render", { name: "chart renders" });
+  const counted = CanvasTexture.prototype.copyTexture;
+  const useFix = (on) => {
+    CanvasTexture.prototype.copyTexture = on ? function () { P.count("CanvasTexture.copyTexture"); return fixedCopy.apply(this, arguments); } : counted;
+  };
 
   async function fade(label) {
-    let frames = 0;
+    const stamps = [];
     const r = await P.during(async () => {
       series.forEach((rs) => rs.runAnimation(new FadeAnimation({ duration: 1000 })));
-      await P.nextFrame();
-      while (series.some((rs) => rs.isRunningAnimation) && frames < 300) { await P.nextFrame(); frames++; }
+      stamps.push(await P.nextFrame());
+      while (series.some((rs) => rs.isRunningAnimation) && stamps.length < 400) stamps.push(await P.nextFrame());
       await P.idleFrames(2);
     });
+    const gaps = stamps.slice(1).map((t, i) => t - stamps[i]).sort((a, b) => a - b);
+    const renders = Math.max(r.total("chart renders"), 1);
     const copies = r.total("CanvasTexture.copyTexture");
     const res = {
-      frames,
+      renders: r.total("chart renders"),
       copies,
-      copiesPerFrame: copies / Math.max(frames, 1),
+      copiesPerRender: copies / renders,
       setPerCopy: copies ? r.total("wasm UIntVector.set") / copies : 0,
-      setPerFrame: r.total("wasm UIntVector.set") / Math.max(frames, 1),
-      canvasesPerFrame: r.total("canvas elements created") / Math.max(frames, 1),
-      ms: r.ms,
+      setPerRender: r.total("wasm UIntVector.set") / renders,
+      canvasesPerRender: r.total("canvas elements created") / renders,
+      maxGap: gaps.length ? gaps[gaps.length - 1] : 0,
+      p95Gap: gaps.length ? gaps[Math.floor(gaps.length * 0.95)] : 0,
     };
     P.log(`${label}: ${JSON.stringify(res)}`);
+    await P.idleFrames(10);
     return res;
   }
 
-  P.status("FadeAnimation on 5 gradient mountains, library as shipped…");
-  const shipped = await fade("fade, as shipped");
-  await P.idleFrames(10);
-  // Swap in the fix under the same counter name; the counted original is put back afterwards.
-  const counted = CanvasTexture.prototype.copyTexture;
-  CanvasTexture.prototype.copyTexture = function () { P.count("CanvasTexture.copyTexture"); return fixedCopy.apply(this, arguments); };
-  P.status("FadeAnimation on 5 gradient mountains, with the bulk copy…");
-  const fixed = await fade("fade, bulk copy");
-  CanvasTexture.prototype.copyTexture = counted;
+  P.status("FadeAnimation on 5 gradient mountains, library as shipped (counting)…");
+  const shipped = await fade("fade, as shipped, counting");
+  useFix(true);
+  P.status("FadeAnimation on 5 gradient mountains, with the bulk copy (counting)…");
+  const fixed = await fade("fade, bulk copy, counting");
+  useFix(false);
+  // Same fades without the per-call embind counter, for frame timing.
+  unhookSet();
+  P.status("FadeAnimation, as shipped, no embind counter (timing)…");
+  const shippedT = await fade("fade, as shipped, timing");
+  useFix(true);
+  P.status("FadeAnimation, bulk copy, no embind counter (timing)…");
+  const fixedT = await fade("fade, bulk copy, timing");
+  useFix(false);
 
   const pixels = SIZE * SIZE;
-  const reproduced = shipped.copiesPerFrame >= SERIES * 0.8 && shipped.setPerCopy >= 2 * pixels * 0.95 && fixed.setPerCopy === 0 && fixed.copies > 0;
+  const reproduced = shipped.copiesPerRender >= SERIES * 0.8 && shipped.setPerCopy >= 2 * pixels * 0.95 && fixed.setPerCopy === 0 && fixed.copies > 0;
   P.report({
     verdict: reproduced ? "reproduced" : "not-reproduced",
     headline: reproduced
-      ? `During a fade, ${SERIES} gradient mountains rebuild ${shipped.copiesPerFrame.toFixed(1)} gradient textures per frame, each with ${Math.round(shipped.setPerCopy).toLocaleString("en-US")} UIntVector.set embind calls (${Math.round(shipped.setPerFrame).toLocaleString("en-US")} per frame). The bulk copy makes 0 and is ${(copyMsShipped / Math.max(copyMsFixed, 1e-3)).toFixed(0)}x faster here (${copyMsShipped.toFixed(2)} vs ${copyMsFixed.toFixed(2)} ms per copy), same output: ${sameOutput ? "yes" : "no"}.`
-      : `Expected about ${2 * pixels} embind calls per gradient copy and ${SERIES} copies per frame; measured ${Math.round(shipped.setPerCopy)} per copy and ${shipped.copiesPerFrame.toFixed(1)} copies per frame.`,
+      ? `During a fade, ${SERIES} gradient mountains rebuild ${shipped.copiesPerRender.toFixed(1)} gradient textures per render, each with ${Math.round(shipped.setPerCopy).toLocaleString("en-US")} UIntVector.set embind calls (${Math.round(shipped.setPerRender).toLocaleString("en-US")} per render). The bulk copy makes 0 and is ${(copyMsShipped / Math.max(copyMsFixed, 1e-3)).toFixed(0)}x faster here (${copyMsShipped.toFixed(2)} vs ${copyMsFixed.toFixed(2)} ms per copy), with identical output.`
+      : `Expected about ${2 * pixels} embind calls per gradient copy and ${SERIES} copies per render; measured ${Math.round(shipped.setPerCopy)} per copy and ${shipped.copiesPerRender.toFixed(1)} copies per render (identical output: ${sameOutput}).`,
     columns: ["As shipped", "Bulk HEAPU32 copy (fix)"],
     rows: [
-      ["Fade animation frames", shipped.frames, fixed.frames],
-      ["Gradient texture rebuilds (copyTexture) per frame", shipped.copiesPerFrame, fixed.copiesPerFrame],
+      ["Gradient texture rebuilds (copyTexture) per render during the fade", shipped.copiesPerRender, fixed.copiesPerRender],
       ["UIntVector.set embind calls per copyTexture", shipped.setPerCopy, fixed.setPerCopy],
-      ["UIntVector.set embind calls per frame", shipped.setPerFrame, fixed.setPerFrame],
-      ["New canvas elements per frame (one per rebuilt CanvasTexture)", shipped.canvasesPerFrame, fixed.canvasesPerFrame],
+      ["UIntVector.set embind calls per render", shipped.setPerRender, fixed.setPerRender],
+      ["New canvas elements per render (one per rebuilt CanvasTexture)", shipped.canvasesPerRender, fixed.canvasesPerRender],
       ["Time per 256x256 copyTexture, standalone, no counters, ms", copyMsShipped, copyMsFixed],
-      ["Fade wall time with counters installed, ms (1000 ms animation)", shipped.ms, fixed.ms],
+      ["Renders during the 1 s fade, no embind counter", shippedT.renders, fixedT.renders],
+      ["Longest frame during the fade, no embind counter, ms", shippedT.maxGap, fixedT.maxGap],
+      ["Frame interval p95 during the fade, no embind counter, ms", shippedT.p95Gap, fixedT.p95Gap],
       ["Copied vectors identical (standalone check, half-transparent texture)", sameOutput ? "yes" : "no", null],
     ],
     notes: [
-      "Counts do not depend on hardware; times do. The embind counter itself slows the shipped run, so the per-copy time comes from the standalone measurement made before any counter was installed.",
-      "The rebuild per frame comes from BrushCache: opacity is part of the gradient brush's cache key although the gradient texture never uses it, so each FadeAnimation step builds a new 256x256 CanvasTexture (with its own canvas element and two 65,536-element vectors) per series. That part is out of this issue's scope and is unchanged by the fix.",
+      "Counts do not depend on hardware; times do. The embind counter slows the counting runs, so times come from the standalone copy and from a second pair of fades run without it.",
+      "The rebuild per render comes from BrushCache: opacity is part of the gradient brush's cache key although the gradient texture never uses it, so each FadeAnimation step builds a new 256x256 CanvasTexture (with its own canvas element and two 65,536-element vectors) per series. That part is outside this issue and is unchanged by the fix.",
     ],
-    metrics: { shipped, fixed, copyMsShipped, copyMsFixed, sameOutput, pixels },
+    metrics: { shipped, fixed, shippedT, fixedT, copyMsShipped, copyMsFixed, sameOutput, pixels },
   });
 }

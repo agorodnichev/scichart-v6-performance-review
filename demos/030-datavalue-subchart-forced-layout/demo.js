@@ -181,7 +181,7 @@ async function demo(P) {
       row("Frame interval p95, ms", "p95"),
     ],
     notes: [
-      "Counts do not depend on hardware; times do. Chromium does not invalidate style for an inline-style write with an unchanged value, which is why the no-movement run reads the sections without forcing a layout.",
+      `Counts do not depend on hardware; times do. Without movement the same ${control.reads.toFixed(0)} section reads per frame take ${control.offsetsMs.toFixed(3)} ms in getOffsets, against ${shipped.offsetsMs.toFixed(3)} ms while panning: the written values are unchanged, Chromium does not invalidate style for them, and the reads find layout clean.`,
       `With the issue's fix the remaining forced layouts come from frames where the wrapper width string changed: during a pure pan the width is the difference of two float coordinates, and ${fixed.jitter.toFixed(2)} width changes per frame were smaller than 0.5 px. Issue 052 proposes a 0.5 px tolerance for that.`,
     ],
     metrics: { control, shipped, fixed, noSections, subs: SUBS },

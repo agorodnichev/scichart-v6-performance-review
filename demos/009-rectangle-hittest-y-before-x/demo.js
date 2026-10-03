@@ -216,7 +216,7 @@ async function demo(P) {
       ["Frame interval p95 while hovering, ms", shippedHover.p95, fixedHover.p95],
     ],
     notes: [
-      `Hit results on a 7 x 5 grid of probe points: ${mismatches === 0 ? "identical" : mismatches + " differ"} between the shipped code and the reordered loop (${hits} of 35 are hits). With the fix, the Y test still runs for every rectangle the X test hits: one per lane in this Gantt layout.`,
+      `Hit results on a 7 x 5 grid of probe points: ${mismatches === 0 ? "identical" : mismatches + " differ"} between the shipped code and the reordered loop (${hits} of 35 are hits). With the fix, the Y test still runs for every rectangle the X test hits: at most one per lane in this Gantt layout.`,
       "The loop stays O(N) after the fix (X still costs 2 GetCoordinate per StartEnd rectangle). The O(log N) helper hitTestForBoxSorted exists but RectangleSeriesHitTestProvider.hitTestForBox never calls it, and it would not cover StartEnd rectangles anyway.",
       "Counts do not depend on hardware; times do, and they include the counting hooks on get() and GetCoordinate, which make each embind call slower than in production.",
     ],

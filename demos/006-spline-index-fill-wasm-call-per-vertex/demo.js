@@ -4,23 +4,28 @@ const META = {
   issue: "issues/006-spline-index-fill-one-wasm-call-per-vertex.md",
   severity: "high",
   claim: "SplineRenderDataTransform.populateSourceIndexes() fills the output index vector with indexes.set(k, …): one embind call per interpolated vertex (input points x 11 by default), every time the transform reruns, which is on every pan or zoom frame that moves the visible index range.",
-  method: "<p>A SplineLineRenderableSeries with 10,000 points (interpolationPoints 10). The X axis is panned for 30 frames (a new visibleRange each frame), first with the default resampling, then with resampling off. The demo counts SplineRenderDataTransform.populateSourceIndexes runs per frame, the interpolated vertices each run writes, and SCRTDoubleVector.set calls made inside it (embind calls into wasm). The time per run comes from a separate 30-frame pass without the per-call counter, so the counter's overhead is not in it.</p><p>A/B: populateSourceIndexes is replaced by the issue's fix, which writes the same values through a Float64Array view of the vector (vectorToArrayViewF64, taken after resizeFast). The demo checks once that both versions write identical indexes. A last pass pans with the Y axis on autoRange = Always to test the issue's hypothesis that the transform then runs twice per frame.</p>",
+  method: "<p>A SplineLineRenderableSeries (interpolationPoints 10) whose X axis is panned for 30 frames (a new visibleRange each frame), in two set-ups: 1,000 points with default settings (too few to be resampled), and 10,000 points with resampling off. The demo counts SplineRenderDataTransform.populateSourceIndexes runs per frame, the interpolated vertices each run writes, and SCRTDoubleVector.set calls made inside it (embind calls into wasm). The time per run comes from a separate 30-frame pass without the per-call counter, so the counter's overhead is not in it.</p><p>A/B: populateSourceIndexes is replaced by the issue's fix, which writes the same values through a Float64Array view of the vector (vectorToArrayViewF64, taken after resizeFast). The demo checks once that both versions write identical indexes. A further pass pans with the Y axis on autoRange = Always to test the issue's hypothesis that the transform then runs twice per frame, and a last pass checks what happens with 10,000 points and default resampling.</p>",
 };
 
 async function demo(P) {
   const { NumericAxis, NumberRange, XyDataSeries, SplineLineRenderableSeries, SplineRenderDataTransform, EResamplingMode, EAutoRange, vectorToArrayViewF64 } = P.SciChart;
-  const N = 10000, FRAMES = 30;
+  const FRAMES = 30;
 
   const { sciChartSurface, wasmContext: wasm } = await P.createSurface("chart");
-  const xAxis = new NumericAxis(wasm, { visibleRange: new NumberRange(0, N * 0.8) });
+  const xAxis = new NumericAxis(wasm);
   const yAxis = new NumericAxis(wasm, { visibleRange: new NumberRange(-1.5, 1.5) });
   sciChartSurface.xAxes.add(xAxis);
   sciChartSurface.yAxes.add(yAxis);
-  const xs = Array.from({ length: N }, (_, i) => i);
-  const spline = new SplineLineRenderableSeries(wasm, {
-    dataSeries: new XyDataSeries(wasm, { xValues: xs, yValues: xs.map((x) => Math.sin(x / 300) + 0.3 * Math.sin(x / 23)), isSorted: true, containsNaN: false }),
-    stroke: "#4e79a7", strokeThickness: 2, interpolationPoints: 10,
-  });
+  const spline = new SplineLineRenderableSeries(wasm, { stroke: "#4e79a7", strokeThickness: 2, interpolationPoints: 10 });
+  let n = 0;
+  function useData(points) {
+    n = points;
+    const xs = Array.from({ length: n }, (_, i) => i);
+    const k = n / 10000;
+    spline.dataSeries = new XyDataSeries(wasm, { xValues: xs, yValues: xs.map((x) => Math.sin(x / (300 * k)) + 0.3 * Math.sin(x / (23 * k))), isSorted: true, containsNaN: false });
+    xAxis.visibleRange = new NumberRange(0, n * 0.8);
+  }
+  useData(1000);
   sciChartSurface.renderableSeries.add(spline);
   await P.sleep(600);
 
@@ -38,6 +43,10 @@ async function demo(P) {
       P.count("interpolated vertices written", this.pointSeries.indexes.size());
     }
   };
+  P.hookMethod(proto, "runTransformInternal", {
+    name: "transform runs",
+    onCall: (args, self, ret) => { if (ret !== self.pointSeries) P.count("transform runs that fell back to the input"); },
+  });
   // The issue's fix: same values, written through a typed-array view instead of one set() call each.
   function populateWithView() {
     const size = this.pointSeries.xValues.size();
@@ -60,17 +69,21 @@ async function demo(P) {
     await P.idleFrames(3);
     populateMs = 0;
     const r = await P.frames(FRAMES, (i) => {
-      const k = (i % 40) / 40, off = N * 0.2 * (k < 0.5 ? k * 2 : 2 - k * 2);
-      xAxis.visibleRange = new NumberRange(off, off + N * 0.8);
+      const k = (i % 40) / 40, off = n * 0.2 * (k < 0.5 ? k * 2 : 2 - k * 2);
+      xAxis.visibleRange = new NumberRange(off, off + n * 0.8);
     });
     if (unhook) unhook();
     const runs = r.total("populateSourceIndexes runs");
+    const rpd = spline.getCurrentRenderPassData();
     const res = {
+      transformRunsPerFrame: r.perFrame("transform runs"),
+      fallbacksPerFrame: r.perFrame("transform runs that fell back to the input"),
       runsPerFrame: runs / FRAMES,
       verticesPerRun: runs ? r.total("interpolated vertices written") / runs : 0,
       setPerRun: runs ? r.total("SCRTDoubleVector.set inside populateSourceIndexes") / runs : 0,
       setPerFrameAll: r.perFrame("SCRTDoubleVector.set (whole page)"),
       msPerRun: runs ? populateMs / runs : 0,
+      resampled: !!(rpd && rpd.pointSeries && rpd.pointSeries.resampled),
       p95: r.frameP95,
     };
     P.log(`${label}${withCounter ? " (counting)" : " (timing)"}: ${JSON.stringify(res)}`);
@@ -85,12 +98,14 @@ async function demo(P) {
     return { shipped: { ...sc, msPerRun: st.msPerRun, p95: st.p95 }, fixed: { ...fc, msPerRun: ft.msPerRun, p95: ft.p95 } };
   }
 
-  P.status("Panning the spline, default resampling…");
-  const resampled = await config("default resampling");
+  P.status("Panning a 1,000-point spline, default settings…");
+  const small = await config("1,000 points, default settings");
 
-  P.status("Panning the spline, resampling off…");
+  P.status("Panning a 10,000-point spline, resampling off…");
+  useData(10000);
   spline.resamplingMode = EResamplingMode.None;
-  const full = await config("resampling off");
+  await P.idleFrames(3);
+  const large = await config("10,000 points, resampling off");
 
   // Same indexes from both versions? Run each on the live transform state and compare.
   const t = spline.renderDataTransform;
@@ -101,36 +116,42 @@ async function demo(P) {
   const identical = a.length > 0 && a.length === b.length && a.every((v, i) => v === b[i]);
 
   P.status("Panning with Y autoRange = Always…");
-  spline.resamplingMode = EResamplingMode.Auto;
   yAxis.autoRange = EAutoRange.Always;
-  const autoY = await pan("default resampling, Y autoRange Always", false);
-  yAxis.autoRange = EAutoRange.Once;
+  const autoY = await pan("10,000 points, resampling off, Y autoRange Always", false);
+  yAxis.autoRange = EAutoRange.Never;
+  yAxis.visibleRange = new NumberRange(-1.5, 1.5);
+
+  P.status("10,000 points with default resampling…");
+  spline.warnOnSplineFailure = false; // the library would otherwise log an error on every frame of this pass
+  spline.resamplingMode = EResamplingMode.Auto;
+  await P.idleFrames(3);
+  const resampled = await pan("10,000 points, default resampling", false);
   proto.populateSourceIndexes = shippedPopulate;
 
-  const s = full.shipped, f = full.fixed, rs = resampled.shipped, rf = resampled.fixed;
-  const perVertex = s.runsPerFrame >= 0.8 && s.verticesPerRun > 0 && s.setPerRun >= 0.99 * s.verticesPerRun &&
-    rs.runsPerFrame >= 0.8 && rs.setPerRun >= 0.99 * rs.verticesPerRun;
-  const fixRemoves = f.setPerRun === 0 && rf.setPerRun === 0 && identical;
-  const reproduced = perVertex && fixRemoves;
+  const ss = small.shipped, sf = small.fixed, ls = large.shipped, lf = large.fixed;
+  const perVertex = (x) => x.runsPerFrame >= 0.8 && x.verticesPerRun > 0 && x.setPerRun >= 0.99 * x.verticesPerRun;
+  const reproduced = perVertex(ss) && perVertex(ls) && sf.setPerRun === 0 && lf.setPerRun === 0 && identical;
+  const fmt = (v) => Math.round(v).toLocaleString("en-US");
   P.report({
     verdict: reproduced ? "reproduced" : "not-reproduced",
     headline: reproduced
-      ? `Each pan frame reruns the spline transform, which makes one wasm set() call per interpolated vertex: ${Math.round(rs.setPerRun).toLocaleString("en-US")} per run with default resampling, ${Math.round(s.setPerRun).toLocaleString("en-US")} with resampling off (10,000 points). Writing through a typed-array view: 0, same values.`
-      : `Expected one SCRTDoubleVector.set call per interpolated vertex per run; measured ${s.setPerRun.toFixed(0)} calls for ${s.verticesPerRun.toFixed(0)} vertices (fix: ${f.setPerRun.toFixed(0)}, identical output: ${identical}).`,
-    columns: ["Resampled, as shipped", "Resampled, fix", "Resampling off, as shipped", "Resampling off, fix"],
+      ? `Each pan frame reruns the spline transform, which makes one wasm set() call per interpolated vertex: ${fmt(ss.setPerRun)} calls per run for 1,000 points, ${fmt(ls.setPerRun)} for 10,000 points (${ls.msPerRun.toFixed(1)} ms per run). Writing through a typed-array view: 0 calls (${lf.msPerRun.toFixed(2)} ms), same values.`
+      : `Expected one SCRTDoubleVector.set call per interpolated vertex per run; measured ${fmt(ls.setPerRun)} calls for ${fmt(ls.verticesPerRun)} vertices (fix: ${fmt(lf.setPerRun)}, identical output: ${identical}).`,
+    columns: ["1,000 pts, as shipped", "1,000 pts, fix", "10,000 pts, as shipped", "10,000 pts, fix"],
     rows: [
-      ["Transform runs (populateSourceIndexes) per pan frame", rs.runsPerFrame, rf.runsPerFrame, s.runsPerFrame, f.runsPerFrame],
-      ["Interpolated vertices per run", rs.verticesPerRun, rf.verticesPerRun, s.verticesPerRun, f.verticesPerRun],
-      ["SCRTDoubleVector.set calls per run (inside populateSourceIndexes)", rs.setPerRun, rf.setPerRun, s.setPerRun, f.setPerRun],
-      ["SCRTDoubleVector.set calls per frame (whole page)", rs.setPerFrameAll, rf.setPerFrameAll, s.setPerFrameAll, f.setPerFrameAll],
-      ["Time in populateSourceIndexes per run, ms", rs.msPerRun, rf.msPerRun, s.msPerRun, f.msPerRun],
-      ["Frame interval p95, ms", rs.p95, rf.p95, s.p95, f.p95],
+      ["Resampled input", ss.resampled ? "yes" : "no", sf.resampled ? "yes" : "no", ls.resampled ? "yes" : "no (off)", lf.resampled ? "yes" : "no (off)"],
+      ["Transform runs (populateSourceIndexes) per pan frame", ss.runsPerFrame, sf.runsPerFrame, ls.runsPerFrame, lf.runsPerFrame],
+      ["Interpolated vertices per run", ss.verticesPerRun, sf.verticesPerRun, ls.verticesPerRun, lf.verticesPerRun],
+      ["SCRTDoubleVector.set calls per run (inside populateSourceIndexes)", ss.setPerRun, sf.setPerRun, ls.setPerRun, lf.setPerRun],
+      ["SCRTDoubleVector.set calls per frame (whole page)", ss.setPerFrameAll, sf.setPerFrameAll, ls.setPerFrameAll, lf.setPerFrameAll],
+      ["Time in populateSourceIndexes per run, ms", ss.msPerRun, sf.msPerRun, ls.msPerRun, lf.msPerRun],
+      ["Frame interval p95, ms", ss.p95, sf.p95, ls.p95, lf.p95],
     ],
     notes: [
-      `Identical indexes from both versions: ${identical ? "yes" : "NO"} (${a.length.toLocaleString("en-US")} values compared).`,
-      `With Y autoRange = Always the transform ran ${autoY.runsPerFrame.toFixed(2)} times per pan frame (the issue marks two runs per frame as a hypothesis; ${autoY.runsPerFrame >= 1.5 ? "it holds here" : "it did not happen here"}).`,
-      "Counts do not depend on hardware; times do. With resampling, the transform input is the resampled set (about two points per pixel), so the call count scales with the chart width rather than the data size.",
+      `Identical indexes from both versions: ${identical ? "yes" : "NO"} (${a.length.toLocaleString("en-US")} values compared). Counts do not depend on hardware; times do.`,
+      `With Y autoRange = Always the transform ran ${autoY.transformRunsPerFrame.toFixed(2)} times per pan frame (populateSourceIndexes ${autoY.runsPerFrame.toFixed(2)}); the issue's two-runs-per-frame hypothesis ${autoY.runsPerFrame >= 1.5 ? "holds here" : "did not show here"}.`,
+      `10,000 points with default resampling: the transform ran ${resampled.transformRunsPerFrame.toFixed(2)} times per frame and ${resampled.fallbacksPerFrame.toFixed(2)} of them fell back to the resampled input (the cubic spline returned NaN, "X data may contain duplicates"), so populateSourceIndexes ran ${resampled.runsPerFrame.toFixed(2)} times per frame. In that set-up no spline is drawn and, unless warnOnSplineFailure = false, the library logs an error on every frame. The per-vertex cost applies when the input is not resampled: small series, or resampling turned off as here.`,
     ],
-    metrics: { N, frames: FRAMES, resampled, full, autoY, identical },
+    metrics: { frames: FRAMES, small, large, autoY, resampled, identical },
   });
 }

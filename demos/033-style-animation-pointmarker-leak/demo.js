@@ -69,7 +69,7 @@ async function demo(P) {
 
   async function phase(label, chart) {
     await P.idleFrames(5);
-    const unused0 = unusedMarkers().length, live0 = liveMarkers(), liveAfterRun = [];
+    const unused0 = new Set(unusedMarkers()), live0 = liveMarkers(), liveAfterRun = [];
     P.native.reset();
     P.native.start();
     const r = await P.during(async () => {
@@ -86,7 +86,7 @@ async function demo(P) {
     });
     P.native.stop();
     const nat = P.native.snapshot();
-    const unused = unusedMarkers();
+    const unused = unusedMarkers(), unusedNew = unused.filter((m) => !unused0.has(m));
     const sum = (re) => Object.keys(nat).filter((k) => re.test(k)).reduce((a, k) => ({ created: a.created + nat[k].created, deleted: a.deleted + nat[k].deleted }), { created: 0, deleted: 0 });
     const uiv = sum(/^UIntVector$/), tex = sum(/Texture/);
     const gpuCreated = r.total("gl.createTexture") + r.total("gpu.createTexture");
@@ -95,10 +95,10 @@ async function demo(P) {
       created: r.total("markers created by style animations"), deletes: r.total("BasePointMarker.delete()"),
       liveDelta: liveAfterRun[RUNS - 1] - live0,
       growthPerRunAfterFirst: (liveAfterRun[RUNS - 1] - liveAfterRun[0]) / (RUNS - 1),
-      unusedDelta: unused.length - unused0, unusedTotal: unused.length, texturesHeld: texturesHeld(unused),
+      unusedDelta: unusedNew.length, unusedTotal: unused.length, texturesHeld: texturesHeld(unusedNew),
       uintVectorsLeaked: uiv.created - uiv.deleted, uintVectorsCreated: uiv.created,
       texturesLeaked: tex.created - tex.deleted, textureClasses: Object.keys(nat).filter((k) => /Texture/.test(k)).join(","),
-      gpuCreated, gpuDeleted, gpuNet: gpuCreated - gpuDeleted,
+      gpuCreated, gpuDeleted, gpuNet: gpuDeleted > 0 ? gpuCreated - gpuDeleted : null, // WebGPU never calls GPUTexture.destroy() here
       liveAfterRun,
     };
     P.log(`${label}: ${JSON.stringify(res)}`);
@@ -127,7 +127,7 @@ async function demo(P) {
       ["BasePointMarker.delete() calls", shipped.deletes, fixed.deletes],
       ["Live point markers (webGlResourcesRefs), change over 10 runs", shipped.liveDelta, fixed.liveDelta],
       ["  more per run, runs 2-10", shipped.growthPerRunAfterFirst, fixed.growthPerRunAfterFirst],
-      ["Live markers that no series uses, added", shipped.unusedDelta, fixed.unusedDelta],
+      ["New live markers that no series uses", shipped.unusedDelta, fixed.unusedDelta],
       ["Sprite CanvasTextures held by those markers", shipped.texturesHeld, fixed.texturesHeld],
       ["Native UIntVector handles never deleted", shipped.uintVectorsLeaked, fixed.uintVectorsLeaked],
       ["Native texture handles never deleted", shipped.texturesLeaked, fixed.texturesLeaked],
@@ -136,6 +136,9 @@ async function demo(P) {
     notes: [
       `With the fix, the first run on each series still leaves the marker the app passed in (${SERIES} markers): the fix deliberately leaves it to the app, which still holds a reference. Every later replacement is deleted, so the count stops growing.`,
       `Each leaked marker keeps 3 CanvasTextures, each with a canvas element, 2 UIntVectors (width x height pixels) and a native bitmap texture. Native texture class: ${shipped.textureClasses || "none seen"}. During each run the marker textures are also rebuilt every animation frame (issue 059): that churn is created and deleted again, so it does not show in the "never deleted" rows.`,
+      shipped.gpuNet === null
+        ? `GPU textures: the ${P.renderer()} backend created ${shipped.gpuCreated} textures in the shipped phase and never called GPUTexture.destroy(), so live GPU textures cannot be counted from JavaScript here (row left empty).`
+        : "GPU textures: gl.createTexture minus gl.deleteTexture over the phase, about 3 per leaked marker.",
       "Counts do not depend on hardware.",
     ],
     metrics: { shipped, fixed, series: SERIES, runs: RUNS },

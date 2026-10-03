@@ -57,13 +57,13 @@ async function demo(P) {
   });
 
   const assignments = [
-    ["Baseline: redraw only, no assignment", () => {}],
-    ["mountainCollection.isOneHundredPercent = false (unchanged)", () => { mountain.coll.isOneHundredPercent = false; }],
-    ["mountainCollection.isVisible = true (unchanged)", () => { mountain.coll.isVisible = true; }],
-    ["mountainCollection.separatePositiveNegativeStacks = true (unchanged)", () => { mountain.coll.separatePositiveNegativeStacks = true; }],
-    ["columnCollection.separatePositiveNegativeStacks = true (unchanged)", () => { column.coll.separatePositiveNegativeStacks = true; }],
-    ["columnSeries.stackedGroupId = its current value", () => { const rs = column.coll.get(2); rs.stackedGroupId = rs.stackedGroupId; }],
-    ["Control: mountainCollection.yRangeMode = unchanged (guarded setter)", () => { mountain.coll.yRangeMode = mountain.coll.yRangeMode; }],
+    ["Per frame, baseline: redraw only, no assignment", () => {}],
+    ["mountains.isOneHundredPercent = false", () => { mountain.coll.isOneHundredPercent = false; }],
+    ["mountains.isVisible = true", () => { mountain.coll.isVisible = true; }],
+    ["mountains.separatePositiveNegativeStacks = true", () => { mountain.coll.separatePositiveNegativeStacks = true; }],
+    ["columns.separatePositiveNegativeStacks = true", () => { column.coll.separatePositiveNegativeStacks = true; }],
+    ["columnLayer.stackedGroupId = its current value", () => { const rs = column.coll.get(2); rs.stackedGroupId = rs.stackedGroupId; }],
+    ["Control: mountains.yRangeMode = current value (guarded setter)", () => { mountain.coll.yRangeMode = mountain.coll.yRangeMode; }],
   ];
 
   async function run(label, assign, countCalls) {
@@ -114,13 +114,13 @@ async function demo(P) {
       ? `Each of the 5 setters, re-assigned its current value once per frame, triggers 1 full rebuild per frame (${Math.round(setterRows[0].pushBack).toLocaleString("en-US")} push_back calls for ${S} x ${N.toLocaleString("en-US")} points); a redraw alone triggers none. ` +
         (fixWorks ? `With an equality guard: 0 rebuilds (${shippedTime.msPerFrame.toFixed(1)} ms -> ${fixedTime.msPerFrame.toFixed(1)} ms per frame in updateAccumulatedVectors).` : `The guards did not remove all rebuilds (see the table).`)
       : `Expected 1 rebuild per frame for each same-value assignment and none for the baseline; measured ${setterRows.map((r) => r.rebuilds.toFixed(1)).join(", ")} (baseline ${shipped[0].rebuilds.toFixed(1)}).`,
-    columns: ["As shipped: rebuilds / frame", "As shipped: push_back / frame", "With guard: rebuilds / frame", "With guard: push_back / frame"],
+    columns: ["Shipped: rebuilds", "Shipped: push_back", "Guarded: rebuilds", "Guarded: push_back"],
     rows: assignments.map(([label], i) => [label, shipped[i].rebuilds, shipped[i].pushBack, fixed[i].rebuilds, fixed[i].pushBack]).concat([
-      ["Time in updateAccumulatedVectors per frame, ms (isOneHundredPercent re-applied, pass without the per-call hook)", shippedTime.msPerFrame, null, fixedTime.msPerFrame, null],
+      ["ms in updateAccumulatedVectors per frame (isOneHundredPercent, no per-call hook)", shippedTime.msPerFrame, null, fixedTime.msPerFrame, null],
       ["Frame interval p95, ms (same pass)", shippedTime.p95, null, fixedTime.p95, null],
     ]),
     notes: [
-      `Both charts are invalidated every frame in every row, so the baseline row shows that redrawing alone does not rebuild. One rebuild is ${perRebuild.toLocaleString("en-US")} embind push_back calls here (issue 021 covers the rebuild's own cost). Counts do not depend on hardware; times do.`,
+      `Counts are per frame; every assigned value equals the current one. Both charts are invalidated every frame in every row, so the baseline row shows that redrawing alone does not rebuild. One rebuild is ${perRebuild.toLocaleString("en-US")} embind push_back calls here (issue 021 covers the rebuild's own cost). Counts do not depend on hardware; times do.`,
       "Workaround without a library change: compare before assigning these properties.",
     ],
     metrics: { S, N, perRebuild, shipped, fixed, shippedTime, fixedTime, labels: assignments.map((a) => a[0]) },

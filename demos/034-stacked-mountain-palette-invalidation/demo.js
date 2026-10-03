@@ -101,7 +101,7 @@ async function demo(P) {
       ? `With a caching palette provider and no data change, every redraw calls overrideFillArgb ${Math.round(shippedRedraw.callbacks).toLocaleString("en-US")} times (${S} layers x ${N.toLocaleString("en-US")} points) and creates ${shippedRedraw.palettes.toFixed(0)} native palettes. ` +
         (fixWorks ? `With the setter guard: ${Math.round(fixedRedraw.callbacks)} calls and ${fixedRedraw.palettes.toFixed(0)} palettes, also while zooming.` : `The setter guard did not remove them (see the table).`)
       : `Expected about ${perRedraw.toLocaleString("en-US")} palette callbacks per redraw; measured ${Math.round(shippedRedraw.callbacks).toLocaleString("en-US")}.`,
-    columns: ["Redraw: as shipped", "Redraw: with fix", "Zoom: as shipped", "Zoom: with fix"],
+    columns: ["Redraw: shipped", "Redraw: fix", "Zoom: shipped", "Zoom: fix"],
     rows: [
       ["STROKE_Y1_DASH_ARRAY notifications to the drawing provider per frame", shippedRedraw.notifications, fixedRedraw.notifications, shippedZoom.notifications, fixedZoom.notifications],
       ["overrideFillArgb calls per frame", shippedRedraw.callbacks, fixedRedraw.callbacks, shippedZoom.callbacks, fixedZoom.callbacks],
