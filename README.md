@@ -22,9 +22,9 @@ Nothing here is measured. Every issue names the recipe that would measure it.
 
 | Status | Issues |
 |---|---|
-| Verified by an adversarial reviewer (confirmed or corrected) | 39 |
+| Verified by an adversarial reviewer (confirmed or corrected) | 40 |
 | Refuted by an adversarial reviewer (file kept, marked) | 0 |
-| **Not yet verified** (reviewer only) | 55 |
+| **Not yet verified** (reviewer only) | 54 |
 
 Verified so far: all issues of `s01-surface-render` and `s02-init-loading`, plus the high-severity issues of the slices listed in the coverage table. Unverified issues are strong candidates: re-check the quoted line and the caller chain before acting. Raw data for resuming: [`data/findings.json`](data/findings.json) (`verified: false`).
 
@@ -58,7 +58,7 @@ Verified so far: all issues of `s01-surface-render` and `s02-init-loading`, plus
 | [024](issues/024-linear-trend-filter-full-recompute-per-append.md) | high | JS execution | XyLinearTrendFilter recomputes and re-uploads the whole series on every source append/update | `esm/Charting/Model/Filters/XyLinearTrendFilter.js:81` | S | yes | medium |
 | [025](issues/025-datapointselection-per-point-metadata-objects.md) | high | Memory and lifecycle | DataPointSelectionModifier gives every point of each series it attaches to its own metadata object, at attach and on every later append, and keeps doing so after the modifier is removed | `esm/Charting/ChartModifiers/DataPointSelectionModifier.js:171` | S | yes | medium |
 | [026](issues/026-3d-hittest-reads-selection-buffer-per-series.md) | medium | Tasks and scheduling | 3D tooltip and hover hit tests repeat the same selection lookup once per series (x17-33 sample pixels for SeriesSelectionModifier3D hover), on every pointermove and again on every render | `esm/Charting3D/ChartModifiers/TooltipModifier3D.js:257` | H | yes | medium |
-| [027](issues/027-engine-raf-loop-never-stops.md) | high | Tasks and scheduling | The engine's rAF main loop asks for a frame every vsync for the life of the wasm module, including when nothing is invalidated and after every chart has been deleted | `_glue-pretty/scichart.js:5918` | S | no | medium |
+| [027](issues/027-engine-raf-loop-never-stops.md) | high | Tasks and scheduling | The engine's rAF main loop asks for a frame every vsync for the life of the wasm module, including when nothing is invalidated and after every chart has been deleted | `_glue-pretty/scichart.js:5916` | S | yes | medium |
 | [028](issues/028-nonuniform-heatmap-cpu-texture-rebuild-per-pan.md) | high | JS execution | The non-uniform heatmap rebuilds a colour texture the size of its on-screen area in JS and re-uploads it on every zoom frame, and on every pan frame while the heatmap is clipped by the plot area | `esm/Charting/Visuals/RenderableSeries/DrawingProviders/HeatmapHelpers.js:313` | S | yes | large |
 | [029](issues/029-wasm-fetch-waits-for-webgpu-device-and-glue.md) | medium | Network | The core wasm download and compile start only after the WebGPU adapter and device requests (auto mode on every Mac) and, with wasm64, after the glue chunk import | `esm/Charting/Visuals/createMaster.js:294` | S | yes | small |
 | [030](issues/030-datavalue-subchart-wrapper-forced-layout-per-frame.md) | medium | Layout | A DataValue-positioned sub-chart with a subChartContainer writes 4 inline styles and then reads clientWidth/clientHeight of its sections on every frame, forcing a synchronous layout per sub-chart | `esm/Charting/Visuals/SciChartSubSurface.js:207` | S | yes | medium |
@@ -144,7 +144,7 @@ Verified so far: all issues of `s01-surface-render` and `s02-init-loading`, plus
 | `s11-layout-core-themes` | 2 | not verified yet |
 | `s12-pie-3d-surface` | 7 | 1 verified, 0 refuted, 6 not verified |
 | `s13-3d-series-modifiers` | 6 | 2 verified, 0 refuted, 3 not verified |
-| `x1-frame-path` | 6 | not verified yet |
+| `x1-frame-path` | 6 | 1 verified, 0 refuted, 3 not verified |
 | `x2-data-and-lifecycle` | 7 | not verified yet |
 
 Per-slice notes on what was checked and found fine, and what static review could not decide: [`data/coverage.json`](data/coverage.json).
